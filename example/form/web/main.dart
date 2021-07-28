@@ -1,8 +1,29 @@
+library demo;
+
 import 'package:vcl/vcl.dart';
+
+part 'TMainForm.dart';
+
 
 void main() async
 {
-  var form = TForm(Application)
+  var form = TMainForm()
+    ..Caption = 'MainForm'
+    ..SetClientSize((Screen.Width*0.6).truncate(), (Screen.Height*0.6).truncate());
+  await form.ShowModal();
+/*  var form = TForm(Application)
+    ..Caption = 'MainForm'
+    ..SetClientSize(640, 480)
+    ..Position = TPosition.ScreenCenter;
+
+  var menu = TMainMenu(form);
+  form.Menu = menu;
+  menu
+//  TStatusBar(form)
+//    ..Parent = form;
+
+  await form.ShowModal();*/
+/*  var form = TForm(Application)
     ..Caption = 'dart-vcl'
     ..Position = TPosition.ScreenCenter
     ..BorderStyle = TFormBorderStyle.Dialog
@@ -35,5 +56,5 @@ void main() async
 
   await form.ShowModal();
   
-  await ShowMessage('see you later');
+  await ShowMessage('see you later');**/
 }
