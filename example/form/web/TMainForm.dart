@@ -39,8 +39,10 @@ class TMainForm extends TForm
     status.Parent = this;
     status.Panels.Add();
     status.Panels.Items[0]
-      ..Width = 100
-      ..Text = 'pages: ${ pages.PageCount }';
+      ..Width = 120
+      ..Text = 'page count: ${ pages.PageCount }';
+
+    status.SimpleText = '© dart-vcl, 2021';
 
   }
 
@@ -130,8 +132,19 @@ class TMainForm extends TForm
       ..PageControl = pages;
 
     TButton(page)
-      ..Caption = 'Show message'
+      ..Caption = 'Modal form'
       ..SetBounds(10, 10, 150, null)
+      ..Parent = page
+      ..OnClick = (Sender) async {
+        var form = TForm(this);
+        form.Position = TPosition.ScreenCenter;
+        await form.ShowModal();
+        await ShowMessage('Modal form closed');
+      };
+
+    TButton(page)
+      ..Caption = 'Show message'
+      ..SetBounds(10, 40, 150, null)
       ..Parent = page
       ..OnClick = (Sender) {
         ShowMessage('Simple message');
@@ -139,12 +152,24 @@ class TMainForm extends TForm
 
     TButton(page)
       ..Caption = 'Input box'
-      ..SetBounds(10, 40, 150, null)
+      ..SetBounds(10, 70, 150, null)
       ..Parent = page
       ..OnClick = (Sender) async {
         var name = await InputBox('Input box', 'Enter your name', '');
         if(name.isNotEmpty)
           await ShowMessage('Hello, $name');
+      };
+
+    TButton(page)
+      ..Caption = 'User dialog'
+      ..SetBounds(10, 100, 150, null)
+      ..Parent = page
+      ..OnClick = (Sender) async {
+        var dlg = TUserDialog(this);
+        if(await dlg.ShowModal() == TModalResult.Ok)
+          ShowMessage('Hello, ${ dlg.userName} ');
+        else
+          ShowMessage('See you later');
       };
   }
 
@@ -170,12 +195,5 @@ class TMainForm extends TForm
     return item;
   }
 
-/*  static TGroupBox CreateGroupBox(TWinControl Parent, [int? left, int? top, int? width, int? height]/*, TNotifyEvent=NULL*/)
-  {
-    var obj = TGroupBox(Parent);
-    obj.SetBounds(left, top, width, height);
-    obj.Parent = Parent;
-    return obj;
-  }*/
 
 }
