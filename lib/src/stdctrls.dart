@@ -1553,7 +1553,7 @@ class TCustomListBox extends TCustomMultiSelectListControl
 
   void Clear()
   {
-    _items!.Clear();
+    _items.Clear();
   }
 
   void ClearSelection()

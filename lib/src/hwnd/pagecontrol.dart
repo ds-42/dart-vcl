@@ -13,25 +13,25 @@ class HPageControl extends HCustomControl
       'box-sizing: border-box;'
       'width: 100%;'
       'height:100%;');
-    rule.addRule('.$name ul, .$name li',
+    rule.addRule('.$name .tab-ul, .$name .tab-li',
       'margin: 0;'
       'padding: 0;'
       'list-style: none;'
       '${ rule.borderBox}');
-    rule.addRule('.$name, .$name input[type="radio"]:checked+label',
+    rule.addRule('.$name, .$name .tab-radio:checked+label',
       'position: relative;');
-    rule.addRule('.$name li, .$name input[type="radio"]+label',
+    rule.addRule('.$name .tab-li, .$name .tab-radio+label',
       'display: inline-block;'
       'user-select: none;');
-    rule.addRule('.$name li > div, .$name input[type="radio"]',
+    rule.addRule('.$name .tab-li > div, .$name .tab-radio',
       'position: absolute;');
-    rule.addRule('.$name li > div, .$name input[type="radio"]+label',
+    rule.addRule('.$name .tab-li > div, .$name .tab-radio+label',
       'border: solid 1px #ccc;');
-    rule.add('li',
+    rule.add('.tab-li',
       'vertical-align: top;');
-    rule.add('li:first-child',
+    rule.add('.tab-li:first-child',
       'margin-left: 4px;');
-    rule.add('li > div',
+    rule.add('.tab-li > div',
       'top: 21px;'
       'bottom: 0;'
       'left: 0;'
@@ -40,7 +40,7 @@ class HPageControl extends HCustomControl
       'overflow: auto;'
       'border: 1px solid #a0a0a0;'
       '${ rule.borderBox}');
-    rule.add('input[type="radio"]+label',
+    rule.add('.tab-radio+label',
       'margin: 0 2px 0 0;'
       'padding: 0 5px;'
       'line-height: 20px;'
@@ -50,19 +50,19 @@ class HPageControl extends HCustomControl
       'border-radius: 3px 3px 0 0;'
       'border: 1px solid #999;' 
       '${ rule.borderBox}');
-    rule.add('input[type="radio"]:checked+label',
+    rule.add('.tab-radio:checked+label',
       'z-index: 1;'
       'color: black;'
       'background: #ddd;'
       'border-bottom-color: #ddd;'
       'cursor: default;');
-    rule.add('input[type="radio"]',
+    rule.add('.tab-radio',
       'opacity: 0;');
-    rule.add('input[type="radio"]~div',
+    rule.add('.tab-radio~div',
       'display: none;');
-    rule.add('input[type="radio"]:checked:not(:disabled)~div',
+    rule.add('.tab-radio:checked:not(:disabled)~div',
       'display: block;');
-    rule.add('input[type="radio"]:disabled+label',
+    rule.add('.tab-radio:disabled+label',
     'opacity: .5; cursor: no-drop;');
   }
 
@@ -72,6 +72,7 @@ class HPageControl extends HCustomControl
   Element getClientHandle() => _ul;
   HPageControl() : super()
   {
+    _ul.className='tab-ul';
     handle.append(_ul);
   }
 
@@ -123,19 +124,22 @@ class HTabSheet extends HCustomControl
   final radio = RadioButtonInputElement();
   late final LabelElement label;
 
-  DivElement? _client;
-  HtmlElement getClientHandle() => _client!;
+  late final DivElement _client;
+  HtmlElement getClientHandle() => _client;
 
   HTabSheet() : super.elem(LIElement())
   {
+    handle.className='tab-li';
     handle.append(radio);
     radio.name='tabs-';
+    radio.className='tab-radio';
     radio.id='tabs-'+hashCode.toString();
 
     label = Element.html('<label for="tabs-${ hashCode.toString() }">...</label>') as LabelElement;
     handle.append(label);
 
     _client=handle.append(DivElement()) as DivElement;
+    _client.owner = this;
   }
 
   String get caption => label.text ?? '';

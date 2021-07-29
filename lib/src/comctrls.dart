@@ -241,8 +241,8 @@ class TTabSheet extends TWinControl
     (WindowHandle as HTabSheet)
         ..label.style.display = TabVisible? '' : 'none'
         ..label.style.lineHeight = TabVisible? '' : '0'
-        .._client!.style.top = TabVisible? '' : '0'
-        .._client!.style.border = TabVisible? '' : '0px';
+        .._client.style.top = TabVisible? '' : '0'
+        .._client.style.border = TabVisible? '' : '0px';
   }
 
 
