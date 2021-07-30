@@ -176,6 +176,13 @@ class HForm extends HCustomControl
           defproc!(elem, message);
           break;
 
+        case WM_SHOWWINDOW:
+          if(message.WParam)
+            show();
+          else
+            hide();
+          break;
+
         default:
           defproc!(elem, message);
           break;

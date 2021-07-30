@@ -3408,7 +3408,8 @@ class TWinControl extends TControl
   }
 
 
-  void _cmVisibleChanged(TMessage Message) {
+  void _cmVisibleChanged(TMessage Message)
+  {
     if(!Visible && (Parent == null))
       RemoveFocus(false);
 

@@ -23,6 +23,31 @@ const DefHintHidePause = DefHintPause * 5;
 
 
 
+HWND? FindTopMostWindow(HWND ActiveWindow)
+{
+  HWND TaskActiveWindow = ActiveWindow;
+  HWND? TaskFirstWindow;
+  HWND? TaskFirstTopMost;
+
+  bool DoFindWindow(HWND hWnd, dynamic Param)
+  {
+    if((hWnd != TaskActiveWindow) && (hWnd != Application._handle) &&
+      Windows.IsWindowVisible(hWnd) && Windows.IsWindowEnabled(hWnd))
+    {
+      if(TaskFirstWindow == null)
+        TaskFirstWindow = hWnd;
+
+    }
+    return true;
+  }
+
+  Windows.EnumThreadWindows(/*GetCurrentThreadID*/null, DoFindWindow, null);
+  if(TaskFirstWindow != null)
+    return TaskFirstWindow;
+  else
+    return TaskFirstTopMost;
+}
+
 bool SendFocusMessage(HWND hWnd, MESSAGE Msg)
 {
   int Count = FocusCount;
@@ -215,6 +240,7 @@ enum TPosition { Designed, Default, DefaultSizeOnly,
                  ScreenCenter, DesktopCenter, MainFormCenter, OwnerFormCenter }
 
 enum TCloseAction {None, Hide, Free, Minimize}
+typedef Future<void> TCloseEvent(TObject Sender, TPointer<TCloseAction> Action);
 
 enum FormStates { Creating, Visible, Showing, Modal, CreatedMDIChild, Activated }
 
@@ -245,22 +271,42 @@ class HCustomForm extends HForm
 
   }
 
-  void set ModalResult(TModalResult Value)
+  void set ModalResult(TModalResult value)
   {
     if(_modal == null)
       return;
+    CloseModal(value);
+  }
 
-    Owner.CloseQuery().then((state)
+
+  void CloseModal(TModalResult Value) async
+  {
+    try
     {
-      if(state)
+      var CloseAction = TPointer(TCloseAction.None);
+      if(await Owner.CloseQuery())
+      {
+        CloseAction.Value = TCloseAction.Hide;
+        await Owner.DoClose(CloseAction);
+      }
+
+      if(CloseAction.Value == TCloseAction.None)
+        Owner._modalResult = TModalResult.None;
+      else
       {
         Owner._modalResult = Value;
         _modal!.complete(Value);
         _modal = null;
+
+        if(CloseAction.Value == TCloseAction.Free)
+          Owner.Destroy();
       }
-      else
-        Owner._modalResult = TModalResult.None;
-    });
+    }
+    catch(E)
+    {
+      Owner._modalResult = TModalResult.None;
+      Application.HandleException(Owner);
+    }
   }
 
 }
@@ -430,6 +476,11 @@ class TCustomForm extends TScrollingWinControl
     get OnActivate => _onActivate;
     set OnActivate(TNotifyEvent? Value) => _onActivate=Value;
 
+  TCloseEvent? _onClose;
+  TCloseEvent?
+    get OnClose => _onClose;
+    set OnClose(TCloseEvent? Value) => _onClose=Value;
+
   TNotifyEvent? _onDeactivate;
   TNotifyEvent?
     get OnDeactivate => _onDeactivate;
@@ -486,9 +537,10 @@ class TCustomForm extends TScrollingWinControl
 
 
 
-  void DoClose(TPointer<TCloseAction> Action)
+  Future<void> DoClose(TPointer<TCloseAction> Action) async
   {
-
+    if(_onClose!=null)
+      await _onClose!(this, Action);
   }
 
   void DoHide()
@@ -910,24 +962,23 @@ class TCustomForm extends TScrollingWinControl
     {
       if(await CloseQuery())
       {
-        TCloseAction CloseAction;
+        var CloseAction = TPointer(TCloseAction.Hide);
         if(FormStyle == TFormStyle.MDIChild)
         {
 
-            CloseAction = TCloseAction.None;
+          CloseAction.Value = TCloseAction.None;
         }
-        else
-          CloseAction = TCloseAction.Hide;
-        DoClose(TPointer(CloseAction));
-        if(CloseAction != TCloseAction.None)
+        await DoClose(CloseAction);
+
+        if(CloseAction.Value != TCloseAction.None)
         {
           if(Application.MainForm == this)
             Application.Terminate();
           else
-          if(CloseAction == TCloseAction.Hide)
+          if(CloseAction.Value == TCloseAction.Hide)
             Hide();
           else
-          if(CloseAction == TCloseAction.Minimize)
+          if(CloseAction.Value == TCloseAction.Minimize)
             WindowState = TWindowState.Minimized;
           else
             Destroy();
@@ -946,38 +997,6 @@ class TCustomForm extends TScrollingWinControl
     Result = true;
 
     return Result;
-  }
-
-  void CloseModal() async
-  {
-    try
-    {
-      TCloseAction CloseAction = TCloseAction.None;
-      if(await CloseQuery())
-      {
-        CloseAction = TCloseAction.Hide;
-        DoClose(TPointer(CloseAction));
-      }
-
-      switch(CloseAction)
-      {
-        case TCloseAction.None:
-          ModalResult = TModalResult.None;
-          break;
-
-        case TCloseAction.Free:
-          Destroy();
-          break;
-
-        default:
-          break;
-      }
-    }
-    catch(E)
-    {
-      ModalResult = TModalResult.None;
-      Application.HandleException(this);
-    }
   }
 
 
@@ -1172,7 +1191,6 @@ class TCustomForm extends TScrollingWinControl
   void _cmShowingChanged(TMessage Message)
   {
 
-
     void UpdateFormPosition(int X, int Y)
     {
       if(X + Width > Screen.Width)
@@ -1267,12 +1285,25 @@ class TCustomForm extends TScrollingWinControl
 
           if(FormState.contains(FormStates.Modal))
           {
-            _form!.hide();
-
+//            _form!.hide();
+            Windows.SetWindowPos(Handle, null, 0, 0, 0, 0,
+                Windows.SWP_HIDEWINDOW | Windows.SWP_NOZORDER | Windows.SWP_NOACTIVATE |
+                Windows.SWP_NOSIZE | Windows.SWP_NOMOVE);
           }
           else
           {
-
+            HWND? NewActiveWindow;
+            if((Windows.GetActiveWindow() == Handle) && !Windows.IsIconic(Handle))
+              NewActiveWindow = FindTopMostWindow(Handle);
+            if(NewActiveWindow != null)
+            {
+              Windows.SetWindowPos(Handle, null, 0, 0, 0, 0,
+                Windows.SWP_HIDEWINDOW | Windows.SWP_NOZORDER | Windows.SWP_NOACTIVATE |
+                Windows.SWP_NOSIZE | Windows.SWP_NOMOVE);
+              Windows.SetActiveWindow(NewActiveWindow);
+            }
+            else
+              Windows.ShowWindow(Handle, Windows.SW_HIDE);
           }
         }
       }

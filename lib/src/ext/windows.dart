@@ -1,5 +1,7 @@
 part of vcl;
 
+typedef bool WNDENUMPROC(HWND hWnd, dynamic lParam);
+
 class _mouseHit
 {
   final Element elem;
@@ -1097,13 +1099,13 @@ abstract class Windows
     pos.cy = cY;
     pos.flags = flags;
 
-    if(flags & Windows.SWP_NOMOVE > 0)
+    if(flags.and(Windows.SWP_NOMOVE))
     {
       pos.x = null;
       pos.y = null;
     }
 
-    if(flags & Windows.SWP_NOSIZE > 0)
+    if(flags.and(Windows.SWP_NOSIZE))
     {
       pos.cx = null;
       pos.cy = null;
@@ -1368,6 +1370,16 @@ abstract class Windows
     if(elem==null)
       return null;
     return HWND.findWindow(elem);
+  }
+
+
+
+  static bool EnumThreadWindows(dynamic dwThreadId, WNDENUMPROC lpfn, dynamic lParam)
+  {
+    for(var hWnd in HWND._elements.values)
+      if(hWnd is HCustomForm && !lpfn(hWnd, lParam))
+        return false;
+    return true;
   }
 
 
