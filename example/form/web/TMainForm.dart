@@ -132,19 +132,34 @@ class TMainForm extends TForm
       ..PageControl = pages;
 
     TButton(page)
-      ..Caption = 'Modal form'
+      ..Caption = 'Simple form'
       ..SetBounds(10, 10, 150, null)
+      ..Parent = page
+      ..OnClick = (Sender) {
+        TForm(this)
+          ..Position = TPosition.ScreenCenter
+          ..Show();
+      };
+
+    TButton(page)
+      ..Caption = 'Modal form'
+      ..SetBounds(10, 40, 150, null)
       ..Parent = page
       ..OnClick = (Sender) async {
         var form = TForm(this);
         form.Position = TPosition.ScreenCenter;
+        form.OnClose = (Sender, Action) async
+        {
+/*          if(await ShowQuestionMessage('Close the form?') != Windows.ID_YES)
+            Action.Value = TCloseAction.None;*/
+        };
         await form.ShowModal();
-        await ShowMessage('Modal form closed');
+        await ShowMessage('The modal form was closed');
       };
 
     TButton(page)
       ..Caption = 'Show message'
-      ..SetBounds(10, 40, 150, null)
+      ..SetBounds(10, 70, 150, null)
       ..Parent = page
       ..OnClick = (Sender) {
         ShowMessage('Simple message');
@@ -152,7 +167,7 @@ class TMainForm extends TForm
 
     TButton(page)
       ..Caption = 'Input box'
-      ..SetBounds(10, 70, 150, null)
+      ..SetBounds(10, 100, 150, null)
       ..Parent = page
       ..OnClick = (Sender) async {
         var name = await InputBox('Input box', 'Enter your name', '');
@@ -162,7 +177,7 @@ class TMainForm extends TForm
 
     TButton(page)
       ..Caption = 'User dialog'
-      ..SetBounds(10, 100, 150, null)
+      ..SetBounds(10, 130, 150, null)
       ..Parent = page
       ..OnClick = (Sender) async {
         var dlg = TUserDialog(this);
