@@ -665,7 +665,9 @@ class TCustomForm extends TScrollingWinControl
   void AlignControls(TControl? AControl, TRect Rect)
   {
     super.AlignControls(AControl, Rect);
-
+    if(ClientHandle != null)
+      Windows.SetWindowPos(_clientHandle!, HWND.BOTTOM, Rect.left, Rect.top, Rect.width,
+          Rect.height, Windows.SWP_NOZORDER | Windows.SWP_NOACTIVATE);
   }
 
 
@@ -1509,6 +1511,7 @@ class TScreen extends TComponent
   final _controlState = TControlState();
 
   int _alignLevel = 0;
+
   void DisableAlign()
   {
     _alignLevel++;
