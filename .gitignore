@@ -18,3 +18,4 @@ doc/api/
 *.js.map
 .idea/
 *.exe
+*.bat
