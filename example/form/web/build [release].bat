@@ -1,1 +1,0 @@
-dart2js.bat -m -o main.dart.js main.dart
