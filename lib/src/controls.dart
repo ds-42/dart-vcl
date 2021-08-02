@@ -470,6 +470,17 @@ class TControlActionLink extends TActionLink
 
 class TControl extends TComponent
 {
+  TFlexParams? _flex;
+  TFlexParams get Flex
+  {
+    if(_flex==null)
+    {
+      _flex = TFlexParams(this);
+///      AControl.Perform(CM_GETFLEXPARAMS, params);
+    }
+    return _flex!;
+  }
+
   TWinControl? _parent;
   TWinControl?
     get Parent => _parent;
@@ -814,6 +825,7 @@ class TControl extends TComponent
 
   void Resize()
   {
+
 
   }
 
@@ -1700,6 +1712,7 @@ class TWinControl extends TControl
 {
 
   int _alignLevel = 0;
+  int get AlignLevel => _alignLevel; // temp
 
   HWND? _handle;
   HWND get Handle

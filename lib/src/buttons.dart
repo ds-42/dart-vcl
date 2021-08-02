@@ -72,7 +72,7 @@ class TSpeedButton  extends TWinControl
   void _cmGetFlexParam(TCMGetFlexParams Flex) // new
   {
     super._cmGetFlexParam(Flex);
-    Flex.Params.AutoSize = false;
+    Flex.Params.AutoSizeOld = false;
   }
 
 

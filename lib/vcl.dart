@@ -70,6 +70,7 @@ part 'src/ext/html_ext.dart';
 part 'src/ext/HDC.dart';
 part 'src/ext/HIMAGE.dart';
 part 'src/ext/local.dart';
+part 'src/ext/metric.dart';
 part 'src/ext/mem.dart';
 part 'src/ext/period.dart';
 part 'src/ext/sysdate.dart';

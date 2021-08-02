@@ -1,121 +1,158 @@
 part of vcl;
 
-enum TFlexAlign { Top, Center, Bottom}
-
-class TCMGetFlexParams extends TCustomMessage {
+class TCMGetFlexParams extends TCustomMessage
+{
 
   TFlexParams get Params => WParam as TFlexParams;
 
   TCMGetFlexParams(TMessage message) : super(message);
 }
 
-extension FlexControlExtension on TControl
-{
-  TFlexParams get Flex
-  {
-    if(Parent != null && Parent is TFlexBand)
-      return (Parent as TFlexBand)._getFlexParams(this);
-
-    throw UnsupportedError('Parent is not Flex band');
-  }
-
-  void FlexInvalidate()
-  {
-    if(Parent != null && Parent is TFlexBand)
-      (Parent as TFlexBand).InvalidateFlexControl(this);
-  }
-}
+enum TFlexJustify { Left, Center, Right, Content }
+enum TFlexJustifyContent { Center, FlexStart, FlexEnd, SpaceBetween, SpaceAround, SpaceEvenly }
 
 class TFlexParams
 {
-  final TFlexBand Band;
-  final TControl  Control;
-  void _testChanged()
+  final TControl Control;
+
+  TFlexParams(this.Control);
+
+  int? _marginLeft;
+  int?
+    get MarginLeft => _marginLeft;
+    set MarginLeft(int? Value)
+    {
+      if(_marginLeft==Value)
+        return;
+      _marginLeft=Value;
+      Invalidate();
+    }
+
+  int? _marginTop;
+  int?
+    get MarginTop => _marginTop;
+    set MarginTop(int? Value)
+    {
+      if(_marginTop==Value)
+        return;
+      _marginTop=Value;
+      Invalidate();
+    }
+
+  int? _marginRight;
+  int?
+    get MarginRight => _marginRight;
+    set MarginRight(int? Value)
+    {
+      if(_marginRight==Value)
+        return;
+      _marginRight=Value;
+      Invalidate();
+    }
+
+  int? _marginBottom;
+  int?
+    get MarginBottom => _marginBottom;
+    set MarginBottom(int? Value)
+    {
+      if(_marginBottom==Value)
+        return;
+      _marginBottom=Value;
+      Invalidate();
+    }
+
+  void SetMargin(int? left, int? top, int? right, int? bottom)
   {
-    if(Band._alignLevel==0)
-      throw UnsupportedError('Band is not align mode. For using custom params use block DisableAlign() { ... } EnableAlign()');
+    MarginLeft = left;
+    MarginTop = top;
+    MarginRight = right;
+    MarginBottom = bottom;
   }
 
-  TFlexParams(this.Band, this.Control);
+  TMetric? _width;
+  TMetric?
+    get Width => _width;
+    set Width(TMetric? Value)
+    {
+      if(_width == Value)
+        return;
+      _width = Value;
+      Invalidate();
+    }
 
-  TFlexAlign? Align;
-  bool       AutoSize = true;
-  bool?      NewLine; // признак нахождения объекта первым в строке
-  TRect      Bounds = TRect();
-  TRect      Margin = TRect();
-  int?       MinWidth;
-  int?       MaxWidth;
+  TFlexJustify? _justify;
+  TFlexJustify?
+    get Justify => _justify;
+    set Justify(TFlexJustify? Value)
+    {
+      if(_justify == Value)
+        return;
+      _justify = Value;
+      Invalidate();
+    }
 
-  int? _width;
-  int? get Width => _width;
-  void set Width(int? Value)
+  void Invalidate()
   {
-    _testChanged();
-    _width = Value;
+    /// To do: add update
   }
+
+  // Old fields
+  bool AutoSizeOld = true; /* not use */
+  int? MinWidthOld;        /* not use */
+  int? MaxWidthOld;        /* not use */
+
+
 }
 
-class TFlexBand extends TWinControl
+class TCalcFlexParams
 {
-  int _indent = 10;
-  int get Indent => _indent;
-  void set Indent(int Value)
+  final TFlexBox    FlexBox;
+  final TFlexParams Params;
+
+  TCalcFlexParams(this.FlexBox, this.Params);
+
+  TControl get Control => Params.Control;
+
+  int x = 0;
+  int y = 0;
+  int? width;
+  int? height;
+
+  int size = 0; // size of cell
+  int lSpace = 0; // space before cell
+  int rSpace = 0; // space after cell
+
+  int get marginLeft => Params.MarginLeft ?? FlexBox.MarginLeft;
+  int get marginTop => Params.MarginTop ?? FlexBox.MarginTop;
+  int get marginRight => Params.MarginRight ?? FlexBox.MarginRight;
+  int get marginBottom => Params.MarginBottom ?? FlexBox.MarginBottom;
+
+}
+
+
+
+
+class TFlexBox extends TWinControl
+{
+
+  TFlexBox(TComponent AOwner) : super(AOwner)
   {
-    if(Value != _indent)
+    Width = 185;
+    Height = 40;
+  }
+
+  void CreateWindowHandle(TCreateParams Params)
+  {
+    WindowHandle = HFlexBand();
+  }
+
+  TFlexJustifyContent _justifyContent = TFlexJustifyContent.FlexStart;
+  TFlexJustifyContent
+    get JustifyContent => _justifyContent;
+    set JustifyContent(TFlexJustifyContent Value)
     {
-      _indent = Value;
-      // ...
-    }
-  }
-
-  int _interval = 10;
-  int get Interval => _interval;
-  void set Interval(int Value)
-  {
-    if(Value != _interval)
-    {
-      _interval = Value;
-      // ...
-    }
-  }
-
-  var _flexList = <TFlexParams>[];
-  TFlexParams _getFlexParams(TControl AControl)
-  {
-    for(TFlexParams p in _flexList) {
-      if(p.Control == AControl)
-        return p;
-    }
-    TFlexParams params = TFlexParams(this, AControl);
-    params.Margin = TRect();
-    params.Align = TFlexAlign.Bottom;
-    AControl.Perform(CM_GETFLEXPARAMS, params);
-    _flexList.add(params);
-    return params;
-  }
-
-  void InvalidateFlexControl(TControl AControl)
-  {
-    for(TFlexParams p in _flexList)
-      if(p.Control == AControl)
-      {
-        int? width = p.Width;
-        AControl.Perform(CM_GETFLEXPARAMS, p);
-        if(width!=null)
-          p.Width = width;
-      }
-  }
-
-  bool _flexOff = false;
-  bool
-    get FlexOff => _flexOff;
-    set FlexOff(bool State)
-    {
-      if(FlexOff==State)
-        return;
-      _flexOff=State;
-      if(FlexOff==false && _alignLevel==1)
-        FlexControls();
+      _justifyContent = Value;
+      // to do: invalidate
     }
 
   int _marginBottom = 5;
@@ -128,181 +165,190 @@ class TFlexBand extends TWinControl
   int get MarginTop => _marginTop;
   int get MarginRight => _marginRight;
 
-  void set MarginBottom(int Value) => SetMargin(MarginLeft, MarginTop, MarginRight, Value);
-  void set MarginLeft(int Value) => SetMargin(Value, MarginTop, MarginRight, MarginBottom);
-  void set MarginTop(int Value) => SetMargin(MarginLeft, Value, MarginRight, MarginBottom);
-  void set MarginRight(int Value) => SetMargin(MarginLeft, MarginTop, Value, MarginBottom);
-
-  void SetMargin(int ALeft, int ATop, int ARight, int ABottom)
-  {
-    if(((ALeft != _marginLeft) || (ATop != _marginTop) ||
-       (ARight != _marginRight) || (ABottom != _marginBottom)))
-    {
-
-      _marginLeft = ALeft;
-      _marginTop = ATop;
-      _marginRight = ARight;
-      _marginBottom = ABottom;
-
-    }
-  }
-
   bool CanFocus() => false;
 
-  void EnableAlign()
+  void Resize()
   {
-    if(_alignLevel == 1)
-    { // update elements position before align finish
-      bool san = ControlState.contains(ControlStates.AlignmentNeeded);
-      FlexControls();
-      ControlState.changeState(ControlStates.AlignmentNeeded, san);
-    }
-    super.EnableAlign();
-  }
+    super.Resize();
 
-  void FlexControls()
-  {
-    if(FlexOff)
-      return;
-
-    var list = <TFlexParams>[];
+    var list = <TCalcFlexParams>[];
 
     for(int i = 0; i<ControlCount; i++)
     {
       TControl ctrl = Controls[i];
-      if(ctrl.Visible && ((ctrl.Align == TAlign.None) || ctrl.Anchors.isEqual([TAnchorKind.Left, TAnchorKind.Top])))
+      if(ctrl.Visible )
       {
-        TFlexParams params = _getFlexParams(ctrl);
-
-        list.add(params);
-
+        
+        list.add(TCalcFlexParams(this, ctrl.Flex));
       }
     }
 
-    int cWidth = ClientWidth - MarginRight;
+    if(list.isNotEmpty)
+      FlexControls(list);
 
-    int px = MarginLeft;
-    int py = MarginTop;
-    int start = 0;
-    int fCount = 0;
-    int maxTop = 0;
-    int maxBottom = 0;
-    int maxHeight = 0;
-    for(int i = 0; i<=list.length; i++)
+    for(var flex in list)
+      flex.Params.Control.SetBounds(flex.x, flex.y, flex.width, flex.height);
+  }
+
+  void Add(List<TControl> ctrls)
+  {
+    DisableAlign();
+    for(var ctrl in ctrls)
     {
-      int width = 0;
-      int margin = 0;
-      TFlexParams? p = i<list.length? list[i] : null;
-      if(p != null)
-      {
-        TControl ctrl =p.Control;
-        //width = ctrl.Width;
-        width = 0;
-        if(p.Width == null)
-        {
-          if(p.AutoSize == false)
-            width = ctrl.Width;
-        }
-        else
-          width = p.Width!;
-        margin = p.Margin.left+p.Margin.right;
-      }
+      ctrl.Parent = this;
+    }
+    EnableAlign();
+  }
 
+  void FlexControls(List<TCalcFlexParams> list)
+  {
+    int cWidth = ClientWidth;
 
-      if((px+width+margin>cWidth || i==list.length || (p!=null && p.NewLine==true)) && (i-start>0))
-      { // align elements in line
-        int dx = 0;
-        for(int j=start; j<i; j++)
-        {
-          TFlexParams p = list[j];
-          int dy = 0;
-          switch(p.Align)
-          {
-            case TFlexAlign.Top: // top align
-              dy = 0;
-              break;
-
-            case TFlexAlign.Center: // center align
-              dy = (maxHeight - p.Bounds.height) ~/ 2;
-              if(dy<0)
-                dy = 0;
-              break;
-
-            default: // bottom align
-              dy = maxHeight - p.Bounds.height;
-              break;
-          }
-          p.Bounds.offset(dx, maxTop + dy);
-
-          if(p.AutoSize && p.Width == null)
-          {
-            int d = ((cWidth - px) / fCount).ceil();
-            p.Bounds.right+=d;
-            dx+=d;
-            px+=d;
-
-            int nWidth = p.Bounds.width;
-            if(p.MinWidth != null && nWidth<p.MinWidth!)
-              nWidth=p.MinWidth!;
-            if(p.MaxWidth != null && nWidth>p.MaxWidth!)
-              nWidth=p.MaxWidth!;
-
-            d = nWidth - p.Bounds.width;
-            if(d!=0)
-            {
-              p.Bounds.right+=d;
-              dx+=d;
-              px+=d;
-            }
-
-            fCount--;
-          }
-        }
-
-        start = i;
-        fCount = 0;
-        px = MarginLeft;
-        py+= maxHeight + Interval + maxBottom + maxTop;
-        maxHeight=0;
-        maxTop=0;
-        maxBottom=0;
-      }
-
-      if (p != null)
-      {
-        if(p.Margin.top > maxTop)
-          maxTop = p.Margin.top;
-        if(p.Margin.bottom > maxBottom)
-          maxBottom = p.Margin.bottom;
-        if(p.Control.Height > maxHeight)
-          maxHeight = p.Control.Height;
-        if(p.AutoSize && p.Width == null)
-          fCount++;
-        if(i > start)
-          px+= Indent;
-        p.Bounds = TRect(px, py, px + width+p.Margin.left, py + p.Control.Height);
-        px = p.Bounds.right+p.Margin.right;
-      }
+    // calc cell size
+    for(var flex in list)
+    {
+      if(flex.Params.Width!=null)
+        flex.size = flex.Params.Width!.toPixel(cWidth);
+      else
+        flex.size = flex.marginLeft + flex.Control.Width + flex.marginRight;
     }
 
-    for(TFlexParams p in list)
-      p.Control.SetBounds(p.Bounds.left, p.Bounds.top, p.Bounds.width, p.Bounds.height);
+    int lineSize = 0;
+    var line = <TCalcFlexParams>[]; // line of objects
+    var lines = [];
+    for(var flex in list)
+    {
+      if(line.isNotEmpty && (lineSize + flex.size > cWidth))
+      {
+        lines.add(line);
+        line = <TCalcFlexParams>[];
+      }
+      line.add(flex);
+      lineSize += flex.size;
+    }
+    if(line.isNotEmpty)
+      lines.add(line);
 
-    _flexList = list;
-    if(py>MarginTop)
-      py-=Interval;
-    Height = py+MarginBottom;
+    // out controls by line
+    int px = 0;
+    int py = 0;
+    for(var line in lines)
+    {
+      int height = 0;
+      for(var flex in list)
+      {
+        int h = flex.Control.Height + flex.marginTop + flex.marginBottom;
+        if(h > height)
+          height = h;
+      }
+      FlexLineControls(line, px, py, cWidth, height);
+      py += height;
+    }
+
+    if(Height != py)
+      SetBounds(Left, Top + Height - py, Width, py);
   }
 
-  TFlexBand(TComponent AOwner) : super(AOwner)
+  void FlexLineControls(List<TCalcFlexParams> list, int px, int py, int cWidth, int cHeight)
   {
-    Width = 100;
-    Height = 36;
-  }
+    // calc size of objects
+    int objWidth = 0;
+    for(var flex in list)
+      objWidth+=flex.size;
 
-  void CreateWindowHandle(TCreateParams Params)
-  {
-    WindowHandle = HFlexBand();
+    TFlexJustify defJust = TFlexJustify.Left;
+    switch(JustifyContent)
+    {
+      case TFlexJustifyContent.FlexStart:
+        defJust = TFlexJustify.Left;
+        list.last.rSpace = cWidth - objWidth;
+        break;
+
+      case TFlexJustifyContent.FlexEnd:
+        list.first.lSpace = cWidth - objWidth;
+        defJust = TFlexJustify.Right;
+        break;
+
+      case TFlexJustifyContent.Center:
+        list.first.lSpace = (cWidth - objWidth) ~/ 2;
+        list.last.rSpace = list.first.lSpace ~/ 2;
+        list.first.lSpace-= list.first.rSpace;
+        defJust = TFlexJustify.Center;
+        break;
+
+      case TFlexJustifyContent.SpaceBetween:
+        defJust = TFlexJustify.Center;
+        int delta = cWidth - objWidth;
+        int count = list.length - 1;
+
+        for(var flex in list)
+        {
+          if(flex != list.first)
+          {
+            flex.lSpace = delta ~/ count;
+            delta-=flex.lSpace;
+            count--;
+          }
+        }
+        break;
+
+      case TFlexJustifyContent.SpaceAround:
+        defJust = TFlexJustify.Center;
+        int delta = cWidth - objWidth;
+        int count = list.length;
+
+        for(var flex in list)
+        {
+          flex.lSpace = delta ~/ count;
+          flex.rSpace = flex.lSpace ~/ 2;
+          flex.lSpace = flex.lSpace - flex.rSpace;
+          delta-=flex.lSpace + flex.rSpace;
+          count--;
+        }
+        break;
+
+      case TFlexJustifyContent.SpaceEvenly:
+        defJust = TFlexJustify.Center;
+        int delta = cWidth - objWidth;
+        int count = list.length + 1;
+
+        for(var flex in list)
+        {
+          flex.lSpace = delta ~/ count;
+          delta-=flex.lSpace;
+          count--;
+        }
+        list.last.rSpace = delta;
+        break;
+    }
+
+    for(var flex in list)
+    {
+      TFlexJustify just = flex.Params.Justify ?? defJust;
+
+      flex.y = py + flex.marginTop;
+
+      int tx = px + flex.lSpace ;
+      int size = flex.size - flex.marginLeft - flex.marginRight;
+      switch(just)
+      {
+        case TFlexJustify.Right:
+          flex.x = tx + flex.size - flex.Control.Width - flex.marginRight;
+          break;
+        case TFlexJustify.Center:
+          flex.x = ((tx + flex.marginLeft)*2 + size - flex.Control.Width)~/2;
+          break;
+        case TFlexJustify.Content:
+          flex.x = tx + flex.marginLeft;
+          flex.width = size;
+          break;
+        default: // TFlexJustify.Left
+          flex.x = tx + flex.marginLeft;
+          break;
+      }
+
+      px += flex.lSpace + flex.size + flex.rSpace;
+    }
 
   }
 }

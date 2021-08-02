@@ -342,7 +342,7 @@ class TCustomEdit extends TWinControl
       case CM_GETFLEXPARAMS:
         super.Dispatch(Message);
         var Flex = TCMGetFlexParams(Message);
-        Flex.Params.MinWidth = 100;
+        Flex.Params.MinWidthOld = 100;
         return;
 
       case CM_ENABLEDCHANGED:
