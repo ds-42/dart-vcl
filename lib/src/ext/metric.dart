@@ -7,7 +7,7 @@ class TMetric
   final num Value;
   final TMetricUnit  Unit;
 
-  TMetric(this.Value, this.Unit);
+  TMetric(this.Value, [this.Unit = TMetricUnit.Pixel] );
 
   int toPixel(num basis)
   {
