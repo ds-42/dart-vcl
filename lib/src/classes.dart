@@ -1316,7 +1316,16 @@ class TComponent extends TPersistent
 
   }
 
-
+  TComponent? FindComponent(String AName)
+  {
+    if(AName.isNotEmpty)
+    {
+      for(var item in _components)
+        if(SysUtils.SameText(item.Name, AName))
+          return item;
+    }
+    return null;
+  }
 
   String _name = '';
   String
