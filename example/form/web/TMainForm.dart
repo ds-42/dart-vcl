@@ -9,18 +9,25 @@ class TMainForm extends TForm
     TMenuItem item;
     Menu = TMainMenu(this);
     item = CreateMenuItem(Menu!, 'File');
-      CreateMenuItem(item, 'Open');
-      CreateMenuItem(item, 'Save');
+      CreateMenuItem(item, 'Open\tCtrl+O');
+      CreateMenuItem(item, 'Save\tCtrl+S');
       CreateMenuItem(item, 'Save as ...');
       CreateMenuItem(item, '-');
-      CreateMenuItem(item, 'Exit');
+      CreateMenuItem(item, 'Exit\tAlt+X');
 
     item = CreateMenuItem(Menu!, 'Edit');
-      CreateMenuItem(item, 'Cut');
-      CreateMenuItem(item, 'Copy');
-      CreateMenuItem(item, 'Paste');
+      CreateMenuItem(item, 'Cut\tCtrl+X');
+      CreateMenuItem(item, 'Copy\tCtrl+C');
+      CreateMenuItem(item, 'Paste\tCtrl+V');
       CreateMenuItem(item, '-');
       CreateMenuItem(item, 'Delete').Enabled = false;
+      CreateMenuItem(item, '-');
+      item = CreateMenuItem(item, 'Zoom');
+        CreateMenuItem(item, '10 %');
+        CreateMenuItem(item, '50 %');
+        CreateMenuItem(item, '100 %');
+        CreateMenuItem(item, '-');
+        CreateMenuItem(item, 'Fit to page');
 
     item = CreateMenuItem(Menu!, '?');
       CreateMenuItem(item, 'About');

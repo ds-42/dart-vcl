@@ -10,34 +10,66 @@ class TUserDialog extends TForm
 
   TUserDialog(TComponent AOwner) : super(AOwner)
   {
-    Position = TPosition.ScreenCenter;
+    AutoSize = true;
+    Position = TPosition.OwnerFormCenter;
     BorderStyle = TFormBorderStyle.Dialog;
-    SetClientSize(300, 120);
+    Caption = 'Registration';
 
-    TLabel(this)
-      ..SetBounds(10, 25, 100, null)
-      ..Caption = 'Login:'
-      ..Parent = this;
+    TFlexBox(this)
+      ..Parent = this
+      ..Width = 250
+      ..Align = TAlign.Top
+      ..AlignItems = TFlexAlignItems.FlexEnd
+      ..Add([
+        TLabel(this)
+          ..Flex.Width = TMetric(80)
+          ..Caption = 'Login:',
 
-    pUserName = TEdit(this)
-      ..SetBounds(100, 20, 190, null)
-      ..Parent = this;
+        pUserName = TEdit(this)
+          ..Name = 'login'
+          ..Flex.Grow = 1,
 
-    TLabel(this)
-      ..SetBounds(10, 55, 100, null)
-      ..Caption = 'Password:'
-      ..Parent = this;
+        TLabel(this)
+          ..Flex.BreakBefore = true
+          ..Flex.Width = TMetric(80)
+          ..Caption = 'Password:',
 
-    pPassword = TEdit(this)
-      ..SetBounds(100, 50, 190, null)
-      ..PasswordChar = '*'
-      ..Parent = this;
+        pPassword = TEdit(this)
+          ..Name = 'password'
+          ..PasswordChar = '*'
+          ..Flex.Grow = 1,
 
-    TButton(this)
-      ..Caption = 'OK'
-      ..MoveTo(215, 90)
-      ..ModalResult = TModalResult.Ok
-      ..Parent = this;
+        TButton(this)
+          ..Flex.BreakBefore = true
+          ..Flex.Width = TMetric(100, TMetricUnit.Percent)
+          ..Flex.Justify = TFlexJustify.Right
+          ..Caption = 'OK'
+          ..ModalResult = TModalResult.Ok,
+      ]);
   }
+
+  Future<void> DoClose(TPointer<TCloseAction> Action) async
+  {
+    await super.DoClose(Action);
+    if(ModalResult == TModalResult.Ok)
+    {
+      var login = FindComponent('login') as TEdit;
+      if(login.Text.trim().isEmpty)
+      {
+        await ShowMessage('Enter user login');
+        login.SetFocus();
+        Action.Value = TCloseAction.None;
+      }
+
+      var pass = FindComponent('password') as TEdit;
+      if(pass.Text.trim().isEmpty)
+      {
+        await ShowMessage('Enter user password');
+        pass.SetFocus();
+        Action.Value = TCloseAction.None;
+      }
+    }
+  }
+
 }
 
