@@ -93,6 +93,16 @@ abstract class SysUtils
   static final PathSep    = ';';  
 
 
+/// SameText compares S1 to S2, without case-sensitivity. Returns true if
+///  S1 and S2 are the equal, that is, if CompareText would return false
+
+static bool SameText(String S1, String S2)
+{
+  return S1.toLowerCase() == S2.toLowerCase();
+}
+
+
+
   static String LoadStr(dynamic Ident)
   {
     return '${ Ident }';
