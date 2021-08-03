@@ -1,11 +1,11 @@
 part of vcl;
 
-class HFlexBand extends HControl
+class HFlexBox extends HControl
 {
-  static final FLEXBAND = CLASS_ID('FLEXBAND');
-  CLASS_ID get classID => FLEXBAND;
+  static final FLEXBOX = CLASS_ID('FLEXBOX');
+  CLASS_ID get classID => FLEXBOX;
 
-  HFlexBand() : super( DivElement() );
+  HFlexBox() : super( DivElement() );
 }
 
 class HPanel extends HControl
