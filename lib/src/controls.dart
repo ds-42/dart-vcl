@@ -59,7 +59,6 @@ const MESSAGE CM_MOUSEWHEEL          = MESSAGE(0xb043, 'CM_MOUSEWHEEL');
 // new
 const MESSAGE CM_GETINSTANCE         = MESSAGE(0xb100, 'CM_GETINSTANCE');
 
-const MESSAGE CM_GETFLEXPARAMS       = MESSAGE(0xb102, 'CM_GETFLEXPARAMS'); // wParam: TFlexParams
 const MESSAGE CM_SETVALUE            = MESSAGE(0xb103, 'CM_SETVALUE'); // lParam: dynamic
 const MESSAGE CM_GETVALUE            = MESSAGE(0xb104, 'CM_GETVALUE'); // lResult: dynamic
 const MESSAGE CM_CLEARVALUE          = MESSAGE(0xb105, 'CM_CLEARVALUE');
@@ -1291,7 +1290,7 @@ class TControl extends TComponent
       case CM_COLORCHANGED:          _cmColorChanged(Message); break;
       case CM_FONTCHANGED:           _cmFontChanged(Message); break;
       case CM_GETVALUE:              _cmGetValue(Message); break;
-      case CM_GETFLEXPARAMS:         _cmGetFlexParam(TCMGetFlexParams(Message)); break;
+
       case CM_HINTSHOW:              _cmHintShow(Message); break;
       case CM_HITTEST:               _cmHitTest(Message); break;
       case CM_MOUSEENTER:            _cmMouseEnter(Message); break;
@@ -1549,10 +1548,7 @@ class TControl extends TComponent
 
   }
 
-  void _cmGetFlexParam(TCMGetFlexParams Flex)
-  {
 
-  }
 
   void _cmGetValue(TMessage Message)
   {

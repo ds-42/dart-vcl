@@ -23,6 +23,7 @@ class TSpeedButton  extends TWinControl
   TSpeedButton(TComponent AOwner) : super(AOwner)
   {
     ControlStyle>>ControlStyles.ClickEvents; // new /** клики выполняются самим обыектом */
+    Flex.Grow = 0;
 
     SetSize(22, 22);
 
@@ -69,11 +70,7 @@ class TSpeedButton  extends TWinControl
     super.DestroyWindowHandle();
   }
 
-  void _cmGetFlexParam(TCMGetFlexParams Flex) // new
-  {
-    super._cmGetFlexParam(Flex);
-    Flex.Params.AutoSizeOld = false;
-  }
+
 
 
   void UpdateGlyph(int index, [int? width=null, int? height=null]) // new

@@ -204,6 +204,8 @@ class TCustomEdit extends TWinControl
     TabStop = true;
     ParentColor = false;
 
+    Flex.MinWidth = TMetric(100);
+
     AdjustHeight();
   }
 
@@ -339,11 +341,7 @@ class TCustomEdit extends TWinControl
   {
     switch(Message.Msg)
     {
-      case CM_GETFLEXPARAMS:
-        super.Dispatch(Message);
-        var Flex = TCMGetFlexParams(Message);
-        Flex.Params.MinWidthOld = 100;
-        return;
+
 
       case CM_ENABLEDCHANGED:
         if(HandleAllocated())
@@ -994,6 +992,7 @@ class TButton extends TButtonControl
   TButton(TComponent AOwner) : super(AOwner)
   {
 
+    Flex.Grow = 0;
     TabStop = true;
   }
 

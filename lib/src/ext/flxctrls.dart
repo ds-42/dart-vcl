@@ -71,6 +71,28 @@ class TFlexParams
     MarginBottom = bottom;
   }
 
+  TMetric? _minWidth;
+  TMetric?
+    get MinWidth => _minWidth;
+    set MinWidth(TMetric? Value)
+    {
+      if(_minWidth == Value)
+        return;
+      _minWidth = Value;
+      Invalidate();
+    }
+
+  TMetric? _maxWidth;
+  TMetric?
+    get MaxWidth => _maxWidth;
+    set MaxWidth(TMetric? Value)
+    {
+      if(_maxWidth == Value)
+        return;
+      _maxWidth = Value;
+      Invalidate();
+    }
+
   TMetric? _width;
   TMetric?
     get Width => _width;
@@ -95,7 +117,7 @@ class TFlexParams
 
 
 
-  double _grow = 0;
+  double _grow = -1;
   double
     get Grow => _grow;
     set Grow(double value)
@@ -133,11 +155,6 @@ class TFlexParams
     /// To do: add update
   }
 
-  // Old fields
-  bool AutoSizeOld = true; /* not use */
-  int? MinWidthOld;        /* not use */
-  int? MaxWidthOld;        /* not use */
-
 
 }
 
@@ -155,10 +172,14 @@ class TCalcFlexParams
   late final int ControlWidth;
   late final TMetric? ParamsWidth;
 
+  late final double Grow;
+
 //  late final TFlexAlig
 
   TCalcFlexParams(this.FlexBox, this.Params)
   {
+    Grow = Params.Grow<0? FlexBox.Grow : Params.Grow;
+
     if(FlexBox.FlexDirection == TFlexDirection.Row)
     {
       marginLeft    = Params.MarginLeft ?? FlexBox.MarginLeft;
@@ -184,7 +205,6 @@ class TCalcFlexParams
   }
 
   TControl get Control => Params.Control;
-
 
   // calculated params
   int x = 0;
@@ -254,6 +274,19 @@ class TFlexBox extends TWinControl
   int get MarginTop => _marginTop;
   int get MarginRight => _marginRight;
 
+  double _grow = 0;
+  double
+    get Grow => _grow;
+    set Grow(double Value)
+    {
+      if(Value<0)
+        Value = 0;
+      if(_grow==Value)
+        return;
+      _grow=Value;
+      // to do: invalidate
+    }
+
   bool CanFocus() => false;
 
   void Resize()
@@ -298,6 +331,70 @@ class TFlexBox extends TWinControl
     EnableAlign();
   }
 
+  // update grow size in line
+  List<TCalcFlexParams> _growControls(List<TCalcFlexParams> line, int cWidth)
+  {
+    var rest = <TCalcFlexParams>[];
+
+    int width = 0;
+    double grow = 0;
+    for(var flex in line)
+    {
+      if(flex.Grow>0)
+        grow+=flex.Grow;
+      else
+        width+=flex.size;
+    }
+
+    if(grow>0)
+    {
+      int dGrow = cWidth - width;
+
+      for(int i=0; i<line.length; i++)
+      {
+        var flex = line[i];
+        if(flex.Grow>0)
+        {
+          int size = dGrow * flex.Grow ~/ grow;
+
+          if(flex.Params.MinWidth!=null)
+          {
+            int w = flex.Params.MinWidth!.toPixel(cWidth);
+            if(size<w)
+              size = w;
+          }
+
+          if(flex.Params.MaxWidth!=null)
+          {
+            int w = flex.Params.MaxWidth!.toPixel(cWidth);
+            if(size>w)
+              size = w;
+          }
+
+          if((i>0) && (width + size > cWidth))
+          {
+            while(i<line.length)
+            {
+              rest.add(line[i]);
+              line.removeAt(i);
+            }
+
+            _growControls(line, cWidth); 
+            return rest;
+          }
+
+          flex.size = size;
+
+          width+=size;
+          dGrow-=size;
+          grow-=flex.Grow;
+        }
+      }
+    }
+
+    return rest;
+  }
+
   void _flexControls(List<TCalcFlexParams> list)
   {
     int cWidth = FlexDirection==TFlexDirection.Row? ClientWidth : ClientHeight;
@@ -309,12 +406,28 @@ class TFlexBox extends TWinControl
         flex.size = flex.ParamsWidth!.toPixel(cWidth);
       else
       {
-        if(flex.Params.Grow>0)
+        if(flex.Grow>0)
           flex.size = 0;
         else
           flex.size = flex.marginLeft + flex.ControlWidth + flex.marginRight;
       }
 
+      if(flex.Grow==0)
+      {
+        if(flex.Params.MinWidth!=null)
+        {
+          int w = flex.Params.MinWidth!.toPixel(cWidth);
+          if(flex.size<w)
+            flex.size=w;
+        }
+
+        if(flex.Params.MaxWidth!=null)
+        {
+          int w = flex.Params.MaxWidth!.toPixel(cWidth);
+          if(flex.size>w)
+            flex.size=w;
+        }
+      }
     }
 
     int lineWidth = 0;
@@ -325,17 +438,26 @@ class TFlexBox extends TWinControl
     {
       if(line.isNotEmpty && ((lineWidth + flex.size > cWidth) || flex.Params.BreakBefore))
       {
+        var rest = _growControls(line, cWidth);
         lines.add(line);
-        line = <TCalcFlexParams>[];
+        line = rest;
         lineWidth = 0;
+        for(var flex in line)
+          if(flex.Grow==0)
+            lineWidth+=flex.size;
       }
 //      if(flex.Params.Basis!=null)
 
       line.add(flex);
       lineWidth += flex.size;
     }
-    if(line.isNotEmpty)
+
+    while(line.isNotEmpty)
+    {
+      var rest = _growControls(line, cWidth);
       lines.add(line);
+      line = rest;
+    }
 
     // out controls by line
     int px = 0;
@@ -344,33 +466,13 @@ class TFlexBox extends TWinControl
     for(var line in lines)
     {
       int height = 0;
-      int width = 0;
-      double grow = 0;
       for(var flex in line)
       {
-        if(flex.Params.Grow>0)
-          grow+=flex.Params.Grow;
-        width+=flex.size;
         int h = flex.ControlHeight + flex.marginTop + flex.marginBottom;
         if(h > height)
           height = h;
       }
 
-      if(grow>0)
-      {
-        int dGrow = cWidth - width;
-
-        for(var flex in line)
-        {
-          if(flex.Params.Grow>0)
-          {
-            int dg = dGrow * flex.Params.Grow ~/ grow;
-            flex.size+=dg;
-            dGrow-=dg;
-            grow-=flex.Params.Grow;
-          }
-        }
-      }
       _flexLineControls(line, px, py, cWidth, height);
       py += height;
     }
