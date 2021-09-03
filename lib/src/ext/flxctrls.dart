@@ -350,6 +350,7 @@ class TFlexBox extends TWinControl
     {
       int dGrow = cWidth - width;
 
+      width = 0;
       for(int i=0; i<line.length; i++)
       {
         var flex = line[i];
@@ -385,10 +386,10 @@ class TFlexBox extends TWinControl
 
           flex.size = size;
 
-          width+=size;
           dGrow-=size;
           grow-=flex.Grow;
         }
+        width+=flex.size;
       }
     }
 
@@ -441,6 +442,13 @@ class TFlexBox extends TWinControl
         var rest = _growControls(line, cWidth);
         lines.add(line);
         line = rest;
+
+        while(line.isNotEmpty && flex.Params.BreakBefore)
+        {
+          lines.add(line);
+          line = _growControls(line, cWidth);
+        }
+
         lineWidth = 0;
         for(var flex in line)
           if(flex.Grow==0)
