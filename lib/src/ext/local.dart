@@ -37,7 +37,7 @@ abstract class TLocal
   }
 
   static String _dateOrder = DateOrder.ymd;
-  static String get dateOrder => _dateFormat;
+  static String get dateOrder => _dateOrder;
   static set dateOrder(String order)
   {
     if(_dateOrder == order)
