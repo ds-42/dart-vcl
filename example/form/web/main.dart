@@ -1,7 +1,10 @@
 library demo;
 
+import 'dart:html';
 import 'package:vcl/vcl.dart';
 
+part 'TFlexDialog.dart';
+part 'TLabelEdit.dart';
 part 'TMainForm.dart';
 part 'TUserDialog.dart';
 

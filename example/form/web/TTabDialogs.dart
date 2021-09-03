@@ -65,6 +65,13 @@ class TTabDialogs extends TTabSheet
             else
               ShowMessage('See you later');
           },
+
+        TButton(this)
+          ..Caption = 'Flex dialog'
+          ..OnClick = (Sender) {
+            TFlexDialog(this)
+              ..ShowModal();
+          },
       ]);
   }
 }
