@@ -1436,12 +1436,14 @@ class TControl extends TComponent
       Integer W2 = W.Copy();
       Integer H2 = H.Copy();
       bool Result = !AutoSize || (DoCanAutoSize(W2, H2) && (W2 == W) && (H2 == H)) || DoCanResize(W2, H2);
-      if(Result == false)
-        return false;
-      NewWidth.Value = W2.Value;
-      NewHeight.Value = H2.Value;
+      if(Result)
+      {
+        NewWidth.Value = W2.Value;
+        NewHeight.Value = H2.Value;
+      }
+      return Result;
     }
-    return true;
+    return false;
   }
 
 

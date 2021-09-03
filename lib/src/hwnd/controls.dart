@@ -16,7 +16,8 @@ class HPanel extends HControl
   void defineClassRule(TWndStyle rule)
   {
     rule.add('',
-      '${ rule.block }${ rule.borderBox }'
+      '${ rule.block }'
+      '${ rule.borderBox }'
       'background: #cccccc;'
       'whiteSpace: nowrap;'
       'overflow: hidden;'
