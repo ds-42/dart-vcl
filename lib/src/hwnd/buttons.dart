@@ -54,7 +54,8 @@ class HCheckBox extends HControl
     rule.addFocusStyle();
     rule.add('',
       '${rule.block}${rule.inline}'
-      'padding-top: 1px;');
+      'padding-top: 1px;'
+      'box-sizing: border-box;');
     rule.add('input',
       'margin:0 2px;'
       'outline:none');

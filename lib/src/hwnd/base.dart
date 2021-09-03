@@ -9,7 +9,7 @@ class HInput extends HControl
   {
     rule.addFocusStyle();
     rule.add('',
-      '${ rule.block }, ${ rule.borderBox }'
+      '${ rule.block }${ rule.borderBox }'
       'border: 1px solid #A0A0A0;');
   }
 
@@ -25,7 +25,7 @@ class HTextArea extends HControl
   {
     rule.add('',
       '${ rule.block }'
-      'resize: none');
+      'resize: none;');
   }
 
   HTextArea() : super( TextAreaElement() );

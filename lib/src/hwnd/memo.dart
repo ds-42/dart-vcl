@@ -11,6 +11,7 @@ class HMemo extends HCustomControl
 
     rule.add('',
       '${ rule.block }'
+      '${ rule.borderBox }'
       'background: white;'
       'border: 1px solid #A0A0A0;'
       'padding: 1px 2px 1px 2px;'
