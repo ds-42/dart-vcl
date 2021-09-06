@@ -992,7 +992,7 @@ class TButton extends TButtonControl
   TButton(TComponent AOwner) : super(AOwner)
   {
 
-    Flex.Grow = 0;
+    Flex.Justify = TFlexJustify.Left;
     TabStop = true;
   }
 
