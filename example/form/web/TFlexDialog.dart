@@ -49,6 +49,12 @@ class TFlexDialog extends TForm
         TLabelEdit(this)
           ..Caption = 'Email',
 
+        TBevel(this)
+           ..Flex.BreakBefore = true
+           ..Flex.SetMargin(0, 5, 0, 0)
+           ..Shape = TBevelShape.TopLine
+           ..Height = 5,
+
         TButton(this)
           ..Flex.BreakBefore = true
           ..Flex.Justify = TFlexJustify.Right
