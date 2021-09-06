@@ -20,7 +20,9 @@ As in windows, communication between windows is carried out using messages.
 
 To create forms, the components TEdit, TComboBox, TPanel, TPageControl, TEdit, 
 TCheckBox and others are implemented. 
-Implemented components TDataSet, TDBGrid for working with databases 
+Implemented components TDataSource, TDataSet, TDataLink, TDBGrid for working with databases 
+
+Added flex component for flexible adjustment of the position of controls in dialog forms
 
 **Warning.** The library was tested only in the browser Google Chrome
 
@@ -32,6 +34,7 @@ import 'package:vcl/vcl.dart';
 void main() async 
 {
   var form = TForm(Application);
+  form.Position = TPosition.ScreenCenter;
   await form.ShowModal();
 }
 ```
