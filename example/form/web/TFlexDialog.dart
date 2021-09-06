@@ -7,6 +7,7 @@ class TFlexDialog extends TForm
     Caption = 'Flex dialog';
     Position = TPosition.ScreenCenter;
     ClientWidth = 400;
+    Constraints.MinWidth = 200;
 
     TFlexBox(this)
       ..Align = TAlign.Top
