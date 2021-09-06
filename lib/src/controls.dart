@@ -82,6 +82,48 @@ const MESSAGE CN_VSCROLL             = MESSAGE(0xbd15, 'CN_VSCROLL');
 // TModalResult values
 enum TModalResult { None, Ok, Cancel, Abort, Retry, Ignore, Yes, No, All, NoToAll, YesToAll }
 
+abstract class ModalResults
+{
+  static final _items = <TLanguage, Map<TModalResult, String> >
+  {
+    TLanguage.ENGLISH: {
+      TModalResult.Ok:       'OK',
+      TModalResult.Cancel:   'Cancel',
+      TModalResult.Abort:    'Abort',
+      TModalResult.Retry:    'Retry',
+      TModalResult.Ignore:   'Ignore',
+      TModalResult.Yes:      'Yes',
+      TModalResult.No:       'No',
+      TModalResult.All:      'All',
+      TModalResult.NoToAll:  'No to all',
+      TModalResult.YesToAll: 'Yes to all',
+    },
+    TLanguage.RUSSIAN: {
+      TModalResult.Ok:       'OK',
+      TModalResult.Cancel:   'Отмена',
+      TModalResult.Abort:    'Прервать',
+      TModalResult.Retry:    'Повторить',
+      TModalResult.Ignore:   'Пропустить',
+      TModalResult.Yes:      'Да',
+      TModalResult.No:       'Нет',
+      TModalResult.All:      'Все',
+      TModalResult.NoToAll:  'Нет для всех',
+      TModalResult.YesToAll: 'Да для всех',
+    },
+  };
+
+  static Map<TModalResult, String> GetNames([TLanguage? language]) =>
+      TLocalSet.GetItems(_items, language ?? TLocal.language, TLanguage.ENGLISH);
+
+  static void UpdateLocal(TLanguage language, Map<TModalResult, String> recs) =>
+      TLocalSet.UpdateLocal(_items, language, recs);
+
+  static String ResultToStr(TModalResult mr, [TLanguage? language]) =>
+    TLocalSet.ValueByIdent(ModalResults._items, mr, language) ?? mr.toString();
+
+
+}
+
 
 
 class TCursor

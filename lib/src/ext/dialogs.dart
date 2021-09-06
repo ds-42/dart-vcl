@@ -3,15 +3,14 @@ part of vcl;
 Future<int> MessageBox(dynamic data, String caption, int mode) async
 {
 
-  TButton CreateButton(TWinControl prnt, String cap, TModalResult mr)
+  TButton CreateButton(TWinControl prnt, TModalResult mr)
   {
-    TButton btn = new TButton(prnt);
-    btn.ModalResult = mr;
-    btn.Caption = cap;
-    btn.Parent = prnt;
-    btn.Handle.style.height = null;
-    btn.Handle.style.width = null;
-    return btn;
+    return TButton(prnt)
+      ..ModalResult = mr
+      ..Caption = ModalResults.ResultToStr(mr, TLocal.language)
+      ..Parent = prnt
+      ..Handle.style.height = null
+      ..Handle.style.width = null;
   }
 
   String text = data.toString();
@@ -58,25 +57,25 @@ Future<int> MessageBox(dynamic data, String caption, int mode) async
     switch(mode)
     {
       case Windows.MB_OK:
-        btns[0] = CreateButton(dlg, 'Ok', TModalResult.Ok);
+        btns[0] = CreateButton(dlg, TModalResult.Ok);
         break;
       case Windows.MB_OKCANCEL:
-        btns[0] = CreateButton(dlg, 'Ok',     TModalResult.Ok);
-        btns[1] = CreateButton(dlg, 'Отмена', TModalResult.Cancel);
+        btns[0] = CreateButton(dlg, TModalResult.Ok);
+        btns[1] = CreateButton(dlg, TModalResult.Cancel);
         break;
       case Windows.MB_YESNO:
-        btns[0] = CreateButton(dlg, 'Да',  TModalResult.Yes);
-        btns[1] = CreateButton(dlg, 'Нет', TModalResult.No);
+        btns[0] = CreateButton(dlg, TModalResult.Yes);
+        btns[1] = CreateButton(dlg, TModalResult.No);
         break;
       case Windows.MB_YESNOCANCEL:
-        btns[0] = CreateButton(dlg, 'Да',     TModalResult.Yes);
-        btns[1] = CreateButton(dlg, 'Нет',    TModalResult.No);
-        btns[2] = CreateButton(dlg, 'Отмена', TModalResult.Cancel);
+        btns[0] = CreateButton(dlg, TModalResult.Yes);
+        btns[1] = CreateButton(dlg, TModalResult.No);
+        btns[2] = CreateButton(dlg, TModalResult.Cancel);
         break;
       case Windows.MB_ABORTRETRYIGNORE:
-        btns[0] = CreateButton(dlg, 'Прервать',   TModalResult.Abort);
-        btns[1] = CreateButton(dlg, 'Повтор',     TModalResult.Retry);
-        btns[2] = CreateButton(dlg, 'Пропустить', TModalResult.Ignore);
+        btns[0] = CreateButton(dlg, TModalResult.Abort);
+        btns[1] = CreateButton(dlg, TModalResult.Retry);
+        btns[2] = CreateButton(dlg, TModalResult.Ignore);
         break;
     }
 
@@ -133,12 +132,12 @@ Future<void> ShowMessage(dynamic data) async
 
 Future<void> ShowWarningMessage(dynamic data) async
 {
-  await MessageBox(data, 'Внимание', Windows.MB_OK);
+  await MessageBox(data, TLocal.language==TLanguage.RUSSIAN? 'Внимание' : 'Warning', Windows.MB_OK);
 }
 
 Future<void> ShowErrorMessage(dynamic data) async
 {
-  await MessageBox(data, 'Ошибка', Windows.MB_OK);
+  await MessageBox(data, TLocal.language==TLanguage.RUSSIAN? 'Ошибка' : 'Error', Windows.MB_OK);
 }
 
 Future<int> ShowQuestionMessage(dynamic data, [int mode = Windows.MB_YESNO]) async
@@ -172,13 +171,13 @@ Future<String> InputBox(String ACaption, String APrompt, String ADefault) async
 
   int btnLeft = (width-160)~/2;
   var btnOk = TButton(form)
-    ..Caption = 'OK'
+    ..Caption = ModalResults.ResultToStr(TModalResult.Ok, TLocal.language)
     ..SetBounds(btnLeft, top, 80, null)
     ..ModalResult = TModalResult.Ok
     ..Parent = form;
 
   TButton(form)
-    ..Caption = 'Отмена'
+    ..Caption = ModalResults.ResultToStr(TModalResult.Cancel, TLocal.language)
     ..SetBounds(btnLeft+90, top, 80, null)
     ..ModalResult = TModalResult.Cancel
     ..Parent = form;
