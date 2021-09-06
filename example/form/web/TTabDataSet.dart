@@ -3,7 +3,7 @@ part of demo;
 TTabSheet BuildDataSetPage(TPageControl pages)
 {
   return TTabDataSet(pages)
-    ..Caption = 'data set'
+    ..Caption = 'dataset'
     ..PageControl = pages;
 }
 
@@ -15,15 +15,23 @@ class TTabDataSet extends TTabSheet
 
   TTabDataSet(TPageControl pages) : super(pages)
   {
+    TButton CreateToolButton(TUserAction action, String caption, String hint)
+    {
+      return TButton(this)
+        ..Caption=caption
+        ..ShowHint = true
+        ..Hint = hint
+        ..OnClick = (Sender) => DoAction(action);
+    }
     // tools
     TFlexBox(this)
       ..Align = TAlign.Top
       ..Parent = this
       ..Add([
-        TButton(this)..Caption='Append'..OnClick = (Sender) => DoAction(TUserAction.Append),
-        TButton(this)..Caption='Change'..OnClick = (Sender) => DoAction(TUserAction.Change),
-        TButton(this)..Caption='Copy'..OnClick = (Sender) => DoAction(TUserAction.Copy),
-        TButton(this)..Caption='Delete'..OnClick = (Sender) => DoAction(TUserAction.Delete),
+        CreateToolButton(TUserAction.Append, 'Append', 'Append record'),
+        CreateToolButton(TUserAction.Change, 'Change', 'Change record'),
+        CreateToolButton(TUserAction.Copy,   'Copy',   'Copy record'),
+        CreateToolButton(TUserAction.Delete, 'Delete', 'Delete record'),
       ]);
 
     // define dataset
@@ -57,7 +65,7 @@ class TTabDataSet extends TTabSheet
       ..Columns.AddEx('Name',       'Name', 150)
       ..Columns.AddEx('Patronymic', 'Patronymic', 150)
       ..DataSource = ds
-      ..DBOptions+= DBGridOptions.RowSelect 
+      ..DBOptions+= DBGridOptions.RowSelect
       ..Parent = this
       ..OnDblClick = (Sender) => DoAction(TUserAction.Change);
   }

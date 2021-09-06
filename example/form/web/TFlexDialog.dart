@@ -25,31 +25,41 @@ class TFlexDialog extends TForm
 
         TLabelEdit(this)
           ..Flex.BreakBefore = true
-          ..Flex.Width = TMetric(100)
-          ..Flex.Grow = 0
-          ..Caption = 'Postcode',
-
-        TLabelEdit(this)
           ..Caption = 'Birthplace',
 
         TLabelEdit(this)
           ..Flex.Width = TMetric(100)
           ..Flex.Grow = 0
           ..Caption = 'Birthdate',
-      ]);
 
-    TFlexBox(this)
-      ..Align = TAlign.Bottom
-      ..JustifyContent = TFlexJustifyContent.FlexEnd
-      ..Parent = this
-      ..Add([
+        TLabelEdit(this)
+          ..Flex.BreakBefore = true
+          ..Flex.Width = TMetric(100)
+          ..Flex.Grow = 0
+          ..Caption = 'Postcode',
+
+        TLabelEdit(this)
+          ..Flex.Grow = 2
+          ..Caption = 'Address',
+
+        TLabelEdit(this)
+          ..Flex.BreakBefore = true
+          ..Caption = 'Phone',
+
+        TLabelEdit(this)
+          ..Caption = 'Email',
+
         TButton(this)
+          ..Flex.BreakBefore = true
+          ..Flex.Justify = TFlexJustify.Right
           ..ModalResult = TModalResult.Ok
           ..Caption = 'Save',
 
         TButton(this)
           ..ModalResult = TModalResult.Cancel
+          ..Flex.Grow = 0
           ..Caption = 'Cancel',
+
       ]);
   }
 
