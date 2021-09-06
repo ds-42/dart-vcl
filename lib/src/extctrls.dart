@@ -14,6 +14,9 @@ class TBevel extends TWinControl //TGraphicControl
     _shape = TBevelShape.Box;
     Width = 50;
     Height = 50;
+
+    Flex.BreakBefore = true;     // new
+    Flex.SetMargin(0, 5, 0, 0);  // new
   }
 
   TBevelStyle _style = TBevelStyle.Lowered;
