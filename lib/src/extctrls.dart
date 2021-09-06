@@ -1,6 +1,92 @@
 part of vcl;
 
 
+enum TBevelStyle { Lowered, Raised }
+enum TBevelShape { Box, Frame, TopLine, BottomLine, LeftLine,
+                   RightLine, Spacer }
+
+class TBevel extends TWinControl //TGraphicControl
+{
+  TBevel(TComponent AOwner) : super(AOwner)
+  {
+    // ControlStyle := ControlStyle + [csReplicatable];
+    _style = TBevelStyle.Lowered;
+    _shape = TBevelShape.Box;
+    Width = 50;
+    Height = 50;
+  }
+
+  TBevelStyle _style = TBevelStyle.Lowered;
+  TBevelStyle
+    get Style => _style;
+    set Style(TBevelStyle Value)
+    {
+      if(Value == _style)
+        return;
+      _style = Value;
+      Invalidate();
+    }
+
+  TBevelShape _shape = TBevelShape.Box;
+  TBevelShape
+    get Shape => _shape;
+    set Shape(TBevelShape Value)
+    {
+      if(Value == _shape)
+        return;
+      _shape = Value;
+      Invalidate();
+    }
+
+  void CreateWnd()
+  {
+    super.CreateWnd();
+    _update_control(WindowHandle!.handle);
+  }
+
+  void _update_control(Element elem)
+  {
+    elem.style.border = null;
+
+    String style = '2px ${ Style==TBevelStyle.Lowered? 'groove' : 'ridge' }';
+
+    switch(Shape)
+    {
+      case TBevelShape.Box:
+        elem.style.border = '1px ${ Style==TBevelStyle.Lowered? 'inset' : 'outset' }';
+        break;
+      case TBevelShape.Frame:
+        elem.style.border = style;
+        break;
+      case TBevelShape.TopLine:
+        elem.style.borderTop = style;
+        break;
+      case TBevelShape.LeftLine:
+        elem.style.borderLeft = style;
+        break;
+      case TBevelShape.RightLine:
+        elem.style.borderRight = style;
+        break;
+      case TBevelShape.BottomLine:
+        elem.style.borderBottom = style;
+        break;
+      case TBevelShape.Spacer:
+        break;
+    }
+
+  }
+
+  void InvalidateControl(bool IsVisible, bool IsOpaque) // new
+  {
+    if(HandleAllocated())
+      _update_control(Handle.handle);
+
+    super.InvalidateControl(IsVisible, IsOpaque);
+  }
+}
+
+
+
 class TCustomPanel extends TCustomControl
 {
   bool CanFocus() => false;
