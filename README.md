@@ -7,7 +7,7 @@ Dart implementation of vcl interface C++Builder, Delphi for web application
 [ChangeLog.md](CHANGELOG.md)
 
 ## About
-If you now the programming languages of C ++ Builder or Delphi, 
+If you now the programming languages of C++ Builder or Delphi, 
 with the help of this library you can start creating web applications 
 in the Dart with the familiar interface and Borland components. 
 
