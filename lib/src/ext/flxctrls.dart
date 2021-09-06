@@ -1,12 +1,6 @@
 part of vcl;
 
 
-class TCMGetFlexParams extends TCustomMessage
-{
-  TFlexParams get Params => WParam as TFlexParams;
-
-  TCMGetFlexParams(TMessage message) : super(message);
-}
 
 enum TFlexAlignItems { FlexStart, FlexEnd, Center, Stretch }
 enum TFlexJustify { Left, Center, Right, Stretch }
@@ -115,8 +109,6 @@ class TFlexParams
       Invalidate();
     }
 
-
-
   double _grow = -1;
   double
     get Grow => _grow;
@@ -155,7 +147,6 @@ class TFlexParams
     /// To do: add update
   }
 
-
 }
 
 class TCalcFlexParams
@@ -173,8 +164,6 @@ class TCalcFlexParams
   late final TMetric? ParamsWidth;
 
   late final double Grow;
-
-//  late final TFlexAlig
 
   TCalcFlexParams(this.FlexBox, this.Params)
   {
@@ -302,11 +291,8 @@ class TFlexBox extends TWinControl
     for(int i = 0; i<ControlCount; i++)
     {
       TControl ctrl = Controls[i];
-      if(ctrl.Visible )
-      {
-        
+      if(ctrl.Visible && ((ctrl.Align == TAlign.None) || ctrl.Anchors.isEqual([TAnchorKind.Left, TAnchorKind.Top])))
         list.add(TCalcFlexParams(this, ctrl.Flex));
-      }
     }
 
     if(list.isNotEmpty)
@@ -453,7 +439,6 @@ class TFlexBox extends TWinControl
           if(flex.Grow==0)
             lineWidth+=flex.size;
       }
-//      if(flex.Params.Basis!=null)
 
       line.add(flex);
       lineWidth += flex.size;
@@ -588,13 +573,16 @@ class TFlexBox extends TWinControl
         case TFlexAlignItems.FlexEnd:
           flex.y = py + cHeight - flex.marginBottom - flex.ControlHeight;
           break;
+
         case TFlexAlignItems.Center:
           flex.y = py + (cHeight - flex.ControlHeight) ~/ 2;
           break;
+
         case TFlexAlignItems.Stretch:
           flex.y = py + flex.marginTop;
           flex.height = cHeight - flex.marginTop - flex.marginBottom;
           break;
+
         default: // TFlexAlignItems.FlexStart
           flex.y = py + flex.marginTop;
           break;
@@ -608,13 +596,16 @@ class TFlexBox extends TWinControl
         case TFlexJustify.Right:
           flex.x = tx + flex.size - flex.ControlWidth - flex.marginRight;
           break;
+
         case TFlexJustify.Center:
           flex.x = ((tx + flex.marginLeft)*2 + size - flex.ControlWidth)~/2;
           break;
+
         case TFlexJustify.Stretch:
           flex.x = tx + flex.marginLeft;
           flex.width = size;
           break;
+
         default: // TFlexJustify.Left
           flex.x = tx + flex.marginLeft;
           break;
