@@ -2325,7 +2325,8 @@ class TWinControl extends TControl
   void CreateWindowHandle(TCreateParams Params)
   {
     _handle = HWND( DivElement() );
-    _handle!.style.position="absolute";
+    _handle!.style.position ='absolute';
+    _handle!.style.boxSizing='border-box';
 
   }
 
