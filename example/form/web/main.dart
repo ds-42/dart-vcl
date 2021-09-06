@@ -3,6 +3,7 @@ library demo;
 import 'dart:html';
 import 'package:vcl/vcl.dart';
 
+part 'TDataMap.dart';
 part 'TFlexDialog.dart';
 part 'TLabelEdit.dart';
 part 'TMainForm.dart';
@@ -11,6 +12,7 @@ part 'TUserDialog.dart';
 part 'TTabControls.dart';
 part 'TTabDialogs.dart';
 part 'TTabPanels.dart';
+part 'TTabDataSet.dart';
 
 
 void main() async

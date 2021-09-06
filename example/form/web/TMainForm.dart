@@ -39,6 +39,7 @@ class TMainForm extends TForm
     BuildPanelsPage(pages);
     BuildControlsPage(pages);
     BuildDialogsPage(pages);
+    BuildDataSetPage(pages);
 
     pages.ActivePageIndex = 0;
 

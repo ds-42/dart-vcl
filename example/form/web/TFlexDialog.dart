@@ -45,8 +45,7 @@ class TFlexDialog extends TForm
       ..Add([
         TButton(this)
           ..ModalResult = TModalResult.Ok
-          ..Caption = 'Save'
-,
+          ..Caption = 'Save',
 
         TButton(this)
           ..ModalResult = TModalResult.Cancel
