@@ -4,7 +4,7 @@ class TFlexDialog extends TForm
 {
   TFlexDialog(TComponent AOwner) : super(AOwner)
   {
-    Caption = 'Flex dialog';
+    Caption = 'Flex dialog [resize for test]';
     Position = TPosition.ScreenCenter;
     ClientWidth = 400;
     Constraints.MinWidth = 200;
@@ -50,8 +50,6 @@ class TFlexDialog extends TForm
           ..Caption = 'Email',
 
         TBevel(this)
-           ..Flex.BreakBefore = true
-           ..Flex.SetMargin(0, 5, 0, 0)
            ..Shape = TBevelShape.TopLine
            ..Height = 5,
 
