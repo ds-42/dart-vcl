@@ -25,6 +25,7 @@ class HTextArea extends HControl
   {
     rule.add('',
       '${ rule.block }'
+      '${ rule.borderBox }'
       'resize: none;');
   }
 

@@ -1291,7 +1291,6 @@ abstract class Windows
   static const int MB_RETRYCANCEL          =  0x0005;
   static const int MB_CANCELTRYCONTINUE    =  0x0006;
 
-
   static const int ID_OK                   =  0x0001;
   static const int ID_CANCEL               =  0x0002;
   static const int ID_ABORT                =  0x0003;
@@ -1307,7 +1306,19 @@ abstract class Windows
   static const int ID_ACTION3              =  0x1003;
   static const int ID_ACTION4              =  0x1004;
 
+  static const int MB_ICONHAND             =  0x0010;
+  static const int MB_ICONQUESTION         =  0x0020;
+  static const int MB_ICONEXCLAMATION      =  0x0030;
+  static const int MB_ICONASTERISK         =  0x0040;
 
+  static const int MB_USERICON             =  0x0080;
+  static const int MB_ICONWARNING          =  MB_ICONEXCLAMATION;
+  static const int MB_ICONERROR            =  MB_ICONHAND;
+
+  static const int MB_ICONINFORMATION      =  MB_ICONASTERISK;
+  static const int MB_ICONSTOP             =  MB_ICONHAND;
+
+  
 
   static TPoint GetCursorPos()
   {
