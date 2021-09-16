@@ -389,6 +389,13 @@ class TControlCanvas extends TCanvas
   }
 
 
+
+static void FreeDeviceContexts()
+{
+
+}
+
+
 }
 
 class TSizeConstraints extends TPersistent
@@ -2330,6 +2337,12 @@ class TWinControl extends TControl
     TCreateParams Params = TCreateParams();
     CreateParams(Params);
 
+      if((Params.WndParent == null) )
+        if((Owner != null) && (Owner!.ComponentState.contains(ComponentStates.Reading)) &&
+          (Owner is TWinControl))
+          Params.WndParent = (Owner as TWinControl).Handle;
+        else
+          throw EInvalidOperation.CreateFmt(Consts.SParentRequired, [Name]);
 
     CreateWindowHandle(Params);
 
@@ -2377,7 +2390,9 @@ class TWinControl extends TControl
 
   void DestroyWnd()
   {
+    _text = Perform(WM_GETTEXT);
 
+    TControlCanvas.FreeDeviceContexts();
     DestroyWindowHandle();
   }
 
