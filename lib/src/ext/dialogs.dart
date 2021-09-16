@@ -54,7 +54,7 @@ Future<int> MessageBox(dynamic data, String caption, int mode) async
 
     var btns = <TButton?>[null, null, null];
 
-    switch(mode)
+    switch(mode & 0x0F)
     {
       case Windows.MB_OK:
         btns[0] = CreateButton(dlg, TModalResult.Ok);

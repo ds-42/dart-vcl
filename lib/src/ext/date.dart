@@ -69,6 +69,21 @@ class Date
   factory Date.parse(String data, [String? order] )
   {
     var p = data.split(RegExp(r'[-\\/.]'));
+
+    if(p.length==1 && p[0].length==8)
+    {
+      String data = p[0];
+      switch(TLocal.dateOrder)
+      {
+        case DateOrder.ymd:
+
+          p.add(data.substring(4, 6));
+          p.add(data.substring(6, 8));
+          p[0] =data.substring(0, 4);
+          break;
+      }
+    }
+
     while(p.length<3)
       p.add('0');
 
