@@ -1838,6 +1838,16 @@ class TApplication extends TComponent
 
 
 
+  Future<void> ShowException(TException E) async
+  {
+    String Msg = E.Message;
+    if((Msg.isNotEmpty)/* && (AnsiLastChar(Msg) > '.')*/)
+      Msg = Msg + '.';
+    await MessageBox(Msg, Title, Windows.MB_OK + Windows.MB_ICONSTOP);
+  }
+
+
+
   bool _showHint = false;
   bool
     get ShowHint => _showHint;
@@ -2202,6 +2212,22 @@ class TApplication extends TComponent
       CancelHint();
   }
 
+
+
+  void TryBlock(Function fnc) async // new
+  {
+    try
+    {
+      await fnc();
+    }
+    catch(E)
+    {
+      if(E is TException)
+        await ShowException(E);
+      else
+        await MessageBox('$E', Title, Windows.MB_OK + Windows.MB_ICONSTOP);
+    }
+  }
 
 }
 
