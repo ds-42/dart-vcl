@@ -9,8 +9,9 @@ class HInput extends HControl
   {
     rule.addFocusStyle();
     rule.add('',
-      '${ rule.block }${ rule.borderBox }'
-      'border: 1px solid #A0A0A0;');
+      '${ rule.block }'
+      '${ rule.borderBox }'
+      '${ rule.softBorder }');
   }
 
   HInput() : super( InputElement() );
@@ -23,13 +24,22 @@ class HTextArea extends HControl
 
   void defineClassRule(TWndStyle rule)
   {
+    rule.addFocusStyle();
     rule.add('',
       '${ rule.block }'
       '${ rule.borderBox }'
+      '${ rule.softBorder }'
       'resize: none;');
   }
 
   HTextArea() : super( TextAreaElement() );
+
+  bool
+    get wrap => (handle as TextAreaElement).wrap != 'off';
+    set wrap(bool state) {
+      (handle as TextAreaElement).wrap = state? 'soft' : 'off';
+    }
+
 }
 
 class HSelect extends HControl 

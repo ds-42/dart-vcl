@@ -519,8 +519,16 @@ abstract class TCustomMemo extends TCustomEdit
   void CreateWindowHandle(TCreateParams Params)
   {
     WindowHandle = HTextArea();
-    (WindowHandle!.handle as TextAreaElement).setMaxLength(MaxLength);
+    var area = WindowHandle as HTextArea;
+    var elem = area.handle as TextAreaElement;
+    elem.setMaxLength(MaxLength);
+    area.wrap = WordWrap;
+    elem.spellcheck = false;
+    elem.text = Params.Caption;
+    if(ReadOnly)
+      elem.readOnly=true;
   }
+
 
 
   TPoint get CaretPos => GetCaretPos();
@@ -537,6 +545,22 @@ abstract class TCustomMemo extends TCustomEdit
   {
 
   }
+
+
+
+  bool _wordWrap = true;
+  bool
+    get WordWrap => _wordWrap;
+    set WordWrap(bool Value)
+    {
+      if(_wordWrap==Value)
+        return;
+      _wordWrap = Value;
+
+      // RecreateWnd;
+      if(HandleAllocated())
+        (WindowHandle as HTextArea).wrap = Value;
+    }
 
 
   void WndProc(TMessage Message)
@@ -1202,6 +1226,7 @@ class TRadioButton extends TButtonControl
   void Click()
   {
     Checked = true; 
+    super.Click();
   }
 
   void SetChecked(bool Value)

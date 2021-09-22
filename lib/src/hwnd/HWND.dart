@@ -77,6 +77,8 @@ class TWndStyle
     '-moz-user-select:none;'
     '-ms-user-select:none;';
 
+  String get softBorder =>
+    'border: 1px solid #A0A0A0;';
 
   void addFocusStyle([subClass='focus-within'])
   {
