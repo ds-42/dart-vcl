@@ -2,115 +2,114 @@ part of vcl;
 
 class TDateTimeBase
 {
-  double Val;
-  TDateTimeBase(this.Val);
+	double Val;
+	TDateTimeBase(this.Val);
 
-  String toString()
-  {
-    return SysDate.dtoa(Val.truncate()+SysUtils.DateDelta);
-  }
+	String toString() => TDateTime(this).toString();
 
-  bool operator == (Object other) => other is TDateTimeBase && Val==other.Val;
+	bool operator == (Object other) => other is TDateTimeBase && Val==other.Val;
 }
+
+enum TDateTimeFlag { Date, Time, DateTime }
 
 class TDateTime extends TDateTimeBase
 {
-  TDateTime( [dynamic Value] ) : super(0.0)
-  {
-    if(Value == null)
-      return;
-    if(Value is double)
-      Val = Value;
-    else
-    if(Value is TDateTimeBase)
-      Val = Value.Val;
-    else
-      throw UnsupportedError("Invalid class type");
-  }
 
 
-  TDateTime.empty() : super(0.0);
-  TDateTime.double(double Value) : super(Value);
-  TDateTime.int(int Value) : super(Value.toDouble());
-  TDateTime.system(int Value) : super(Value==0? 0.0 : (Value - SysUtils.DateDelta).toDouble());
-  TDateTime.ymd(int year, int month, int day) : this.system(SysDate.init(year, month, day));
+	TDateTime([TDateTimeBase? src]) : super(src==null? 0 : src.Val);
+	TDateTime.native(double src) : super(src);
+	TDateTime.native_i4(int src) : super(src.toDouble());
 
-  TDateTime.CurrentDate() : this.system(SysDate.curDate());
-  TDateTime.CurrentDateTime() : this.system(SysDate.curDate());
-  TDateTime.CurrentTime() : this.system(0); // не реализовано
+	TDateTime.system(double src) : this.native(src - SysUtils.DateDelta);
+	TDateTime.sysDate(int src) : this.native_i4(src - SysUtils.DateDelta);
 
-  TDateTime.dd_mm_yyyy(String Value) : this.system(SysDate.atod(Value, order: DateOrder.dmy));
-  TDateTime.yyyy_mm_dd(String Value) : this.system(SysDate.atod(Value, order: DateOrder.ymd));
+	TDateTime.CurrentDate() : this.system(SysDate.now().toDouble());
+	TDateTime.CurrentDateTime() : this.system(SysDate.curDateTime());
+	TDateTime.CurrentTime() : this.native(SysTime.now());
 
-  int
-    get AsSystem => Val == 0.0? 0 : Val.truncate() + SysUtils.DateDelta;
-    set AsSystem(int Value) => Val = Value==0? 0.0 : Value-SysUtils.DateDelta.toDouble();
+	factory TDateTime.parse(String src, [TDateTimeFlag flag = TDateTimeFlag.DateTime])
+	{
+		switch(flag)
+		{
+			case TDateTimeFlag.DateTime: return SysUtils.StrToDateTime(src);
+			case TDateTimeFlag.Date:     return SysUtils.StrToDate(src);
+			case TDateTimeFlag.Time:     return SysUtils.StrToTime(src);
+		}
+	}
 
-  TDate get AsDate => TDate(this);
-  DateTime Decode()
-  {
-    Date date = SysDate.itod(AsSystem);
-    /// append time part
-    return DateTime(date.year, date.month, date.day);
-  }
+	factory TDateTime.date(int year, int month, int day) =>
+			SysUtils.EncodeDate(year, month, day);
+	factory TDateTime.time(int hour, int min, int sec, int msec) =>
+			SysUtils.EncodeTime(hour, min, sec, msec);
 
-  DateTime DecodeDate()
-  {
-    Date date = SysDate.itod(AsSystem);
-    return DateTime(date.year, date.month, date.day);
-  }
+	String toString() => DateTimeString();
 
-  int get DayOfWeek => SysDate.dayOfWeek(AsSystem);
 
-  bool operator <  (TDateTime other) => Val <  other.Val;
-  bool operator <= (TDateTime other) => Val <= other.Val;
-  bool operator >  (TDateTime other) => Val >  other.Val;
-  bool operator >= (TDateTime other) => Val >= other.Val;
 
-  TDateTime operator - (dynamic other)
-  {
-    if(other is int)
-      return TDateTime(Val - other);
-    if(other is TDateTime)
-      return TDateTime(Val - other.Val);
-    throw UnsupportedError('invalid type');
-  }
+	TDateTime operator + (dynamic other)
+	{
+		if(other is int)
+			return TDateTime.native(Val + other);
+		if(other is double)
+			return TDateTime.native(Val + other);
+		if(other is TDateTime)
+			return TDateTime.native(Val + other.Val);
+		throw UnsupportedError('invalid type');
+	}
 
-  TDateTime operator + (dynamic other)
-  {
-    if(other is int)
-      return TDateTime(Val + other);
-    if(other is TDateTime)
-      return TDateTime(Val + other.Val);
-    throw UnsupportedError('invalid type');
-  }
+	TDateTime operator - (dynamic other)
+	{
+		if(other is int)
+			return TDateTime.native(Val - other);
+		if(other is double)
+			return TDateTime.native(Val - other);
+		if(other is TDateTime)
+			return TDateTime.native(Val - other.Val);
+		throw UnsupportedError('invalid type');
+	}
+
+	// comparisons
+
+	bool operator >  (TDateTime other) => Val >  other.Val;
+	bool operator <  (TDateTime other) => Val <  other.Val;
+	bool operator >= (TDateTime other) => Val >= other.Val;
+	bool operator <= (TDateTime other) => Val <= other.Val;
+
+
+	String FormatString(String format) => SysUtils.FormatDateTime(format, this);
+	String DateString() => SysUtils.DateToStr(this);
+	String TimeString() => SysUtils.TimeToStr(this);
+	String DateTimeString() => SysUtils.DateTimeToStr(this);
+
+	double toDouble() => Val;
+	int toInt() => Val.toInt();
+
+	int
+	  get ValI4 => Val.truncate();
+	  set ValI4(int Value) => Val = Value.toDouble();
+
+	int
+	  get AsSysDate => (Val + SysUtils.DateDelta).truncate();
+	  set AsSysDate(int date) => Val = (date - SysUtils.DateDelta).toDouble();
+
+	int DayOfWeek() => SysUtils.DayOfWeek(this);
+
 }
 
 class TDate extends TDateTime
 {
-  TDate( [dynamic Value=null] ) : super.empty()
-  {
-    if(Value==null)
-      return;
-    if(Value is TDateTimeBase)
-    {
-      Val = Value.Val.truncateToDouble();
-      return;
-    }
-    throw UnsupportedError('Invalid class type');
-  }
+	TDate([TDateTimeBase? src]) : super(src);
+	TDate.native(int src) : super.native_i4(src);
+	TDate.sysDate(int src) : super.sysDate(src);
+	TDate.parse(String src) : super(TDateTime.parse(src, TDateTimeFlag.Date));
 
-  TDate.system(int Value) : super.system(Value);
-  TDate.CurrentDate() : super.CurrentDate();
-  TDate.dd_mm_yyyy(String Value) : super.dd_mm_yyyy(Value);
-  TDate.yyyy_mm_dd(String Value) : super.yyyy_mm_dd(Value);
+	TDate.CurrentDate() : super.CurrentDate();
+
 }
 
 class TTime extends TDateTime
 {
-  TTime.base(TDateTimeBase Value) : super(Value);
-  TTime.CurrentTime() : super.CurrentTime();
+	TTime([TDateTimeBase? src]) : super();
 }
-
 
 

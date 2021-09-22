@@ -28,6 +28,9 @@ abstract class Consts
   static const SFixedColTooBig = 'Fixed column count must be less than column count';
   static const SFixedRowTooBig = 'Fixed row count must be less than row count';
 
+
+  static const SDateEncodeError = 'Invalid argument to date encode';
+
   static const SInsertLineError = 'Unable to insert a line';
 
 

@@ -2553,26 +2553,12 @@ abstract class TDataSet extends TComponent
 
       case TFieldType.Date:
       case TFieldType.DateTime:
+      case TFieldType.Time:
         if(Value is TDateTimeBase)
           return TDateTime(Value);
         if(Value is String)
-        {
-          if(Value.length==10)
-          {
-            if(Value[4]=='-' && Value[7]=='-')
-            {
-              if(fld.DataType==TFieldType.Date)
-                return TDate.yyyy_mm_dd(Value);
-              return TDateTime.yyyy_mm_dd(Value);
-            }
-            if(Value[2]=='.' && Value[5]=='.')
-            {
-              if(fld.DataType==TFieldType.Date)
-                return TDate.dd_mm_yyyy(Value);
-              return TDateTime.dd_mm_yyyy(Value);
-            }
-          }
-        }
+          return TDateTime.parse(Value);
+
         break;
 
       case TFieldType.Float:

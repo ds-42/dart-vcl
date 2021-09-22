@@ -77,13 +77,12 @@ TDateTime? toDateDef(dynamic val, [TDateTime? def] )
   if(val is TDateTime)
     return val;
   if(val is int)
-    return TDateTime.system(val);
+    return TDateTime.sysDate(val);
   if(val is String)
   {
-    int d = SysDate.atod(val);
-    if(d != 0)
-      return TDateTime.system(d);
-    return def;
+    var res = TDateTime();
+    if(SysUtils.TryStrToDateTime(val, res))
+      return res;
   }
   return def;
 }

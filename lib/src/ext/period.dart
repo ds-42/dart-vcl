@@ -66,8 +66,44 @@ class Period
 
   Period get inv => Period._(ys, ms, ds, !neg);
 
-  static Period difDays(int start, int end) =>
-    SysDate.difDate(start, end);
+  factory Period.difDays(int start, int end)
+  {
+    bool neg=start>end;
+    if(neg){ int t=start; start=end; end=t; }
+
+    var dd1 = Date.days(start);
+    var dd2 = Date.days(end);
+
+    int d1=dd1.day, m1=dd1.month, y1=dd1.year;
+    int d2=dd2.day, m2=dd2.month, y2=dd2.year;
+
+    d2-=d1;
+    if(d2<0)
+    {
+      if(--m2==0)
+      {
+        m2 = 12;
+        y2--;
+      }
+      d2+=SysDate.daysInMonth(y2, m2);
+
+      if(d2<0)
+      {
+        m2--;
+        d2+=31;
+      }
+    }
+
+    m2-=m1;
+    if(m2<0)
+    {
+      m2+=12;
+      y1++;
+    }
+
+    var res = Period(y2-y1, m2, d2);
+    return neg? res.inv : res;
+  }  
 
   int get days
   {

@@ -14,4 +14,6 @@ abstract class RTLConsts
 
   static const SSortedListError = 'Operation not allowed on sorted list';
   
+  static const STimeEncodeError = 'Invalid argument to time encode';
+
 }
