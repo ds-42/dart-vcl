@@ -5,20 +5,30 @@ extension VclIntExtension on int
   bool and(int mask) => (this & mask) != 0;
   bool or(int mask)  => (this | mask) != 0;
 
+  bool beetwen(int start, int end) => this>=start && this<=end;
+
   String get twoDigits
   {
-    if(this<0) return "-${ (-this).twoDigits }";
-    if(this >= 10) return "${ this }";
-    return "0${ this }";
+    if(this <  0) return '-${ (-this).twoDigits }';
+    if(this < 10) return '0${ this }';
+    return '${ this }';
+  }
+
+  String get threeDigits
+  {
+    if(this <   0) return '-${ (-this).threeDigits }';
+    if(this <  10) return '00${ this }';
+    if(this < 100) return '0${ this }';
+    return '${ this }';
   }
 
   String get fourDigits
   {
-    if(this<0) return "-${ (-this).fourDigits }";
-    if(this >= 1000) return "${ this }";
-    if(this >= 100)  return "0${ this }";
-    if(this >= 10)   return "00${ this }";
-    return "000${ this }";
+    if(this <    0) return '-${ (-this).fourDigits }';
+    if(this <   10) return '000${ this }';
+    if(this <  100) return '00${ this }';
+    if(this < 1000) return '0${ this }';
+    return '${ this }';
   }
 
   String asHex([int size=0])
