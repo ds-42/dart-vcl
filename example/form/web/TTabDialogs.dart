@@ -72,6 +72,15 @@ class TTabDialogs extends TTabSheet
             TFlexDialog(this)
               ..ShowModal();
           },
+
+        TButton(this)
+          ..Caption = 'Exception'
+          ..OnClick = (Sender)
+          {
+            TExceptionDialog(Application)
+                ..Position = TPosition.ScreenCenter
+                ..ShowModal();
+          }
       ]);
   }
 }

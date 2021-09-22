@@ -5,6 +5,7 @@ import 'package:vcl/vcl.dart';
 
 part 'TDataMap.dart';
 part 'TFlexDialog.dart';
+part 'TExceptionDialog.dart';
 part 'TLabelEdit.dart';
 part 'TMainForm.dart';
 part 'TUserDialog.dart';
@@ -17,8 +18,13 @@ part 'TTabDataSet.dart';
 
 void main() async
 {
-  var form = TMainForm()
-    ..Caption = 'MainForm'
-    ..SetClientSize((Screen.Width*0.6).truncate(), (Screen.Height*0.6).truncate());
-  await form.ShowModal();
+  Locale.select(TLocale.ENGLISH);
+
+  Application.TryBlock(() async
+  {
+    var form = TMainForm()
+      ..Caption = 'MainForm'
+      ..SetClientSize((Screen.Width*0.6).truncate(), (Screen.Height*0.6).truncate());
+    await form.ShowModal();
+  });
 }
