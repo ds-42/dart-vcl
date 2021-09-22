@@ -1424,12 +1424,12 @@ class TScreen extends TComponent
       _width = window.innerWidth!;
       _height = window.innerHeight!;
 
-      _customForms.forEach((element)
+      _customForms.forEach((form)
       {
-        if(element.HandleAllocated())
+        if(form.HandleAllocated())
         {
-          if(element._form!.Maximize)
-            Windows.SetWindowPos(element._form!, null, 0, 0, _width, _height, 0);
+          if(form._form!.Maximize)
+            Windows.SetWindowPos(form._form!, null, 0, 0, _width, _height, 0);
         }
       });
     });
@@ -2214,18 +2214,39 @@ class TApplication extends TComponent
 
 
 
-  void TryBlock(Function fnc) async // new
+  Future<void> TryBlock(Future<void> Function() block, [Future<Object?> Function(Object)? excp]) async // new
   {
     try
     {
-      await fnc();
+      await block();
     }
     catch(E)
     {
-      if(E is TException)
-        await ShowException(E);
+      Future<void> showException(Object E) async
+      {
+        if(E is TException)
+          await ShowException(E);
+        else
+          await MessageBox('$E', Title, Windows.MB_OK + Windows.MB_ICONSTOP);
+      }
+
+      if(excp==null)
+        await showException(E);
       else
-        await MessageBox('$E', Title, Windows.MB_OK + Windows.MB_ICONSTOP);
+      {
+        try
+        {
+          // return E;
+          // return Future.error(E);
+          var e = await excp(E);
+          if(e != null)
+            return Future.error(e);
+        }
+        catch(E)
+        {
+          await showException(E);
+        }
+      }
     }
   }
 
