@@ -84,9 +84,9 @@ enum TModalResult { None, Ok, Cancel, Abort, Retry, Ignore, Yes, No, All, NoToAl
 
 abstract class ModalResults
 {
-  static final _items = <TLanguage, Map<TModalResult, String> >
+  static final _items = <TLocale, Map<TModalResult, String> >
   {
-    TLanguage.ENGLISH: {
+    TLocale.ENGLISH: {
       TModalResult.Ok:       'OK',
       TModalResult.Cancel:   'Cancel',
       TModalResult.Abort:    'Abort',
@@ -98,7 +98,7 @@ abstract class ModalResults
       TModalResult.NoToAll:  'No to all',
       TModalResult.YesToAll: 'Yes to all',
     },
-    TLanguage.RUSSIAN: {
+    TLocale.RUSSIAN: {
       TModalResult.Ok:       'OK',
       TModalResult.Cancel:   'Отмена',
       TModalResult.Abort:    'Прервать',
@@ -112,16 +112,14 @@ abstract class ModalResults
     },
   };
 
-  static Map<TModalResult, String> GetNames([TLanguage? language]) =>
-      TLocalSet.GetItems(_items, language ?? TLocal.language, TLanguage.ENGLISH);
+  static Map<TModalResult, String> GetNames([TLocale? locale]) =>
+      TLocaleSet.GetItems(_items, locale ?? Locale.active, TLocale.ENGLISH);
 
-  static void UpdateLocal(TLanguage language, Map<TModalResult, String> recs) =>
-      TLocalSet.UpdateLocal(_items, language, recs);
+  static void UpdateLocale(TLocale locale, Map<TModalResult, String> recs) =>
+      TLocaleSet.Update(_items, locale, recs);
 
-  static String ResultToStr(TModalResult mr, [TLanguage? language]) =>
-    TLocalSet.ValueByIdent(ModalResults._items, mr, language) ?? mr.toString();
-
-
+  static String ResultToStr(TModalResult mr, [TLocale? locale]) =>
+    TLocaleSet.ValueByIdent(ModalResults._items, mr, locale) ?? mr.toString();
 }
 
 

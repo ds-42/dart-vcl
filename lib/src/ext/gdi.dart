@@ -75,9 +75,9 @@ const TPenStyle psLongDashDotDot   = TPenStyle('psLongDashDotDot', [21,2,1,1,1,2
 
 abstract class PenStyles
 {
-  static final _items = <TLanguage, Map<TPenStyle, String> >
+  static final _items = <TLocale, Map<TPenStyle, String> >
   {
-    TLanguage.ENGLISH: {
+    TLocale.ENGLISH: {
       psClear:           'clear',
       psSolid:            'solid',
       psDash:             'dash',
@@ -91,7 +91,7 @@ abstract class PenStyles
       psLongDashDot:      'long dash dot',
       psLongDashDotDot:   'long dash dot dot',
     },
-    TLanguage.RUSSIAN: {
+    TLocale.RUSSIAN: {
       psClear:            'прозрачный',
       psSolid:            'сплошной',
       psDash:             'штриховой',
@@ -107,17 +107,17 @@ abstract class PenStyles
     },
   };
 
-  static Map<TPenStyle, String> GetStyles([TLanguage? language]) =>
-    TLocalSet.GetItems(_items, language ?? TLocal.language, TLanguage.ENGLISH);
+  static Map<TPenStyle, String> GetStyles([TLocale? locale]) =>
+    TLocaleSet.GetItems(_items, locale ?? Locale.active, TLocale.ENGLISH);
 
-  static void UpdateLocal(TLanguage language, Map<TPenStyle, String> recs) =>
-    TLocalSet.UpdateLocal(_items, language, recs);
+  static void UpdateLocale(TLocale locale, Map<TPenStyle, String> recs) =>
+    TLocaleSet.Update(_items, locale, recs);
 
-  static String StyleToStr(TPenStyle style, [TLanguage? language]) =>
-    TLocalSet.ValueByIdent(PenStyles._items, style, language) ?? style.name;
+  static String StyleToStr(TPenStyle style, [TLocale? locale]) =>
+    TLocaleSet.ValueByIdent(PenStyles._items, style, locale) ?? style.name;
 
-  static TPenStyle? StringToStyle(String value, [TLanguage? language]) =>
-    TLocalSet.IdentByValue<TPenStyle>(PenStyles._items, value, language);
+  static TPenStyle? StringToStyle(String value, [TLocale? locale]) =>
+    TLocaleSet.IdentByValue<TPenStyle>(PenStyles._items, value, locale);
 }
 
 typedef void ENUM_FONT_FAMILY_PROC(String name);

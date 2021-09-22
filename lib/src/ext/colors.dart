@@ -204,9 +204,9 @@ const TColor clLinkBk              = TColor(0x80001003, 'clLinkBk');
 
 abstract class Colors
 {
-  static final _items = <TLanguage, Map<TColor, String> >
+  static final _items = <TLocale, Map<TColor, String> >
   {
-    TLanguage.ENGLISH: {
+    TLocale.ENGLISH: {
       clBlack:   'black',
       clWhite:   'white',
       clMaroon:  'maroon',
@@ -224,7 +224,7 @@ abstract class Colors
       clFuchsia: 'fuchsia',
       clAqua:    'aqua',
     },
-    TLanguage.RUSSIAN: {
+    TLocale.RUSSIAN: {
       clBlack:   'черный',
       clWhite:   'белый',
       clMaroon:  'коричневый',
@@ -244,18 +244,18 @@ abstract class Colors
     },
   };
 
-  static Map<TColor, String> GetColors([TLanguage? language]) =>
-      TLocalSet.GetItems(_items, language ?? TLocal.language, TLanguage.ENGLISH);
+  static Map<TColor, String> GetColors([TLocale? locale]) =>
+      TLocaleSet.GetItems(_items, locale ?? Locale.active, TLocale.ENGLISH);
 
-  static void UpdateLocal(TLanguage language, Map<TColor, String> recs) =>
-      TLocalSet.UpdateLocal(_items, language, recs);
+  static void UpdateLocale(TLocale locale, Map<TColor, String> recs) =>
+      TLocaleSet.Update(_items, locale, recs);
 
-  static String ColorToStr(TColor color, [TLanguage? language]) =>
-      TLocalSet.ValueByIdent(Colors._items, color, language) ?? color.html;
+  static String ColorToStr(TColor color, [TLocale? locale]) =>
+      TLocaleSet.ValueByIdent(Colors._items, color, locale) ?? color.html;
 
-  static TColor? StringToColor(String value, [TLanguage? language])
+  static TColor? StringToColor(String value, [TLocale? locale])
   {
-    return TLocalSet.IdentByValue<TColor>(Colors._items, value, language);
+    return TLocaleSet.IdentByValue<TColor>(Colors._items, value, locale);
   }
 
   static TColor IntToColor(int val)
@@ -270,10 +270,10 @@ abstract class Colors
   }
 }
 
-String ColorToStr(TColor color, [TLanguage? lng] ) =>
+String ColorToStr(TColor color, [TLocale? lng] ) =>
   Colors.ColorToStr(color, lng);
 
-TColor? StrToColor(String data, [TColor? def = clBlack, TLanguage? lng] )
+TColor? StrToColor(String data, [TColor? def = clBlack, TLocale? lng] )
 {
   if(data.isEmpty)
     return def;

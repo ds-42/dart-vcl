@@ -7,7 +7,7 @@ Future<int> MessageBox(dynamic data, String caption, int mode) async
   {
     return TButton(prnt)
       ..ModalResult = mr
-      ..Caption = ModalResults.ResultToStr(mr, TLocal.language)
+      ..Caption = ModalResults.ResultToStr(mr, Locale.active)
       ..Parent = prnt
       ..Handle.style.height = null
       ..Handle.style.width = null;
@@ -79,9 +79,9 @@ Future<int> MessageBox(dynamic data, String caption, int mode) async
         break;
     }
 
-    int bwidth = 80;
-    int bheight = 0;
-    int bcount = 0;
+    var bwidth = 80;
+    var bheight = 0;
+    var bcount = 0;
     for(TButton? btn in btns)
     {
       if(btn != null)
@@ -95,17 +95,17 @@ Future<int> MessageBox(dynamic data, String caption, int mode) async
       }
     }
 
-    int x = (dlg.ClientWidth - bwidth*bcount - 5*(bcount-1)) >> 1;
+    int x = (dlg.ClientWidth - bwidth*bcount - 10*(bcount-1)) ~/ 2;
     for(TButton? btn in btns)
     {
       if(btn != null)
       {
-        btn.SetBounds(x, height+5, bwidth, bheight);
-        x+=btn.Width+5;
+        btn.SetBounds(x, height + 5, bwidth, bheight);
+        x+=btn.Width + 10;
       }
     }
 
-    dlg.ClientHeight = height + bheight+10;
+    dlg.ClientHeight = height + bheight + 10;
 
   };
 
@@ -132,12 +132,12 @@ Future<void> ShowMessage(dynamic data) async
 
 Future<void> ShowWarningMessage(dynamic data) async
 {
-  await MessageBox(data, TLocal.language==TLanguage.RUSSIAN? 'Внимание' : 'Warning', Windows.MB_OK);
+  await MessageBox(data, '${ SysLocale.Warning }', Windows.MB_OK);
 }
 
 Future<void> ShowErrorMessage(dynamic data) async
 {
-  await MessageBox(data, TLocal.language==TLanguage.RUSSIAN? 'Ошибка' : 'Error', Windows.MB_OK);
+  await MessageBox(data, '${ SysLocale.Error }', Windows.MB_OK);
 }
 
 Future<int> ShowQuestionMessage(dynamic data, [int mode = Windows.MB_YESNO]) async
@@ -171,13 +171,13 @@ Future<String> InputBox(String ACaption, String APrompt, String ADefault) async
 
   int btnLeft = (width-160)~/2;
   var btnOk = TButton(form)
-    ..Caption = ModalResults.ResultToStr(TModalResult.Ok, TLocal.language)
+    ..Caption = ModalResults.ResultToStr(TModalResult.Ok, Locale.active)
     ..SetBounds(btnLeft, top, 80, null)
     ..ModalResult = TModalResult.Ok
     ..Parent = form;
 
   TButton(form)
-    ..Caption = ModalResults.ResultToStr(TModalResult.Cancel, TLocal.language)
+    ..Caption = ModalResults.ResultToStr(TModalResult.Cancel, Locale.active)
     ..SetBounds(btnLeft+90, top, 80, null)
     ..ModalResult = TModalResult.Cancel
     ..Parent = form;
