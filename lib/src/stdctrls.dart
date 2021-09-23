@@ -947,6 +947,19 @@ class TComboBox extends TCustomComboBox
 
 }
 
+/// TButtonActionLinkClass = class of TButtonActionLink;
+
+class TButtonActionLink extends TWinControlActionLink
+{
+
+
+  static TClass get classType => TClass( TButtonActionLink, (AOwner) => TButtonActionLink(AOwner) );
+
+  TButtonActionLink(TComponent AOwner) : super(AOwner);
+
+
+}
+
 class TButtonControl extends TWinControl
 {
   bool _clicksDisabled = false;
@@ -962,10 +975,18 @@ class TButtonControl extends TWinControl
 
   void ActionChange(TObject Sender, bool CheckDefaults)
   {
-
+    super.ActionChange(Sender, CheckDefaults);
+    if(Sender is TCustomAction)
+    {
+      if(!CheckDefaults || (Checked == false))
+        Checked = Sender.Checked;
+    }
   }
 
-
+  TMetaClass GetActionLinkClass()
+  {
+    return TButtonActionLink.classType;
+  }
 
   bool get Checked => GetChecked();
   void set Checked(bool Value) => SetChecked(Value);
@@ -1172,15 +1193,6 @@ class TCustomCheckBox extends TButtonControl
     super.WndProc(Message);
   }
 
-  void Dispatch(TMessage Message)
-  {
-    switch(Message.Msg)
-    {
-      case CN_COMMAND: _cnCommand(TWMCommand(Message)); return;
-    }
-    super.Dispatch(Message);
-  }
-
 
 
   void _cnCommand(TWMCommand Message)
@@ -1204,6 +1216,7 @@ class TCheckBox extends TCustomCheckBox
 
 }
 
+
 class TRadioButton extends TButtonControl
 {
 
@@ -1213,21 +1226,16 @@ class TRadioButton extends TButtonControl
     Width = 113;
     Height = 17;
     ControlStyle.assign( [ControlStyles.SetCaption, ControlStyles.DoubleClicks] );
-    TabStop = true;
 
   }
 
   String get Caption => _getText();
   void set Caption(String Value) => _setText(Value);
 
+
+
   bool _checked = false;
   bool GetChecked() => _checked;
-
-  void Click()
-  {
-    Checked = true; 
-    super.Click();
-  }
 
   void SetChecked(bool Value)
   {
@@ -1235,27 +1243,26 @@ class TRadioButton extends TButtonControl
     {
       if(Parent == null)
         return;
-
-      for(int i = 0; i<Parent!.ControlCount; i++)
+      for(var Sibling in Parent!.Controls)
       {
-        TControl Sibling = Parent!.Controls[i];
-        if(Sibling != this && Sibling is TRadioButton)
+        if((Sibling != this) && (Sibling is TRadioButton))
         {
-
+            if((Sibling.Action!=null) &&
+               (Sibling.Action is TCustomAction) &&
+               (Sibling.Action as TCustomAction).AutoCheck)
+              (Sibling.Action as TCustomAction).Checked = false;
           Sibling.SetChecked(false);
         }
       }
     }
 
-
     if(_checked == Value)
       return;
-
     _checked = Value;
+    print(Checked);
     TabStop = Value;
     if(HandleAllocated())
       Windows.SendMessage(Handle, BM_SETCHECK, Checked? 1 : 0, 0);
-
     if(Value)
     {
       TurnSiblingsOff();
@@ -1271,9 +1278,22 @@ class TRadioButton extends TButtonControl
     rb.caption.text = Params.Caption;
     rb.radio.checked = _checked;
     WindowHandle = rb;
+//    rb.handle.onClick.listen((event) => Checked=true ); // временно пока не пойму как работает переключение
+  }
 
 
-    rb.handle.onClick.listen((event) => Checked=true ); // временно пока не пойму как работает переключение
+
+  void _cnCommand(TWMCommand Message)
+  {
+    switch(Message.NotifyCode)
+    {
+      case Windows.BN_CLICKED:
+        SetChecked(true);
+        break;
+      case Windows.BN_DOUBLECLICKED:
+        DblClick();
+        break;
+    }
   }
 
 }

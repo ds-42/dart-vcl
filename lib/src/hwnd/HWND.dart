@@ -406,8 +406,8 @@ void _default_element_proc(Element elem, TMessage Message)
       HWND? wnd = HWND.findWindow(elem);
       if(wnd!=null)
       {
-        bool isButton = wnd is HCheckBox; 
-        if(isButton)
+        
+        if(wnd is HButtonControl)
         {
           Element? prnt = wnd.handle.parent;
           if(prnt != null)

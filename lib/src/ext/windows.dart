@@ -1400,6 +1400,8 @@ abstract class Windows
    */
   static const int BN_CLICKED           = 0;
 
+  static const BN_DOUBLECLICKED         = 5;
+
 
 
 

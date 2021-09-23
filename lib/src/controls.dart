@@ -483,9 +483,12 @@ class TSizeConstraints extends TPersistent
 }
 
 
+
 class TControlActionLink extends TActionLink
 {
 
+
+  static TClass get classType => TClass( TControlActionLink, (AOwner) => TControlActionLink(AOwner) );
 
   TControl? _client;
 
@@ -721,6 +724,11 @@ class TControl extends TComponent
 
 
 
+  // property Caption: TCaption read GetText write SetText stored IsCaptionStored;
+  String
+    get _caption => _getText();
+    set _caption(String val) => _setText(val);
+
   String _text="";
   String
     get WindowText => _text;
@@ -823,7 +831,12 @@ class TControl extends TComponent
     // Call OnClick if assigned and not equal to associated action's OnExecute.
     //  If associated action's OnExecute assigned then call it, otherwise, call
     //  OnClick.
-
+    if((OnClick!=null) && (Action != null) && (_onClick != Action!.OnExecute))
+      OnClick!(this);
+    else
+    if(!(ComponentState.contains(ComponentStates.Designing)) && (ActionLink != null))
+      ActionLink!.Execute(this);
+    else
     if(OnClick != null)
       OnClick!(this);
   }
@@ -855,6 +868,39 @@ class TControl extends TComponent
     super.Destroy();
   }
 
+
+
+  TBasicAction? get Action => GetAction();
+
+  TBasicAction? GetAction() // virtual
+  {
+    return ActionLink == null? null : ActionLink!.Action;
+  }
+
+  void set Action(TBasicAction? Value)
+  {
+    if(Value == null)
+    {
+      ActionLink!.Free();
+      ActionLink = null;
+      _controlStyle >> ControlStyles.ActionClient;
+    }
+    else
+    {
+      _controlStyle << ControlStyles.ActionClient;
+      if(ActionLink == null)
+        ActionLink = GetActionLinkClass().Create(this);
+      ActionLink!.Action = Value;
+      ActionLink!.OnChange = (Sender) // DoActionChange;
+      {
+        if(Sender == Action)
+          ActionChange(Sender, false);
+      };
+
+      ActionChange(Value, Value.ComponentState.contains(ComponentStates.Loading));
+      Value.FreeNotification(this);
+    }
+  }
 
   bool IsAnchorsStored()
   {
@@ -1569,6 +1615,30 @@ class TControl extends TComponent
 
 
 
+  void ActionChange(TObject Sender, bool CheckDefaults)
+  {
+    if(Sender is TCustomAction)
+    {
+      if(!CheckDefaults || _caption.isEmpty || (_caption == Name))
+        _caption = Sender.Caption;
+      if(!CheckDefaults || (Enabled == true))
+        Enabled = Sender.Enabled;
+      if(!CheckDefaults || Hint.isEmpty)
+        Hint = Sender.Hint;
+      if(!CheckDefaults || (Visible == true))
+        Visible = Sender.Visible;
+      if(!CheckDefaults || (OnClick!=null))
+        OnClick = Sender.OnExecute;
+    }
+  }
+
+  TMetaClass GetActionLinkClass()
+  {
+    return TControlActionLink.classType; 
+  }
+
+
+
   void AdjustSize()
   {
     if(!ComponentState.contains(ComponentStates.Loading))
@@ -1737,6 +1807,16 @@ class TControl extends TComponent
   }
 }
 
+///  TWinControlActionLinkClass = class of TWinControlActionLink;
+
+class TWinControlActionLink extends TControlActionLink
+{
+
+
+  TWinControlActionLink(TComponent AOwner) : super(AOwner);
+
+  
+}
 
 class _controlsIterator extends Iterator<TControl>
 {
@@ -2734,6 +2814,7 @@ class TWinControl extends TControl
       case CN_KEYDOWN:            _cnKeyDown(TWMKey(Message)); break;
       case CN_KEYUP:              _cnKeyUp(TWMKey(Message)); break;
       case CN_CHAR:               _cnChar(TWMKey(Message)); break;
+      case CN_COMMAND:            _cnCommand(TWMCommand(Message)); break;
 
       case WM_CHAR:               _wmChar(TWMKey(Message)); break;
       case WM_NCHITTEST:          _wmNCHitTest(Message); break;
@@ -3555,6 +3636,11 @@ class TWinControl extends TControl
         return;
     Message.Result = 0;
   }
+
+  void _cnCommand(TWMCommand Message) // new
+  {
+  }
+
 
   
 

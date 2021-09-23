@@ -2214,6 +2214,34 @@ class TApplication extends TComponent
 
 
 
+  TActionEvent? _onActionExecute;
+  TActionEvent?
+    get OnActionExecute => _onActionExecute;
+    set OnActionExecute(TActionEvent? Value) => _onActionExecute = Value;
+
+  bool ExecuteAction(TBasicAction Action)
+  {
+    var Result = TPointer(false);
+    if(OnActionExecute != null)
+      OnActionExecute!(Action, Result);
+    return Result.Value;
+  }
+
+  TActionEvent? _onActionUpdate;
+  TActionEvent?
+    get OnActionUpdate => _onActionUpdate;
+    set OnActionUpdate(TActionEvent? Value) => _onActionUpdate = Value;
+
+  bool UpdateAction(TBasicAction Action)
+  {
+    var Result = TPointer(false);
+    if(OnActionUpdate != null)
+      OnActionUpdate!(Action, Result);
+    return Result.Value;
+  }
+
+
+
   Future<void> TryBlock(Future<void> Function() block, [Future<Object?> Function(Object)? excp]) async // new
   {
     try

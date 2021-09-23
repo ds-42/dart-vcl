@@ -1182,6 +1182,7 @@ class TComponent extends TPersistent
 
   late final TItems<TComponent> Components;
 
+  final _freeNotifies = <TComponent>[];
 
   final _componentState = TComponentState();
   TComponentState get ComponentState => _componentState;
@@ -1201,27 +1202,37 @@ class TComponent extends TPersistent
     Owner?.InsertComponent(this);
   }
 
-
-
   void Destroy()
   {
     Destroying();
-
+    while(_freeNotifies.isNotEmpty)
+      _freeNotifies.last.Notification(this, TOperation.Remove);
     DestroyComponents();
     if(Owner != null)
       Owner!.RemoveComponent(this);
     super.Destroy();
   }
 
-
+  void BeforeDestruction()
+  {
+    if(!ComponentState.contains(ComponentStates.Destroying))
+      Destroying();
+  }
 
   void FreeNotification(TComponent AComponent)
   {
     if((Owner == null) || (AComponent.Owner != Owner))
     {
-
+      // Never acquire a reference to a component that is being deleted.
+      assert(!(ComponentState.contains(ComponentStates.Destroying) ||
+               AComponent.ComponentState.contains(ComponentStates.Destroying)));
+      if(!_freeNotifies.contains(AComponent))
+      {
+        _freeNotifies.add(AComponent);
+        AComponent.FreeNotification(this);
+      }
     }
-    
+    _componentState << ComponentStates.FreeNotification;
   }
 
 
@@ -1279,7 +1290,7 @@ class TComponent extends TPersistent
 
   void RemoveNotification(TComponent AComponent)
   {
-
+    _freeNotifies.remove(AComponent);
   }
 
   void RemoveFreeNotification(TComponent AComponent)
@@ -1349,21 +1360,39 @@ class TComponent extends TPersistent
 
 }
 
-class TBasicActionLink extends TObject
-{
-
+class TBasicActionLink extends TObject {
+  
 
   TBasicActionLink(TObject AClient) : super()
   {
     AssignClient(AClient);
   }
 
-  void AssignClient(TObject AClient)
-  {
+  TNotifyEvent? _onChange;
+
+  TNotifyEvent?
+  get OnChange => _onChange;
+
+  set OnChange(TNotifyEvent? Value) => _onChange = Value;
+
+  void AssignClient(TObject AClient) {
 
   }
 
+  
 
+  bool Execute(TComponent? AComponent)
+  {
+    if(_action!.ActionComponent != AComponent)
+    {
+      if(_action!.ActionComponent!=null)
+        _action!.ActionComponent!.RemoveFreeNotification(_action!);
+      if(AComponent != null)
+        AComponent.FreeNotification(_action!);
+      _action!.ActionComponent = AComponent;
+    }
+    return _action!.Execute();
+  }
 
   TBasicAction? _action;
   TBasicAction?
@@ -1390,12 +1419,26 @@ class TBasicActionLink extends TObject
 class TBasicAction extends TComponent
 {
 
+  TComponent? _actionComponent;
+  TComponent?
+    get ActionComponent => _actionComponent;
+    set ActionComponent(TComponent? Value) => _actionComponent = Value;
 
-  final _clients = <dynamic>[];
+  final _clients = <TBasicActionLink>[];
 
   TBasicAction(TComponent AOwner) : super(AOwner)
   {
 
+  }
+
+  void Destroy() // destructor
+  {
+    super.Destroy();
+    if(ActionComponent != null)
+      ActionComponent!.RemoveFreeNotification(this);
+    while(_clients.isNotEmpty)
+      UnRegisterChanges(_clients.last);
+    // FreeAndNil(FClients);
   }
 
 
@@ -1454,11 +1497,9 @@ class TBasicAction extends TComponent
 
   void UnRegisterChanges(TBasicActionLink Value)
   {
-    var ndx = _clients.indexOf(Value);
-    if(ndx == -1)
-      return;
-    Value._action = null;
-    _clients.removeAt(ndx);
+    if(_clients.remove(Value))
+      Value._action = null;
+
   }
 
 }
