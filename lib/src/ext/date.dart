@@ -144,9 +144,27 @@ class Date
 
 
   String toString() =>
-    SysUtils._date_time_to_string(SysUtils.ShortDateFormat, days.toDouble());
+      formatString(SysUtils.ShortDateFormat);
 
-  
+  String formatString(String format) =>
+    SysUtils._date_time_to_string(format, days.toDouble());
+
+  String formatOrder( {TDateOrder? order, String? separator} )
+  {
+    if(order == null)
+      order = SysUtils.GetDateOrder(SysUtils.ShortDateFormat);
+    if(separator==null)
+      separator = String.fromCharCode(SysUtils.DateSeparator);
+    switch(order)
+    {
+      case TDateOrder.DMY:
+        return '${day.twoDigits}$separator${month.twoDigits}$separator${year.fourDigits}';
+      case TDateOrder.MDY:
+        return '${month.twoDigits}$separator${day.twoDigits}$separator${year.fourDigits}';
+      case TDateOrder.YMD:
+        return '${year.fourDigits}$separator${month.twoDigits}$separator${day.twoDigits}';
+    }
+  }
 
   int get days => SysDate.encode(year, month, day);
 
