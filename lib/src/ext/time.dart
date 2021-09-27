@@ -12,6 +12,14 @@ class Time
   factory Time(int hour, int minute, [int second=0, int millisecond=0]) =>
     Time.msec(SysTime.getMillisecond(hour, minute, second, millisecond));
 
+  static Time? create(int hour, int minute, [int second=0, int millisecond=0])
+  {
+    if((hour >= 0 && hour < 24) && (minute >= 0 && minute < 60) &&
+        (second>=0 && second < 60) && (millisecond>=0 && millisecond < 1000))
+      return Time._(hour, minute, second, millisecond);
+    return null;
+  }
+
   factory Time.now()
   {
     var data = DateTime.now();
@@ -25,6 +33,23 @@ class Time
     int min  = val ~/ 60000;
     int msec = val  % 60000;
     return Time._(min ~/ 60, min % 60, msec ~/ 1000, msec % 1000);
+  }
+
+  factory Time.parse(String source)
+  {
+    var time = tryParse(source);
+    if(time == null)
+      SysUtils.ConvertErrorFmt(SysConsts.SInvalidDateTime, [source]);
+    return time!;
+  }
+
+  static Time? tryParse(String source)
+  {
+    var pos = Integer();
+    var time = SysUtils._scan_time(source.codeUnits, pos);
+    if(time != null)
+      return create(time.hour, time.minute, time.second, time.millisecond);
+    return null;
   }
 
   String toString() =>

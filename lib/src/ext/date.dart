@@ -53,7 +53,16 @@ class Date
     return Date._(year, month, day);
   }
 
+  static Date? create(int year, [int month=1, int day=1])
+  {
+    var days = SysDate.monthDaysOfYear(year);
+    if((year >= 1) && (year <= 9999) && (month >= 1) && (month <= 12) &&
+        (day >= 1) && (day <= days[month-1]))
+      return Date._(year, month, day);
+    return null;
+  }
 
+  
 
   factory Date.now()
   {
@@ -115,6 +124,31 @@ class Date
     return Date._(y, m+1, d+1);
   }
 
+  factory Date.parse(String source)
+  {
+    var date = tryParse(source);
+    if(date == null)
+      SysUtils.ConvertErrorFmt(SysConsts.SInvalidDateTime, [source]);
+    return date!;
+  }
+
+  static Date? tryParse(String source, {TDateOrder? order, int? separator} )
+  {
+    var date = SysUtils._scan_date(source.codeUnits, Integer(), order, separator);
+    if(date != null)
+      return create(date.year, date.month, date.day);
+    return null;
+  }
+
+
+
+
+  String toString() =>
+    SysUtils._date_time_to_string(SysUtils.ShortDateFormat, days.toDouble());
+
+  
+
+  int get days => SysDate.encode(year, month, day);
 
 }
 
