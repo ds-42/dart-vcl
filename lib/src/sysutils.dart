@@ -101,8 +101,8 @@ abstract class SysUtils
   static int    TimeSeparator = CHAR.COLON;
   static String TimeAMString = 'am';
   static String TimePMString = 'pm';
-  static String ShortTimeFormat = 'h:mm tt';
-  static String LongTimeFormat = 'h:mm:ss tt';
+  static String ShortTimeFormat = 'h:mm';
+  static String LongTimeFormat = 'h:mm:ss';
 
   static int    TwoDigitYearCenturyWindow = 50;
 
@@ -358,15 +358,13 @@ static bool SameText(String S1, String S2)
   /// EncodeTime simply return False if the parameters given are not valid.
   /// Other than that, these functions are functionally the same as the above
   /// functions.
-  static bool TryEncodeTime(int Hour, int Min, int Sec, int MSec, TDateTime Time)
+  static bool TryEncodeTime(int Hour, int Min, int Sec, int MSec, TDateTime ResTime)
   {
-    if((Hour >= 0 && Hour < 24) && (Min >= 0 && Min < 60) &&
-       (Sec>=0 && Sec < 60) && (MSec>=0 && MSec < 1000))
-    {
-      Time.Val = SysTime.encode(Hour, Min, Sec, MSec);
-      return true;
-    }
-    return false;
+    var t = Time.create(Hour, Min, Sec, MSec);
+    if(t == null)
+      return false;
+    ResTime.Val = SysTime.encode(t.hour, t.minute, t.second, t.millisecond);
+    return true;
   }
 
   /// EncodeTime encodes the given hour, minute, second, and millisecond into a
@@ -408,23 +406,12 @@ static bool SameText(String S1, String S2)
     return SysDate.isLeapYear(year<0? -year : year);
   }
 
-  static Date? _try_encode_date(int year, int month, int day)
+  static bool TryEncodeDate(int Year, int Month, int Day, TDateTime ResDate)
   {
-    var days = SysDate.monthDaysOfYear(year);
-    if((year >= 1) && (year <= 9999) && (month >= 1) && (month <= 12) &&
-        (day >= 1) && (day <= days[month-1]))
-    {
-      return Date._(year, month, day);
-    }
-    return null;
-  }
-
-  static bool TryEncodeDate(int Year, int Month, int Day, TDateTime Date)
-  {
-    var d = _try_encode_date(Year, Month, Day);
+    var d = Date.create(Year, Month, Day);
     if(d==null)
       return false;
-    Date.Val = (SysDate.encode(d.year, d.month, d.day) - DateDelta).toDouble();
+    ResDate.Val = (SysDate.encode(d.year, d.month, d.day) - DateDelta).toDouble();
     return true;
   }
 
@@ -1087,14 +1074,18 @@ static bool SameText(String S1, String S2)
 
   
 
-  static Date? _scan_date(List<int> data, Integer Pos)
+  static Date? _scan_date(List<int> data, Integer pos, [TDateOrder? dateOrder, int? separator])
   {
-    var N1 = Integer();
-    var N2 = Integer();
-    var N3 = Integer();
-    var L1 = Integer();
-    var L2 = Integer();
-    var L3 = Integer();
+    if(dateOrder==null)
+      dateOrder = GetDateOrder(ShortDateFormat);
+    if(separator==null)
+      separator = DateSeparator;
+    var n1 = Integer();
+    var n2 = Integer();
+    var n3 = Integer();
+    var l1 = Integer();
+    var l2 = Integer();
+    var l3 = Integer();
     int CenturyBase;
 
 
@@ -1104,11 +1095,10 @@ static bool SameText(String S1, String S2)
       return Year;
     }
 
-    int Y = 0;
-    int M = 0;
-    int D = 0;
+    int y = 0;
+    int m = 0;
+    int d = 0;
     int YearLen = 0;
-    TDateOrder DateOrder = GetDateOrder(ShortDateFormat);
     int EraYearOffset = 0;
 /*    if(ShortDateFormat[1] == 'g')  // skip over prefix text
     {
@@ -1119,52 +1109,52 @@ static bool SameText(String S1, String S2)
     else
     if(AnsiPos('e', ShortDateFormat) > 0))
       EraYearOffset = EraYearOffsets[1];*/
-    if( !(_scan_number(data, Pos, N1, L1) && _scan_char(data, Pos, DateSeparator) &&
-      _scan_number(data, Pos, N2, L2)))
+    if( !(_scan_number(data, pos, n1, l1) && _scan_char(data, pos, separator) &&
+      _scan_number(data, pos, n2, l2)))
         return null;
-    if(_scan_char(data, Pos, DateSeparator))
+    if(_scan_char(data, pos, separator))
     {
-      if(!_scan_number(data, Pos, N3, L3))
+      if(!_scan_number(data, pos, n3, l3))
         return null;
-      switch(DateOrder)
+      switch(dateOrder)
       {
         case TDateOrder.MDY:
-          Y = N3.Value; YearLen = L3.Value; M = N1.Value; D = N2.Value;
+          y = n3.Value; YearLen = l3.Value; m = n1.Value; d = n2.Value;
           break;
         case TDateOrder.DMY:
-          Y = N3.Value; YearLen = L3.Value; M = N2.Value; D = N1.Value;
+          y = n3.Value; YearLen = l3.Value; m = n2.Value; d = n1.Value;
           break;
         case TDateOrder.YMD:
-          Y = N1.Value; YearLen = L1.Value; M = N2.Value; D = N3.Value;
+          y = n1.Value; YearLen = l1.Value; m = n2.Value; d = n3.Value;
           break;
       }
       if(EraYearOffset > 0)
-        Y = EraToYear(Y);
+        y = EraToYear(y);
       else
       if(YearLen <= 2)
       {
         CenturyBase = CurrentYear() - TwoDigitYearCenturyWindow;
-        Y+=CenturyBase ~/ 100 * 100;
-        if((TwoDigitYearCenturyWindow > 0) && (Y < CenturyBase))
-          Y+=100;
+        y+=CenturyBase ~/ 100 * 100;
+        if((TwoDigitYearCenturyWindow > 0) && (y < CenturyBase))
+          y+=100;
       }
     }
     else
     {
-      Y = CurrentYear();
-      if(DateOrder == TDateOrder.DMY)
+      y = CurrentYear();
+      if(dateOrder == TDateOrder.DMY)
       {
-        D = N1.Value;
-        M = N2.Value;
+        d = n1.Value;
+        m = n2.Value;
       }
       else
       {
-        M = N1.Value;
-        D = N2.Value;
+        m = n1.Value;
+        d = n2.Value;
       }
     }
-    _scan_char(data, Pos, DateSeparator);
-    _scan_blanks(data, Pos);
+    _scan_char(data, pos, separator);
+    _scan_blanks(data, pos);
 /*    if SysLocale.FarEast and (System.Pos('ddd', ShortDateFormat) <> 0) then
     begin     // ignore trailing text
       if ShortTimeFormat[1] in ['0'..'9'] then  // stop at time digit
@@ -1177,7 +1167,7 @@ static bool SameText(String S1, String S2)
           (AnsiCompareText(TimeAMString, Copy(S, Pos, Length(TimeAMString))) = 0) or
           (AnsiCompareText(TimePMString, Copy(S, Pos, Length(TimePMString))) = 0);
     end;**/
-    return Date._(Y, M, D);
+    return Date._(y, m, d);
   }
 
   static bool _scanDate(String S, Integer Pos, TDateTime Date)
