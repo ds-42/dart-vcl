@@ -1259,7 +1259,6 @@ class TRadioButton extends TButtonControl
     if(_checked == Value)
       return;
     _checked = Value;
-    print(Checked);
     TabStop = Value;
     if(HandleAllocated())
       Windows.SendMessage(Handle, BM_SETCHECK, Checked? 1 : 0, 0);
