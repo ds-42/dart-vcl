@@ -40,7 +40,7 @@ void main() async
 ```
 ### Demo
 
-Download [files](https://github.com/ds-42/dart-vcl/tree/main/demo) and open *index.html* in Google Chrome browser
+Press [link](http://dart-vcl.delasoft.org/) for demo application or download last version [files](https://github.com/ds-42/dart-vcl/tree/main/demo) and open *index.html* in Google Chrome browser
 
 [Source files](https://github.com/ds-42/dart-vcl/tree/main/example/form) of demo project 
 
