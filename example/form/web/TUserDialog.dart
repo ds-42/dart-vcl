@@ -59,6 +59,7 @@ class TUserDialog extends TForm
         await ShowMessage('Enter user login');
         login.SetFocus();
         Action.Value = TCloseAction.None;
+        return;
       }
 
       var pass = FindComponent('password') as TEdit;
