@@ -1,11 +1,15 @@
-## [1.0.0]
+## [1.0.3]
 
-- Initial version.
-
-## [1.0.1]
-
-- pub version.
+- Support dart SDK 2.14.4
 
 ## [1.0.2]
 
-- added direct [link](http://dart-vcl.delasoft.org/) for demo.
+- Added direct [link](http://dart-vcl.delasoft.org/) for demo.
+
+## [1.0.1]
+
+- Pub version.
+
+## [1.0.0]
+
+- Initial version.
