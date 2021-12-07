@@ -1381,6 +1381,7 @@ class TControl extends TComponent
     switch(Message.Msg)
     {
       case CM_COLORCHANGED:          _cmColorChanged(Message); break;
+      case CM_ENABLEDCHANGED:        _cmEnabledChanged(Message); break;
       case CM_FONTCHANGED:           _cmFontChanged(Message); break;
       case CM_GETVALUE:              _cmGetValue(Message); break;
 
@@ -1662,6 +1663,11 @@ class TControl extends TComponent
     Invalidate();
   }
 
+  void _cmEnabledChanged(TMessage Message)
+  {
+    Invalidate();
+  }
+
   void _cmFontChanged(TMessage Message)
   {
 
@@ -1935,7 +1941,7 @@ class TWinControl extends TControl
     Perform(CM_TABSTOPCHANGED, 0, 0);
   }
 
-  bool _ctl3D = true;
+  bool _ctl3D = false;
   bool get Ctl3D => _ctl3D;
   void set Ctl3D(bool Value)
   {
@@ -2799,12 +2805,14 @@ class TWinControl extends TControl
     {
       case CM_CANFOCUS:           _cmCanFocus(Message); break;
       case CM_CHILDKEY:           _cmChildKey(Message); break;
+      case CM_CTL3DCHANGED:       _cmCtl3DChanged(Message); break;
       case CM_CURSORCHANGED:      _cmCursorChanged(Message); break;
       case CM_DIALOGCHAR:         _cmDialogChar(Message); break;
       case CM_DIALOGKEY:          _cmDialogKey(Message); break;
       case CM_ENTER:              _cmEnter(Message); break;
       case CM_EXIT:               _cmExit(Message); break;
       case CM_INVALIDATE:         _cmInvalidate(Message); break;
+      case CM_PARENTCTL3DCHANGED: _cmParentCtl3DChanged(Message); break;
       case CM_RECREATEWND:        _cmRecreateWnd(Message); break;
       case CM_SETFOCUS:           _cmSetFocus(Message); break;
       case CM_SHOWINGCHANGED:     _cmShowingChanged(Message); break;
@@ -3483,6 +3491,14 @@ class TWinControl extends TControl
   void _cmDialogKey(TMessage Message /*TCMDialogKey*/)
   {
     Broadcast(Message);
+  }
+
+  void _cmEnabledChanged(TMessage Message)
+  {
+    if(!Enabled && (Parent != null))
+      RemoveFocus(false);
+    if(HandleAllocated() && !ComponentState.contains(ComponentStates.Designing))
+      Windows.EnableWindow(_handle!, Enabled);
   }
 
   void _cmEnter(TMessage Message)

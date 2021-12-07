@@ -499,12 +499,15 @@ class TCustomForm extends TScrollingWinControl
   TFormState _formState = TFormState();
   TFormState get FormState => _formState;
     
-  TCustomForm(TComponent? AOwner) : super(AOwner)
-  {
-    _visible = false;
-    Height = 240;
-    Width = 320;
 
+
+  TCustomForm(TComponent? AOwner) : this.CreateNew(AOwner, 0);
+
+
+  TCustomForm.CreateNew(TComponent? AOwner, int Dummy) : super(AOwner)
+  {
+    ControlStyle.assign( [ControlStyles.AcceptsControls, ControlStyles.CaptureMouse, ControlStyles.ClickEvents,
+      ControlStyles.SetCaption, ControlStyles.DoubleClicks] );
     Left = 0;
     Top = 0;
     Width = 320;
@@ -512,7 +515,8 @@ class TCustomForm extends TScrollingWinControl
 
     Visible = false;
     ParentColor = false;
-
+    ParentFont = false;
+    Ctl3D = true;
     Screen.AddForm(this);
   }
 
@@ -683,6 +687,28 @@ class TCustomForm extends TScrollingWinControl
   }
 
 
+
+  TColor get _normalColor
+  {
+    if(FormStyle == TFormStyle.MDIForm)
+      return clAppWorkSpace;
+    return clWindow;
+  }
+
+  void _cmCtl3DChanged(TMessage Message)
+  {
+    super._cmCtl3DChanged(Message);
+    if(Ctl3D)
+    {
+       if(Color == _normalColor)
+         Color = clBtnFace;
+    }
+    else
+    if(Color == clBtnFace)
+      Color = _normalColor;
+  }
+
+
   void SetWindowToMonitor()
   {
 
@@ -728,6 +754,7 @@ class TCustomForm extends TScrollingWinControl
     var form = _form = HCustomForm(this);
     form.ownedWindow = Params.WndParent;
     form.Title = _borderStyle != TBorderStyle.None;
+    form.setColor(Color);
     if(WindowState == TWindowState.Maximized)
     {
       form.Maximize = true;
