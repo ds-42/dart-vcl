@@ -1,5 +1,33 @@
 part of vcl;
 
+class COLORREF
+{
+  final int? _alpha;
+  int get alpha => (_alpha ?? 255);
+
+  final int blue;
+  final int green;
+  final int red;
+
+  const COLORREF(this.red, this.green, this.blue, [this._alpha] );
+  const COLORREF.rgb(int value, [int? alpha])  : this((value>>16)&0xff, (value>> 8)&0xff, (value)   &0xff, alpha);
+  factory COLORREF.rgba(int? value)
+  {
+    if(value==null)
+      return COLORREF(0, 0, 0, 0);
+    return COLORREF((value>>24)&0xff, (value>>16)&0xff, (value>>8)&0xff, value&0xff);
+  }
+
+  int get gray => (red*76 + green*150 + blue*29) ~/ 255; // red*0.299 + green*0.587 + blue*0.114
+
+  int get argb => (alpha<<24)+(red<<16)+(green<<8)+(red);
+  int get rgba => (red<<24)+(green<<16)+(blue<<8)+(alpha);
+
+  int get rgb => (red<<16)+(green<<8)+blue;
+
+  String toString() => '#${ red.asHex(2) }${ green.asHex(2) }${ blue.asHex(2) }${ _alpha==null? '' : alpha.asHex(2) }';
+}
+
 class TColor
 {
   final int value;
@@ -20,6 +48,14 @@ class TColor
 
   factory TColor.parse(String data) =>
     StrToColor(data) ?? clNone;
+
+  TColor _same(int red, int green, int blue)
+  {
+    int rgb = (red << 16) + (green << 8) + blue;
+    if(this is TAlphaColor)
+      return TAlphaColor(rgb, (this as TAlphaColor).alphaBlend);
+    return TColor(rgb);
+  }
 
   TColor alpha(int a) => TAlphaColor(value, a, name);
 
@@ -97,13 +133,71 @@ class TColor
     return name ?? '0x${value.toRadixString(16)}';
   }
 
+  COLORREF? toColorRef()
+  {
+    var clr = rgb;
+    if(clr==null)
+      return null;
+    return COLORREF.rgb(clr);
+  }
+
   TColor mixWith(TColor clr) => TColor.mix(this, clr);
+
+  TColor grayScale()
+  {
+    var clr = toColorRef();
+    if(clr == null)
+      return clDefault;
+
+    return _same(clr.gray, clr.gray, clr.gray);
+  }
+
+  TColor tone(double val)
+  {
+    if(val == 0)
+    {
+      if(this is TAlphaColor)
+        return TAlphaColor(value, (this as TAlphaColor).alphaBlend);
+      return TColor(value);
+    }
+    var clr = toColorRef();
+    if(clr == null)
+      return clDefault;
+
+    int red = clr.red;
+    int green = clr.green;
+    int blue = clr.blue;
+    if(val>0)
+    {
+      if(val>1.0)
+        val = 1.0;
+      red = 255 - red;
+      green = 255 - green;
+      blue = 255 - blue;
+    }
+    else
+    if(val<-1.0)
+      val = -1.0;
+
+    return _same(clr.red + (red * val).round(),
+                 clr.green + (green * val).round(),
+                 clr.blue + (blue * val).round());
+  }
+
 }
 
 class TAlphaColor extends TColor
 {
   final int alphaBlend;
   const TAlphaColor(int value, this.alphaBlend, [String? name]) : super(value, name);
+
+  COLORREF? toColorRef()
+  {
+    var clr = rgb;
+    if(clr==null)
+      return null;
+    return COLORREF.rgb(clr, alphaBlend);
+  }
 
   int? get rgba
   {

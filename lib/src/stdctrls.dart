@@ -386,6 +386,15 @@ class TCustomEdit extends TWinControl
 
 
 
+  void _cmColorChanged(TMessage Message) // new
+  {
+    if(WindowHandle is HInput)
+      WindowHandle!.setColor(Color);
+
+    super._cmColorChanged(Message);
+  }
+
+
   TNotifyEvent? _onChange;
   TNotifyEvent?
     get OnChange => _onChange;

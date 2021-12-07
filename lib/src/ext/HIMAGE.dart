@@ -1,29 +1,5 @@
 part of vcl;
 
-class COLORREF
-{
-  final int? _alpha;
-  int get alpha => (_alpha ?? 255);
-
-  final int blue;
-  final int green;
-  final int red;
-
-  const COLORREF(this.red, this.green, this.blue, [this._alpha] );
-  const COLORREF.rgb(int value)  : this((value>>16)&0xff, (value>> 8)&0xff, (value)   &0xff, null);
-  factory COLORREF.rgba(int? value)
-  {
-    if(value==null)
-      return COLORREF(0, 0, 0, 0);
-    return COLORREF((value>>24)&0xff, (value>>16)&0xff, (value>>8)&0xff, value&0xff);
-  }
-
-  int get argb => (alpha<<24)+(red<<16)+(green<<8)+(red);
-  int get rgba => (red<<24)+(green<<16)+(blue<<8)+(alpha);
-
-  String toString() => '#${ red.asHex(2) }${ green.asHex(2) }${ blue.asHex(2) }${ _alpha==null? '' : alpha.asHex(2) }';
-}
-
 abstract class HIMAGE
 {
   List<int> get bits;
