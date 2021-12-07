@@ -1215,9 +1215,18 @@ abstract class Windows
   }
 
 
+
+
+  static bool EnableWindow(HWND hWnd, bool bEnable)
+  {
+    SendMessage(hWnd, WM_ENABLE, bEnable? 1 : 0, 0);
+    return true;
+  }
+
   static bool IsWindowEnabled(HWND hWnd)
   {
-    return hWnd.style.pointerEvents!='none';
+    return hWnd.enabled;
+    
     
   }
 

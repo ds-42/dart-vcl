@@ -143,6 +143,7 @@ const MESSAGE WM_SIZE                = MESSAGE(0x0005, 'WM_SIZE'); // wParam: nu
 const MESSAGE WM_ACTIVATE            = MESSAGE(0x0006, 'WM_ACTIVATE'); //wParamHi: active, wParamLo: minimized, lParam: prevElem
 const MESSAGE WM_SETFOCUS            = MESSAGE(0x0007, 'WM_SETFOCUS'); // wParam: node
 const MESSAGE WM_KILLFOCUS           = MESSAGE(0x0008, 'WM_KILLFOCUS'); // wParam: node
+const MESSAGE WM_ENABLE              = MESSAGE(0x000A, 'WM_ENABLE'); // wParam: (int) state
 const MESSAGE WM_SETREDRAW           = MESSAGE(0x000B, 'WM_SETREDRAW');
 const MESSAGE WM_SETTEXT             = MESSAGE(0x000C, 'WM_SETTEXT');
 const MESSAGE WM_GETTEXT             = MESSAGE(0x000D, 'WM_GETTEXT');

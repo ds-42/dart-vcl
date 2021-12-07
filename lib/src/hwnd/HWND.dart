@@ -214,6 +214,15 @@ class HWND extends _HWND
   
   }
 
+  bool get enabled
+  {
+    return style.pointerEvents!='none';
+  }
+
+  void set enabled(bool state)
+  {
+    style.pointerEvents = state? '' : 'none';
+  }
 
 
 
@@ -376,6 +385,13 @@ void _default_element_proc(Element elem, TMessage Message)
         elem.value = Message.LParam;
       else
         elem.text = Message.LParam;
+      break;
+
+    case WM_ENABLE:
+      bool state = toBoolDef(Message.WParam, false);
+      elem.style.pointerEvents = state? '' : 'none';
+      if(elem is ButtonElement)
+        elem.disabled = !state;
       break;
 
     case WM_SHOWWINDOW:
