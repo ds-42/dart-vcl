@@ -9,35 +9,201 @@ TTabSheet BuildControlsPage(TPageControl pages)
 
 class TTabControls extends TTabSheet
 {
+  TBevel CreateSeparate(TWinControl prnt)
+  {
+    return TBevel(prnt)
+      ..Flex.BreakBefore = true
+      ..Flex.Grow = 1
+      ..Height = 5
+      ..Shape = TBevelShape.TopLine;
+  }
+
+  late final TComboBox comboList;
+
   TTabControls(TPageControl pages) : super(pages)
   {
-    TEdit(this)
-      ..SetBounds(10, 20, 120, null)
-      ..Text = 'TEdit'
-      ..Parent = this;
+    late TEdit edit;
+    late TMemo memo;
+    late TComboBox combo;
+    late TListBox list;
 
-    var combo = TComboBox(this)
-      ..SetBounds(10, 50, 120, null)
-      ..Text = 'TComboBox'
-      ..Parent = this;
+    var flex1 = TFlexBox(this)
+      ..Align = TAlign.Left
+      ..Grow = 1
+      ..Parent = this
+      ..Add([
+
+        edit = TEdit(this)
+          ..Name = 'Edit'
+          ..Text = 'TEdit'
+          ..OnKeyPress = (Sender, Key)
+          {
+            if(Key.Code == Windows.VK_RETURN && edit.Text.isNotEmpty)
+            {
+              memo.Lines.Add(edit.Text);
+              edit.Text = '';
+            }
+          },
+
+        memo = TMemo(this)
+          ..Flex.BreakBefore = true
+          ..Name = 'Memo'
+          ..Text = 'TMemo',
+
+        combo = TComboBox(this)
+          ..Flex.BreakBefore = true
+          ..Name = 'ComboBox'
+          ..Text = 'TComboBox'
+          ..OnSelect = (Sender)
+          {
+            list.Items.Add(combo.Text);
+          },
+
+        list = TListBox(this)
+          ..Flex.BreakBefore = true
+          ..Name = 'ListBox',
+      ]);
+
     for(var i=0; i<10; i++)
       combo.Items.Add('Item $i');
 
-    TCheckBox(this)
-      ..SetBounds(210, 20, 120, null)
-      ..Caption = 'TCheckBox'
-      ..Checked = true
-      ..Parent = this;
+//    list.Items.Add('TListBox');
 
-    TRadioButton(this)
-      ..SetBounds(210, 40, 120, null)
-      ..Caption = 'TRadioButton 1'
-      ..Parent = this;
+    var flex2 = TFlexBox(this)
+      ..Align = TAlign.Left
+      ..Grow = 1
+      ..Parent = this
+      ..Add([
 
-    TRadioButton(this)
-      ..SetBounds(210, 60, 120, null)
-      ..Caption = 'TRadioButton 2'
-      ..Parent = this;
+        TCheckBox(this)
+          ..Name = 'CheckBox'
+          ..Caption = 'TCheckBox'
+          ..Checked = true,
 
+//        CreateSeparate(this),
+
+        TRadioButton(this)
+          ..Flex.BreakBefore = true
+          ..Name = 'RadioButton1'
+          ..Caption = 'TRadioButton 1',
+
+        TRadioButton(this)
+          ..Flex.BreakBefore = true
+          ..Name = 'RadioButton2'
+          ..Caption = 'TRadioButton 2',
+
+        TButton(this)
+          ..Flex.BreakBefore = true
+          ..Name = 'Button'
+          ..Caption = 'TButton',
+
+        CreateSeparate(this),
+
+        TGroupBox(this)
+          ..Flex.BreakBefore = true
+          ..Name = 'GroupBox'
+          ..Caption = 'TGroupBox',
+
+
+      ]);
+
+    TWinControl? ItemControl()
+    {
+      if(comboList.Enabled && comboList.ItemIndex>=0)
+        return comboList.ItemObject as TWinControl;
+      return null;
+    }
+
+    late TCheckBox styleVisible, styleEnabled, styleHint, styleChecked;
+    late TEdit styleCaption;
+    TFlexBox(this)
+      ..Align = TAlign.Client
+      ..Parent = this
+      ..Color = clBtnFace.tone(-0.1)
+      ..AlignItems = TFlexAlignItems.FlexEnd
+      ..Add([
+
+        TLabel(this)
+          ..Caption = 'Object properties:',
+
+        comboList = TComboBox(this)
+          ..Flex.Grow = 1
+          ..Flex.MinWidth = TMetric(100)
+          ..Flex.MaxWidth = TMetric(200)
+          ..SetBounds(10, 50, 120, null),
+
+        CreateSeparate(this),
+
+        styleVisible = TCheckBox(this)
+          ..Flex.BreakBefore = true
+          ..Caption = 'Visible'
+          ..OnClick = (Sender) =>
+            ItemControl()?.Visible = !ItemControl()!.Visible,
+
+        styleEnabled = TCheckBox(this)
+          ..Flex.BreakBefore = true
+          ..Caption = 'Enabled'
+          ..OnClick = (Sender) =>
+            ItemControl()?.Enabled = !ItemControl()!.Enabled,
+
+        styleHint = TCheckBox(this)
+          ..Flex.BreakBefore = true
+          ..Caption = 'Show hint'
+          ..OnClick = (Sender) =>
+            ItemControl()?.ShowHint = !ItemControl()!.ShowHint,
+
+        styleChecked = TCheckBox(this)
+          ..Flex.BreakBefore = true
+          ..Caption = 'Checked'
+          ..OnClick = (Sender)
+          {
+            var ctrl = ItemControl();
+            if(ctrl == null)
+              return;
+            Windows.SendMessage(ctrl.Handle, CM_SETVALUE, null, styleChecked.Checked? 1 : 0);
+          }
+      ]);
+
+    comboList.OnSelect = (Sender)
+    {
+      var ctrl = ItemControl();
+
+      if(ctrl == null)
+        return;
+      comboList.Enabled = false;
+      styleVisible.Checked = ctrl.Visible;
+      styleEnabled.Checked = ctrl.Enabled;
+      styleHint.Checked = ctrl.ShowHint;
+      styleChecked.Enabled = ctrl is TButtonControl;
+      if(styleChecked.Enabled)
+        styleChecked.Checked = toBoolDef(Windows.SendMessage(ctrl.Handle, CM_GETVALUE), false);
+
+      comboList.Enabled = true;
+    };
+
+    void AddObjects(TWinControl ctrl)
+    {
+      for(var item in ctrl.Controls)
+      {
+        if(item is TBevel)
+          continue;
+        comboList.AddItem(item.Name, item);
+        item.ShowHint = true;
+        item.Hint = item.Name;
+      }
+    }
+
+    AddObjects(flex1);
+    AddObjects(flex2);
+  }
+
+  void SelectControl(TWinControl ctrl)
+  {
+    int ndx = comboList.Items.IndexOfObject(ctrl);
+    if(ndx>=0)
+    {
+      comboList.ItemIndex = ndx;
+      comboList.OnSelect!(comboList);
+    }
   }
 }

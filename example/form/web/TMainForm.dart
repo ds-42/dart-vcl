@@ -37,7 +37,7 @@ class TMainForm extends TForm
       ..Parent = this;
 
     BuildPanelsPage(pages);
-    BuildControlsPage(pages);
+    var pageCtrls = BuildControlsPage(pages);
     BuildDialogsPage(pages);
     BuildDataSetPage(pages);
 
@@ -50,8 +50,17 @@ class TMainForm extends TForm
       ..Width = 120
       ..Text = 'page count: ${ pages.PageCount }';
 
-    status.SimpleText = '© dart-vcl, 2021';
+    status.SimpleText = '© dart-vcl [${vcl_lib_version}], ${vcl_lib_date.year}';
 
+    Application.OnMessage = (msg, handled)
+    {
+      if(msg.message==WM_LBUTTONDOWN)
+      {
+        var ctrl = Windows.SendMessage(msg.hwnd, CM_GETINSTANCE);
+        if(ctrl is TWinControl)
+          (pageCtrls as TTabControls).SelectControl(ctrl);
+      }
+    };
   }
 
   static TMenuItem CreateMenuItem(TComponent Owner, String Caption, [int Index=-1/*, TNotifyEvent ev*/])
@@ -75,6 +84,5 @@ class TMainForm extends TForm
     item.Caption = Caption;
     return item;
   }
-
 
 }
