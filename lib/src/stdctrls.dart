@@ -1014,6 +1014,16 @@ class TButtonControl extends TWinControl
   {
     switch(Message.Msg)
     {
+      case CM_GETVALUE:
+        Message.Result = Checked;
+        return;
+
+      case CM_SETVALUE:
+        bool? val = tryToBool(Message.LParam);
+        if(val!=null)
+          Checked = val;
+        return;
+
       case WM_LBUTTONDOWN:
       case WM_LBUTTONDBLCLK:
         if(!ComponentState.contains(ComponentStates.Designing) && !Focused())
@@ -1178,16 +1188,6 @@ class TCustomCheckBox extends TButtonControl
   {
     switch(Message.Msg)
     {
-      case CM_GETVALUE:
-        Message.Result = Checked;
-        return;
-
-      case CM_SETVALUE:
-        bool? val = tryToBool(Message.LParam);
-        if(val!=null)
-          Checked = val;
-        return;
-
       case CM_ENABLEDCHANGED:
         if(HandleAllocated())
         {
@@ -1197,8 +1197,8 @@ class TCustomCheckBox extends TButtonControl
             Handle.handle.setAttribute('disabled','');
         }
         break;
+    }
 
-      }
     super.WndProc(Message);
   }
 
