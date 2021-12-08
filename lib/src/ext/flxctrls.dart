@@ -220,6 +220,7 @@ class TFlexBox extends TWinControl
   void CreateWindowHandle(TCreateParams Params)
   {
     WindowHandle = HFlexBox();
+    WindowHandle!.setColor(Color);
   }
 
   TFlexDirection _flexDirection = TFlexDirection.Row;
