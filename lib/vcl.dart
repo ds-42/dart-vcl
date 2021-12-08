@@ -81,4 +81,6 @@ part 'src/ext/types_ext.dart';
 part 'src/ext/winuser.dart';
 part 'src/ext/windows.dart';
 
+final String vcl_lib_version = '1.0.3';
+final DateTime vcl_lib_date = DateTime(2021, 12, 8);
 
