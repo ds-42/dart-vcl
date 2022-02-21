@@ -1,3 +1,8 @@
+## [1.1.0]
+
+- Support dart SDK 2.16.1
+- Update flex box
+
 ## [1.0.3]
 
 - Support dart SDK 2.14.4
