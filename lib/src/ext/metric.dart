@@ -9,6 +9,18 @@ class TMetric
 
   TMetric(this.Value, [this.Unit = TMetricUnit.Pixel] );
 
+  String toString()
+  {
+    String unit = '';
+    switch(Unit)
+    {
+      case TMetricUnit.Pixel: unit = 'px'; break;
+      case TMetricUnit.Percent: unit = '%'; break;
+      default: break;
+    }
+    return '$Value$unit';
+  }
+
   int toPixel(num basis)
   {
     switch(Unit)
