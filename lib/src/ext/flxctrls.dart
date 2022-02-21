@@ -264,6 +264,14 @@ class TFlexBox extends TWinControl
   int get MarginTop => _marginTop;
   int get MarginRight => _marginRight;
 
+  void SetMargin({int? left, int? top, int? right, int? bottom})
+  {
+    _marginLeft = left ?? _marginLeft;
+    _marginTop = top ?? _marginTop;
+    _marginRight = right ?? _marginRight;
+    _marginBottom = bottom ?? _marginBottom;
+  }
+
   double _grow = 0;
   double
     get Grow => _grow;
@@ -279,6 +287,8 @@ class TFlexBox extends TWinControl
 
   bool CanFocus() => false;
 
+  bool CanFlex() => true;
+
   void Resize()
   {
     super.Resize();
@@ -287,6 +297,9 @@ class TFlexBox extends TWinControl
 
   void _flexProcessing()
   {
+    if(!CanFlex())
+      return;
+
     var list = <TCalcFlexParams>[];
 
     for(int i = 0; i<ControlCount; i++)
