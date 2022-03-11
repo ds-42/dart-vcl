@@ -58,9 +58,8 @@ class HCheckBox extends HButtonControl
     final name = classID;
     rule.addFocusStyle();
     rule.add('',
-      '${rule.block}${rule.inline}'
-      'padding-top: 1px;'
-      'box-sizing: border-box;');
+      '${rule.block}${rule.inline}${rule.borderBox}'
+      'padding-top: 1px;');
     rule.add('input',
       'margin:0 2px;'
       'outline:none');
@@ -132,7 +131,7 @@ class HRadioButton extends HButtonControl
   {
     rule.addFocusStyle();
     rule.add('',
-      '${rule.block}${rule.inline}'
+      '${rule.block}${rule.inline}${rule.borderBox}'
       'padding-top: 1px;');
     rule.add('input',
       'margin: 0 2px;'
