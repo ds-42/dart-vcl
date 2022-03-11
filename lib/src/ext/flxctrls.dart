@@ -2,17 +2,14 @@ part of vcl;
 
 
 
-enum TFlexAlignItems { FlexStart, FlexEnd, Center, Stretch }
-enum TFlexJustify { Left, Center, Right, Stretch }
-enum TFlexJustifyContent { Center, FlexStart, FlexEnd, SpaceBetween, SpaceAround, SpaceEvenly }
+enum TFlexAlignContent { FlexStart, Center, FlexEnd, SpaceBetween, SpaceAround, SpaceEvenly, Stretch }
+enum TFlexAlignItem { FlexStart, Center, FlexEnd, Stretch }
 enum TFlexDirection { Row, Column, /* RowReverse, ColumnReverse*/ }
+enum TFlexJustify { Left, Center, Right, Stretch }
+enum TFlexJustifyContent { FlexStart, Center, FlexEnd, SpaceBetween, SpaceAround, SpaceEvenly }
 
-class TFlexParams
+abstract class TFlexParams
 {
-  final TControl Control;
-
-  TFlexParams(this.Control);
-
   int? _marginLeft;
   int?
     get MarginLeft => _marginLeft;
@@ -98,6 +95,28 @@ class TFlexParams
       Invalidate();
     }
 
+  TMetric? _minHeight;
+  TMetric?
+    get MinHeight => _minHeight;
+    set MinHeight(TMetric? Value)
+    {
+      if(_minHeight == Value)
+        return;
+      _minHeight = Value;
+      Invalidate();
+    }
+
+  TMetric? _maxHeight;
+  TMetric?
+    get MaxHeight => _maxHeight;
+    set MaxHeight(TMetric? Value)
+    {
+      if(_maxHeight == Value)
+        return;
+      _maxHeight = Value;
+      Invalidate();
+    }
+
   TMetric? _height;
   TMetric?
     get Height => _height;
@@ -120,6 +139,17 @@ class TFlexParams
       Invalidate();
     }
 
+  TFlexAlignItem? _align;
+  TFlexAlignItem?
+    get Align => _align;
+    set Align(TFlexAlignItem? Value)
+    {
+      if(_align == Value)
+        return;
+      _align = Value;
+      Invalidate();
+    }
+
   TFlexJustify? _justify = TFlexJustify.Stretch;
   TFlexJustify?
     get Justify => _justify;
@@ -130,6 +160,15 @@ class TFlexParams
       _justify = Value;
       Invalidate();
     }
+
+  void Invalidate();
+}
+
+class TFlexControlParams extends TFlexParams
+{
+  final TControl Control;
+
+  TFlexControlParams(this.Control);
 
   bool _breakBefore = false; // start with new line
   bool
@@ -144,15 +183,32 @@ class TFlexParams
 
   void Invalidate()
   {
-    /// To do: add update
+    if(Control.Parent is TFlexBox)
+      (Control.Parent as TFlexBox).FlexControls();
   }
 
 }
 
+class TFlexParamItems extends TFlexParams
+{
+  final TFlexBox FlexBox;
+
+  TFlexParamItems(this.FlexBox)
+  {
+    _grow = 0;
+    _marginBottom = 5;
+    _marginLeft = 5;
+    _marginTop = 5;
+    _marginRight = 5;
+  }
+
+  void Invalidate() => FlexBox.FlexControls();
+}
+
 class TCalcFlexParams
 {
-  final TFlexBox    FlexBox;
-  final TFlexParams Params;
+  final TFlexBox FlexBox;
+  final TFlexControlParams Params;
 
   late final int marginLeft;
   late final int marginTop;
@@ -161,35 +217,48 @@ class TCalcFlexParams
 
   late final int ControlHeight;
   late final int ControlWidth;
+  late final TMetric? MinWidth;
+  late final TMetric? MaxWidth;
+  late final TMetric? MinHeight;
+  late final TMetric? MaxHeight;
   late final TMetric? ParamsWidth;
 
   late final double Grow;
 
   TCalcFlexParams(this.FlexBox, this.Params)
   {
-    Grow = Params.Grow<0? FlexBox.Grow : Params.Grow;
+    var grow = Params.Grow<0? FlexBox.FlexItems.Grow : Params.Grow;
+    Grow = grow<0? 0 : grow;
 
     if(FlexBox.FlexDirection == TFlexDirection.Row)
     {
-      marginLeft    = Params.MarginLeft ?? FlexBox.MarginLeft;
-      marginTop     = Params.MarginTop ?? FlexBox.MarginTop;
-      marginRight   = Params.MarginRight ?? FlexBox.MarginRight;
-      marginBottom  = Params.MarginBottom ?? FlexBox.MarginBottom;
+      marginLeft    = Params.MarginLeft ?? (FlexBox.FlexItems.MarginLeft ?? 0);
+      marginTop     = Params.MarginTop ?? (FlexBox.FlexItems.MarginTop ?? 0);
+      marginRight   = Params.MarginRight ?? (FlexBox.FlexItems.MarginRight ?? 0);
+      marginBottom  = Params.MarginBottom ?? (FlexBox.FlexItems.MarginBottom ?? 0);
 
       ControlHeight = Control.Height;
       ControlWidth  = Control.Width;
+      MinWidth      = Control.Flex.MinWidth ?? FlexBox.FlexItems.MinWidth;
+      MaxWidth      = Control.Flex.MaxWidth ?? FlexBox.FlexItems.MaxWidth;
+      MinHeight     = Control.Flex.MinHeight ?? FlexBox.FlexItems.MinHeight;
+      MaxHeight     = Control.Flex.MaxHeight ?? FlexBox.FlexItems.MaxHeight;
       ParamsWidth   = Params.Width;
     }
     else
     {
-      marginLeft    = Params.MarginTop ?? FlexBox.MarginTop;
-      marginTop     = Params.MarginLeft ?? FlexBox.MarginLeft;
-      marginRight   = Params.MarginBottom ?? FlexBox.MarginBottom;
-      marginBottom  = Params.MarginRight ?? FlexBox.MarginRight;
+      marginLeft    = Params.MarginTop ?? (FlexBox.FlexItems.MarginTop ?? 0);
+      marginTop     = Params.MarginLeft ?? (FlexBox.FlexItems.MarginLeft ?? 0);
+      marginRight   = Params.MarginBottom ?? (FlexBox.FlexItems.MarginBottom ?? 0);
+      marginBottom  = Params.MarginRight ?? (FlexBox.FlexItems.MarginRight ?? 0);
 
-      ParamsWidth   = Params.Height;
       ControlHeight = Control.Width;
       ControlWidth  = Control.Height;
+      MinWidth      = Control.Flex.MinHeight ?? FlexBox.FlexItems.MinHeight;
+      MaxWidth      = Control.Flex.MaxHeight ?? FlexBox.FlexItems.MaxHeight;
+      MinHeight     = Control.Flex.MinWidth ?? FlexBox.FlexItems.MinWidth;
+      MaxHeight     = Control.Flex.MaxWidth ?? FlexBox.FlexItems.MaxWidth;
+      ParamsWidth   = Params.Height;
     }
   }
 
@@ -210,9 +279,11 @@ class TCalcFlexParams
 
 class TFlexBox extends TWinControl
 {
+  late final TFlexParamItems FlexItems;
 
   TFlexBox(TComponent AOwner) : super(AOwner)
   {
+    FlexItems = TFlexParamItems(this);
     Width = 185;
     Height = 40;
   }
@@ -231,7 +302,7 @@ class TFlexBox extends TWinControl
       if(_flexDirection == value)
         return;
       _flexDirection = value;
-      _flexProcessing();
+      FlexControls();
     }
 
   TFlexJustifyContent _justifyContent = TFlexJustifyContent.FlexStart;
@@ -240,60 +311,42 @@ class TFlexBox extends TWinControl
     set JustifyContent(TFlexJustifyContent Value)
     {
       _justifyContent = Value;
-      // to do: invalidate
+      FlexControls();
     }
 
-  TFlexAlignItems _alignItems = TFlexAlignItems.FlexStart;
-  TFlexAlignItems
+  TFlexAlignItem _alignItems = TFlexAlignItem.FlexStart;
+  TFlexAlignItem
     get AlignItems => _alignItems;
-    set AlignItems(TFlexAlignItems value)
+    set AlignItems(TFlexAlignItem value)
     {
       if(_alignItems == value)
         return;
       _alignItems = value;
-      // to do: invalidate
+      FlexControls();
     }
 
-  int _marginBottom = 5;
-  int _marginLeft = 5;
-  int _marginTop = 5;
-  int _marginRight = 5;
-
-  int get MarginBottom => _marginBottom;
-  int get MarginLeft => _marginLeft;
-  int get MarginTop => _marginTop;
-  int get MarginRight => _marginRight;
-
-  void SetMargin({int? left, int? top, int? right, int? bottom})
-  {
-    _marginLeft = left ?? _marginLeft;
-    _marginTop = top ?? _marginTop;
-    _marginRight = right ?? _marginRight;
-    _marginBottom = bottom ?? _marginBottom;
-  }
-
-  double _grow = 0;
-  double
-    get Grow => _grow;
-    set Grow(double Value)
+  TFlexAlignContent _alignContent = TFlexAlignContent.FlexStart;
+  TFlexAlignContent
+    get AlignContent => _alignContent;
+    set AlignContent(TFlexAlignContent value)
     {
-      if(Value<0)
-        Value = 0;
-      if(_grow==Value)
+      if(_alignContent == value)
         return;
-      _grow=Value;
-      // to do: invalidate
+      _alignContent = value;
+      FlexControls();
     }
 
   bool CanFocus() => false;
 
   bool CanFlex() => true;
 
-  void Resize()
+  void AlignControls(TControl? AControl, TRect Rect)
   {
-    super.Resize();
+    super.AlignControls(AControl, Rect);
     _flexProcessing();
   }
+
+  void FlexControls() => Realign();
 
   void _flexProcessing()
   {
@@ -356,16 +409,38 @@ class TFlexBox extends TWinControl
         {
           flex.size = dGrow * flex.Grow ~/ grow;
 
-          if(flex.Params.MinWidth!=null)
+          if(flex.Params.Justify != TFlexJustify.Stretch)
           {
-            int w = flex.Params.MinWidth!.toPixel(cWidth);
+            int w;
+            switch(flex.Params.Justify)
+            {
+              case TFlexJustify.Left:
+                w = flex.ControlWidth + flex.marginRight;
+                break;
+              case TFlexJustify.Right:
+                w = flex.ControlWidth + flex.marginLeft;
+                break;
+              case TFlexJustify.Center:
+                w = flex.ControlWidth + flex.marginLeft + flex.marginRight;
+                break;
+              default:
+                w = 0;
+                break;
+            }
+            if(flex.size < w)
+              flex.size = w;
+          }
+
+          if(flex.MinWidth!=null)
+          {
+            int w = flex.MinWidth!.toPixel(cWidth);
             if(flex.size<w)
               flex.size = w;
           }
 
-          if(flex.Params.MaxWidth!=null)
+          if(flex.MaxWidth!=null)
           {
-            int w = flex.Params.MaxWidth!.toPixel(cWidth);
+            int w = flex.MaxWidth!.toPixel(cWidth);
             if(flex.size>w)
               flex.size = w;
           }
@@ -384,7 +459,8 @@ class TFlexBox extends TWinControl
             line.removeAt(i);
           }
 
-          _growControls(line, cWidth); 
+          var items = _growControls(line, cWidth); 
+          rest.insertAll(0, items);
           return rest;
         }
 
@@ -414,16 +490,16 @@ class TFlexBox extends TWinControl
 
       if(flex.Grow==0)
       {
-        if(flex.Params.MinWidth!=null)
+        if(flex.MinWidth!=null)
         {
-          int w = flex.Params.MinWidth!.toPixel(cWidth);
+          int w = flex.MinWidth!.toPixel(cWidth);
           if(flex.size<w)
             flex.size=w;
         }
 
-        if(flex.Params.MaxWidth!=null)
+        if(flex.MaxWidth!=null)
         {
-          int w = flex.Params.MaxWidth!.toPixel(cWidth);
+          int w = flex.MaxWidth!.toPixel(cWidth);
           if(flex.size>w)
             flex.size=w;
         }
@@ -483,6 +559,74 @@ class TFlexBox extends TWinControl
       py += height;
     }
 
+    int rest = Height-py;
+    if(rest>0)
+    {
+      switch(AlignContent)
+      {
+        case TFlexAlignContent.FlexStart:
+          break;
+
+        case TFlexAlignContent.FlexEnd:
+        case TFlexAlignContent.Center:
+          if(AlignContent==TFlexAlignContent.Center)
+            rest = rest ~/ 2;
+          for(var line in lines)
+            for(var flex in line)
+              flex.y+=rest;
+          break;
+
+        case TFlexAlignContent.SpaceBetween:
+          int cnt = lines.length - 1;
+          int dy = 0;
+          for(int i=1; i<lines.length; i++)
+          {
+            int rr = rest ~/ cnt;
+            dy+=rr;
+            var line = lines[i];
+            for(var flex in line)
+              flex.y+=dy;
+            rest-=rr;
+            cnt--;
+          }
+          break;
+
+        case TFlexAlignContent.SpaceAround:
+          int count = lines.length;
+          int dy = 0;
+          for(var line in lines)
+          {
+            int h = rest ~/ count;
+            int h2 = h ~/ 2;
+            dy+=h-h2;
+            for(var flex in line)
+              flex.y+=dy;
+            dy+=h2;
+            rest-=h;
+            count--;
+          }
+          break;
+
+        case TFlexAlignContent.SpaceEvenly:
+          int count = lines.length + 1;
+          int dy = 0;
+          for(var line in lines)
+          {
+            int h = rest ~/ count;
+            dy+=h;
+            for(var flex in line)
+              flex.y+=dy;
+            rest-=h;
+            count--;
+          }
+          break;
+
+        case TFlexAlignContent.Stretch:
+          break;
+      }
+    }
+
+
     if(FlexDirection==TFlexDirection.Row)
     {
       if(Height != py)
@@ -490,6 +634,7 @@ class TFlexBox extends TWinControl
         if(Align == TAlign.Bottom)
           SetBounds(Left, Top + Height - py, Width, py);
         else
+        if(Align == TAlign.Top)
           Height = py;
       }
     }
@@ -500,6 +645,7 @@ class TFlexBox extends TWinControl
         if(Align == TAlign.Right)
           SetBounds(Left + Width - py, Top, py, Height);
         else
+        if(Align == TAlign.Left)
           Width = py;
       }
     }
@@ -581,18 +727,19 @@ class TFlexBox extends TWinControl
     for(var flex in list)
     {
       TFlexJustify just = flex.Params.Justify ?? defJust;
+      TFlexAlignItem align = flex.Params.Align ?? AlignItems;
 
-      switch(AlignItems)
+      switch(align)
       {
-        case TFlexAlignItems.FlexEnd:
+        case TFlexAlignItem.FlexEnd:
           flex.y = py + cHeight - flex.marginBottom - flex.ControlHeight;
           break;
 
-        case TFlexAlignItems.Center:
+        case TFlexAlignItem.Center:
           flex.y = py + (cHeight - flex.ControlHeight) ~/ 2;
           break;
 
-        case TFlexAlignItems.Stretch:
+        case TFlexAlignItem.Stretch:
           flex.y = py + flex.marginTop;
           flex.height = cHeight - flex.marginTop - flex.marginBottom;
           break;
