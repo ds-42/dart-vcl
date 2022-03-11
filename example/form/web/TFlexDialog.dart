@@ -11,7 +11,7 @@ class TFlexDialog extends TForm
 
     TFlexBox(this)
       ..Align = TAlign.Top
-      ..Grow = 1
+      ..FlexItems.Grow = 1
       ..Parent = this
       ..Add([
         TLabelEdit(this)

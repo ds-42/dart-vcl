@@ -29,13 +29,14 @@ class TTabControls extends TTabSheet
 
     var flex1 = TFlexBox(this)
       ..Align = TAlign.Left
-      ..Grow = 1
+      ..FlexItems.Grow = 1
       ..Parent = this
       ..Add([
 
         edit = TEdit(this)
           ..Name = 'Edit'
           ..Text = 'TEdit'
+          ..OnMouseDown = _controlMouseDown
           ..OnKeyPress = (Sender, Key)
           {
             if(Key.Code == Windows.VK_RETURN && edit.Text.isNotEmpty)
@@ -48,12 +49,14 @@ class TTabControls extends TTabSheet
         memo = TMemo(this)
           ..Flex.BreakBefore = true
           ..Name = 'Memo'
+          ..OnMouseDown = _controlMouseDown
           ..Text = 'TMemo',
 
         combo = TComboBox(this)
           ..Flex.BreakBefore = true
           ..Name = 'ComboBox'
           ..Text = 'TComboBox'
+          ..OnMouseDown = _controlMouseDown
           ..OnSelect = (Sender)
           {
             list.Items.Add(combo.Text);
@@ -61,6 +64,7 @@ class TTabControls extends TTabSheet
 
         list = TListBox(this)
           ..Flex.BreakBefore = true
+          ..OnMouseDown = _controlMouseDown
           ..Name = 'ListBox',
       ]);
 
@@ -71,13 +75,14 @@ class TTabControls extends TTabSheet
 
     var flex2 = TFlexBox(this)
       ..Align = TAlign.Left
-      ..Grow = 1
+      ..FlexItems.Grow = 1
       ..Parent = this
       ..Add([
 
         TCheckBox(this)
           ..Name = 'CheckBox'
           ..Caption = 'TCheckBox'
+          ..OnMouseDown = _controlMouseDown
           ..Checked = true,
 
 //        CreateSeparate(this),
@@ -85,16 +90,19 @@ class TTabControls extends TTabSheet
         TRadioButton(this)
           ..Flex.BreakBefore = true
           ..Name = 'RadioButton1'
+          ..OnMouseDown = _controlMouseDown
           ..Caption = 'TRadioButton 1',
 
         TRadioButton(this)
           ..Flex.BreakBefore = true
           ..Name = 'RadioButton2'
+          ..OnMouseDown = _controlMouseDown
           ..Caption = 'TRadioButton 2',
 
         TButton(this)
           ..Flex.BreakBefore = true
           ..Name = 'Button'
+          ..OnMouseDown = _controlMouseDown
           ..Caption = 'TButton',
 
         CreateSeparate(this),
@@ -102,6 +110,7 @@ class TTabControls extends TTabSheet
         TGroupBox(this)
           ..Flex.BreakBefore = true
           ..Name = 'GroupBox'
+          ..OnMouseDown = _controlMouseDown
           ..Caption = 'TGroupBox',
 
 
@@ -120,7 +129,7 @@ class TTabControls extends TTabSheet
       ..Align = TAlign.Client
       ..Parent = this
       ..Color = clBtnFace.tone(-0.1)
-      ..AlignItems = TFlexAlignItems.FlexEnd
+      ..AlignItems = TFlexAlignItem.FlexEnd
       ..Add([
 
         TLabel(this)
@@ -196,6 +205,8 @@ class TTabControls extends TTabSheet
     AddObjects(flex1);
     AddObjects(flex2);
   }
+
+  void _controlMouseDown(sender, btn, shift, x, y) => SelectControl(sender);
 
   void SelectControl(TWinControl ctrl)
   {

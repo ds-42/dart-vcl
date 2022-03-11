@@ -11,7 +11,7 @@ class TExceptionDialog extends TForm
     var flex = TFlexBox(this)
         ..Width = ClientWidth
         ..Align = TAlign.Top
-        ..Grow = 1
+        ..FlexItems.Grow = 1
         ..Parent = this
         ..Add([
 

@@ -16,7 +16,7 @@ class TTabDialogs extends TTabSheet
       ..Parent = this
       ..FlexDirection = TFlexDirection.Column
       ..JustifyContent = TFlexJustifyContent.FlexStart
-      ..AlignItems = TFlexAlignItems.Stretch
+      ..AlignItems = TFlexAlignItem.Stretch
       ..Add([
 
         TButton(this)

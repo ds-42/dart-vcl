@@ -91,7 +91,7 @@ class TTabDataSet extends TTabSheet
     TFlexBox(dlg)
       ..Align = TAlign.Top
       ..Width = dlg.ClientWidth // for auto size dialog
-      ..Grow = 1
+      ..FlexItems.Grow = 1
       ..Parent = dlg
       ..Add([
         Surname = TLabelEdit(this)

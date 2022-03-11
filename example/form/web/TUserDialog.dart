@@ -19,7 +19,7 @@ class TUserDialog extends TForm
       ..Parent = this
       ..Width = 250
       ..Align = TAlign.Top
-      ..AlignItems = TFlexAlignItems.FlexEnd
+      ..AlignItems = TFlexAlignItem.FlexEnd
       ..Add([
         TLabel(this)
           ..Flex.Width = TMetric(80)
