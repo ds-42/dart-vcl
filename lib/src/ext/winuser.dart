@@ -5,6 +5,8 @@ class TCommand
   final int ID;
   final int Notify;
   TCommand(this.ID, this.Notify);
+
+  String toString() => 'TCommand(ID: $ID, Notify: $Notify)';
 }
 
 class MESSAGE extends TEnum
@@ -90,6 +92,22 @@ class TWMMove extends TCustomMessage
   TWMMove(TMessage message) : super(message);
 }
 
+class NMHDR
+{
+  final HWND?     hwndFrom;
+  final int       idFrom;
+  final int       code;         // NM_ code
+
+  NMHDR(this.hwndFrom, this.idFrom, this.code);
+}
+
+class TWMNotify extends TCustomMessage
+{
+  int get IDCtrl => WParam as int;
+  NMHDR get NMHdr => LParam as NMHDR;
+  TWMNotify(TMessage message) : super(message);
+}
+
 class TWheelInfo
 {
   int WhellDelta;
@@ -154,6 +172,7 @@ const MESSAGE WM_SETFONT             = MESSAGE(0x0030, 'WM_SETFONT');
 
 const MESSAGE WM_WINDOWPOSCHANGING   = MESSAGE(0x0046, 'WM_WINDOWPOSCHANGING'); // wParam: null, lParam TElementPos
 const MESSAGE WM_WINDOWPOSCHANGED    = MESSAGE(0x0047, 'WM_WINDOWPOSCHANGED'); // wParam: null, lParam TElementPos
+const MESSAGE WM_NOTIFY              = MESSAGE(0x004E, 'WM_NOTIFY');
 const MESSAGE WM_NCHITTEST           = MESSAGE(0x0084, 'WM_NCHITTEST');
 const MESSAGE WM_GETDLGCODE          = MESSAGE(0x0087, 'WM_GETDLGCODE');
 
