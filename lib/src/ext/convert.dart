@@ -56,6 +56,16 @@ double? tryToDouble(dynamic val, [double? def] )
   return def;
 }
 
+T toEnumDef<T>(dynamic val, T def) =>
+  tryToEnum(val, def)!;
+
+T? tryToEnum<T>(dynamic val, [T? def])
+{
+  if(val is T)
+    return val;
+  return def;
+}
+
 String? tryToString(dynamic val, [String? def] )
 {
   if(val==null)
