@@ -1,3 +1,9 @@
+## [1.1.1]
+
+- Update TComboBox
+- Update TFlexBox
+- Update TPageControl
+
 ## [1.1.0]
 
 - Support dart SDK 2.16.1
