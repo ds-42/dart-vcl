@@ -49,6 +49,7 @@ part 'src/hwnd/form.dart';
 part 'src/hwnd/glyph.dart';
 part 'src/hwnd/grid.dart';
 part 'src/hwnd/groupbox.dart';
+part 'src/hwnd/lblgroup.dart';
 part 'src/hwnd/memo.dart';
 part 'src/hwnd/menu.dart';
 part 'src/hwnd/pagecontrol.dart';
@@ -62,6 +63,7 @@ part 'src/ext/CHAR.dart';
 part 'src/ext/classes_ext.dart';
 part 'src/ext/colors.dart';
 part 'src/ext/convert.dart';
+part 'src/ext/ctrls.dart';
 part 'src/ext/date.dart';
 part 'src/ext/dialogs.dart';
 part 'src/ext/flxctrls.dart';
@@ -83,5 +85,5 @@ part 'src/ext/windows.dart';
 
 
 
-final String vcl_lib_version = '1.0.4';
-final DateTime vcl_lib_date = DateTime(2022, 02, 21);
+final String vcl_lib_version = '1.1.1';
+final DateTime vcl_lib_date = DateTime(2022, 03, 11);
