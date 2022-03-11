@@ -12,6 +12,7 @@ part 'TUserDialog.dart';
 
 part 'TTabControls.dart';
 part 'TTabDialogs.dart';
+part 'TTabFlexControls.dart';
 part 'TTabPanels.dart';
 part 'TTabDataSet.dart';
 
