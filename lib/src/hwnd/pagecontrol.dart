@@ -1,5 +1,16 @@
 part of vcl;
 
+class TTCItem
+{
+    int mask = 0;
+
+    String? pszText;
+/*    int cchTextMax;
+    int iImage;**/
+
+    dynamic lParam;
+}
+
 class HPageControl extends HCustomControl
 {
   static final PAGECONTROL = CLASS_ID('PAGECONTROL');
@@ -66,7 +77,7 @@ class HPageControl extends HCustomControl
     'opacity: .5; cursor: no-drop;');
   }
 
-  final pages = <HTabSheet>[];
+  final _tabs = Map<Element, HTabSheet>();
   final _ul = UListElement();
 
   Element getClientHandle() => _ul;
@@ -76,15 +87,43 @@ class HPageControl extends HCustomControl
     handle.append(_ul);
   }
 
-  HTabSheet appendPage(String caption)
+  HTabSheet? getTabSheet(int ndx)
   {
-    HTabSheet tab=HTabSheet();
-    _ul.append(tab.handle);
-    tab.caption=caption;
-    tab.radio.name = "page-${ hashCode.toString() }";
-    pages.add(tab);
-    if(pages.length == 1)
-      tab.radio.checked=true;
+    if(ndx>=0 && ndx<_ul.children.length)
+    {
+      var elem = _ul.children[ndx];
+      if(_tabs.containsKey(elem))
+        return _tabs[elem];
+    }
+    return null;
+  }
+
+  HTabSheet? findTabSheet(dynamic param)
+  {
+    for(var tab in _tabs.values)
+      if(tab.tabParam == param)
+        return tab;
+    return null;
+  }
+
+  int indexOfTabSheet(HTabSheet tab) =>
+    _ul.children.indexOf(tab.handle);
+
+  HTabSheet insertPage(int ndx, String caption)
+  {
+    HTabSheet tab = HTabSheet();
+    _ul.children.insert(ndx, tab.handle);
+//    _ul.append(tab.handle);
+    tab.caption = caption;
+    tab.radio.name = 'page-${ hashCode.toString() }';
+    tab.radio.onChange.listen((event)
+    {
+      Windows.SendMessage(this, WM_NOTIFY, 0, NMHDR(null, 0, TCN_SELCHANGING));
+      Windows.SendMessage(this, WM_NOTIFY, 0, NMHDR(null, 0, TCN_SELCHANGE));
+    });
+    _tabs[tab.handle] = tab;
+    if(_tabs.length == 1)
+      tab.radio.checked = true;
     return tab;
   }
 
@@ -94,11 +133,11 @@ class HPageControl extends HCustomControl
     {
       case TCM_GETCURSEL:
         int ndx = 0;
-        for(HTabSheet item in pages)
+        for(var tab in _tabs.values)
         {
-          if(item.radio.checked ?? false)
+          if(tab.radio.checked ?? false)
           {
-            Message.Result=ndx;
+            Message.Result = indexOfTabSheet(tab);
             return;
           }
           ndx++;
@@ -107,9 +146,44 @@ class HPageControl extends HCustomControl
         break;
 
       case TCM_SETCURSEL:
-        int ndx = Message.WParam;
-        if(ndx>=0 && ndx<pages.length)
-          pages[ndx].radio.checked = true;
+        var tab = getTabSheet(Message.WParam);
+        if(tab != null)
+          tab.radio.checked = true;
+        break;
+
+      case TCM_INSERTITEM:
+        TTCItem item = Message.LParam;
+        String? caption;
+        if(item.mask & TCIF_TEXT == TCIF_TEXT)
+          caption = item.pszText;
+        var tab = insertPage(Message.WParam, caption ?? '');
+        Message.Result = indexOfTabSheet(tab);
+        break;
+
+      case TCM_GETITEM:
+        var tab = getTabSheet(Message.WParam);
+        if(tab != null)
+        {
+          TTCItem item = Message.LParam;
+          if(item.mask.and(TCIF_TEXT))
+            item.pszText = tab.caption;
+          if(item.mask.and(TCIF_PARAM))
+            item.lParam = tab.tabParam;
+          Message.Result = 1;
+        }
+        break;
+
+      case TCM_SETITEM:
+        var tab = getTabSheet(Message.WParam);
+        if(tab != null)
+        {
+          TTCItem item = Message.LParam;
+          if(item.mask.and(TCIF_TEXT) && item.pszText!=null)
+            tab.caption = item.pszText!;
+          if(item.mask.and(TCIF_PARAM))
+            tab.tabParam = item.lParam;
+          Message.Result = 1;
+        }
         break;
 
       default:
@@ -126,6 +200,8 @@ class HTabSheet extends HCustomControl
 
   late final DivElement _client;
   HtmlElement getClientHandle() => _client;
+
+  dynamic tabParam;
 
   HTabSheet() : super.elem(LIElement())
   {
