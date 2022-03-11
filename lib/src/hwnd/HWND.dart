@@ -205,6 +205,7 @@ class HWND extends _HWND
     if(hWndNewParent == null)
       handle.remove();
     else
+    if(!hWndNewParent.clientHandle.children.contains(handle))
       hWndNewParent.clientHandle.append(handle);
   }
 
