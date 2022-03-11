@@ -621,7 +621,7 @@ abstract class TCustomComboBoxStrings extends TStrings
   dynamic GetObject(int Index)
   {
     dynamic Result = PerformHandle(CB_GETITEMDATA, Index, 0);
-    if(Result == null)
+    if(Result == Windows.CB_ERR)
       this.Error(RTLConsts.SListIndexError, Index);
     return Result;
   }
@@ -744,7 +744,7 @@ abstract class TCustomCombo extends TCustomListControl
       _itemIndex = Value;
     else
     if(GetItemIndex() != Value)
-      PerformHandle(CB_SETCURSEL, Value, 0);
+      PerformHandle(CB_SETCURSEL, Value, 0); // new
   }
 
 
@@ -853,6 +853,11 @@ abstract class TCustomCombo extends TCustomListControl
       return Items.Objects[ndx];
     return null;
   }
+
+  set ItemObject(dynamic val) 
+  {
+    ItemIndex = Items.IndexOfObject(val);
+  }
 }
 
 class TCustomComboBox extends TCustomCombo
@@ -892,7 +897,6 @@ class TCustomComboBox extends TCustomCombo
     WindowHandle = _combo;
 
     WindowHandle!.setColor(Color);
-
     switch(Style)
     {
       case TComboBoxStyle.DropDown:
@@ -907,7 +911,7 @@ class TCustomComboBox extends TCustomCombo
     }
 
     _combo!.input.value = Params.Caption;
-    _combo!.input.setSelectionRange(0, _combo!.input.value!.length);
+    _combo!.input.select(); //setSelectionRange(0, _combo!.input.value!.length);
 
     _combo!.Enabled = Enabled;
 
@@ -921,7 +925,21 @@ class TCustomComboBox extends TCustomCombo
     if(_combo == null)
       _combo = HComboBox();
 
-    return Windows.SendMessage(_combo!, msg, wParam, lParam);
+    var res = Windows.SendMessage(_combo!, msg, wParam, lParam);
+
+    switch(msg)
+    {
+      case CB_SETCURSEL:
+        if(!HandleAllocated())
+        { // Component not ready. Emulate OnSelect
+          this.Text = _combo!.input.value ?? '';
+          Click();
+          Select();
+        }
+        break;
+    }
+
+    return res;
   }
 
   void WndProc(TMessage Message)

@@ -1431,4 +1431,13 @@ abstract class Windows
 
 
 
+  /*
+   * Combo Box return Values
+   */
+  static const int CB_OKAY              =  0;
+  static const int CB_ERR               = -1;
+  static const int CB_ERRSPACE          = -2;
+
+
+
 }

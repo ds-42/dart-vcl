@@ -44,6 +44,9 @@ class HComboBox extends HCustomControl
   final input = InputElement();
   final objects = Map<OptionElement, dynamic>();
 
+  int get selectedIndex => select.selectedIndex ?? 0;
+  int get selectLength => select.length ?? 0;
+
   Element getClientHandle() => input;
 
   HComboBox() : super()
@@ -71,21 +74,13 @@ class HComboBox extends HCustomControl
     select.owner = this;
 
 
-    select.onChange.listen((event) => Windows.SendMessage(this, CN_COMMAND, TCommand(0, CBN_SELCHANGE)) );
+//    select.onChange.listen((event) => Windows.SendMessage(this, CN_COMMAND, TCommand(selectedIndex - 1, CBN_SELCHANGE)) );
+    select.onChange.listen((event) =>  ItemIndex = selectedIndex - 1); //Windows.SendMessage(this, CN_COMMAND, TCommand(selectedIndex - 1, CBN_SELCHANGE)) );
 
     WNDPROC? defproc;
     defproc = Windows.ChangeWindowProc(this, (elem, message)
     { // mainproc
-      if(message.Msg == CN_COMMAND)
-      {
-        TWMCommand Msg= TWMCommand(message);
-        switch(Msg.NotifyCode)
-        {
-          case CBN_SELCHANGE:
-            UpdateText();
-            return;
-        }
-      }
+
 
       if(message.Msg is COMBOBOX_MESSAGE)
       {
@@ -101,16 +96,9 @@ class HComboBox extends HCustomControl
             break;
 
           case CB_SETCURSEL:
-            int pndx = select.selectedIndex!;
-            defproc!(select, message);
-            if(select.selectedIndex!>=0 && select.selectedIndex!!=pndx)
-            {
-              input.value = select.options[select.selectedIndex!].text;
-              if(!Windows.IsFocused(this))
-                input.setSelectionRange(0, SysUtils.MAXLONG);
-            }
-            else
-              input.value = "";
+
+            ItemIndex = message.WParam;
+            message.Result = ItemIndex;
             break;
 
           case CB_SETITEMDATA:
@@ -119,7 +107,13 @@ class HComboBox extends HCustomControl
             break;
 
           case CB_GETITEMDATA:
-            OptionElement elem = select.options[message.WParam+1];
+            int ndx = message.WParam;
+            if(ndx < 0 || ndx >=selectLength)
+            {
+              message.Result = Windows.CB_ERR;
+              return;
+            }
+            OptionElement elem = select.options[ndx+1];
             message.Result = objects[elem];
             break;
 
@@ -179,30 +173,32 @@ class HComboBox extends HCustomControl
   void UpdateText()
   {
 
-    input.value = select.options[select.selectedIndex!].text;
+    input.value = select.options[selectedIndex].text;
     input.select();
   }
 
   int get ItemIndex
   {
-    if(select.selectedIndex!<0)
+    if(selectedIndex<0)
       return -1;
-    OptionElement elem = select.options[select.selectedIndex!];
+    OptionElement elem = select.options[selectedIndex];
     if(elem.hidden)
       return -1;
-    return select.selectedIndex!-1;
+    return selectedIndex-1;
   }
 
-  void set ItemIndex(int Value)
+  set ItemIndex(int Value)
   {
     int ndx = Value+1;
-    if(ndx<0) ndx = 0;
-    if(ndx>=select.length!)
-      ndx = select.length!-1;
-    if(select.length! == ndx)
+    if(ndx < 0)
+      ndx = 0;
+    if(ndx >= selectLength)
+      ndx = selectLength;
+    if(selectLength == ndx)
       return;
     select.selectedIndex=ndx;
     UpdateText();
+    Windows.SendMessage(this, CN_COMMAND, TCommand(ndx - 1, CBN_SELCHANGE));
   }
 
   void EnableChanged()
