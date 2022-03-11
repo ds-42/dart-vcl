@@ -8,6 +8,8 @@ typedef void TNotifyEvent(TObject Sender);
 typedef void TUnsafeNotifyEvent(TObject? Sender);
 typedef void TKeyEvent(TObject Sender, TKeyCode Key, TShiftState Shift);
 typedef void TKeyPressEvent(TObject Sender, TKeyCode Key);
+typedef void TMouseEvent(TObject Sender, TMouseButton Button, TShiftState Shift, int X, int Y);
+typedef void TMouseMoveEvent(TObject Sender, TShiftState Shift, int X, int Y);
 
 typedef TObject TObjectCreator(TObject? Owner);
 typedef void TCanResizeEvent(TObject Sender, Integer NewWidth, Integer NewNeight, TPointer<bool> Accept);

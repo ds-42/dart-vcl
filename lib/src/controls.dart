@@ -519,14 +519,11 @@ class TControlActionLink extends TActionLink
 
 class TControl extends TComponent
 {
-  TFlexParams? _flex;
-  TFlexParams get Flex
+  TFlexControlParams? _flex;
+  TFlexControlParams get Flex
   {
     if(_flex==null)
-    {
-      _flex = TFlexParams(this);
-///      AControl.Perform(CM_GETFLEXPARAMS, params);
-    }
+      _flex = TFlexControlParams(this);
     return _flex!;
   }
 
@@ -819,6 +816,21 @@ class TControl extends TComponent
     get OnCanResize => _onCanResize;
     set OnCanResize(TCanResizeEvent? Value) => _onCanResize=Value;
 
+
+  TMouseEvent? _onMouseDown;
+  TMouseEvent?
+    get OnMouseDown => _onMouseDown;
+    set OnMouseDown(TMouseEvent? Value) => _onMouseDown=Value;
+
+  TMouseMoveEvent? _onMouseMove;
+  TMouseMoveEvent?
+    get OnMouseMove => _onMouseMove;
+    set OnMouseMove(TMouseMoveEvent? Value) => _onMouseMove=Value;
+
+  TMouseEvent? _onMouseUp;
+  TMouseEvent?
+    get OnMouseUp => _onMouseUp;
+    set OnMouseUp(TMouseEvent? Value) => _onMouseUp=Value;
 
 
   TNotifyEvent? _onClick;
@@ -1504,7 +1516,8 @@ class TControl extends TComponent
 
   void MouseDown(TMouseButton Button, TShiftState Shift, int X, int Y)
   {
-
+    if(_onMouseDown!=null)
+      _onMouseDown!(this, Button, Shift, X, Y);
   }
 
   void DoMouseDown(TWMMouse Message, TMouseButton Button, TShiftState Shift)
@@ -1543,12 +1556,14 @@ class TControl extends TComponent
 
   void MouseMove(TShiftState Shift, int X, int Y)
   {
-
+    if(_onMouseMove!=null)
+      _onMouseMove!(this, Shift, X, Y);
   }
 
   void MouseUp(TMouseButton Button, TShiftState Shift, int X, int Y)
   {
-
+    if(_onMouseUp!=null)
+      _onMouseUp!(this, Button, Shift, X, Y);
   }
 
   void DoMouseUp(TWMMouse Message, TMouseButton Button)
