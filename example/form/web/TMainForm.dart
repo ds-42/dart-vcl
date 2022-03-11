@@ -37,30 +37,27 @@ class TMainForm extends TForm
       ..Parent = this;
 
     BuildPanelsPage(pages);
-    var pageCtrls = BuildControlsPage(pages);
+    BuildControlsPage(pages);
+    BuildFlexControlsPage(pages);
     BuildDialogsPage(pages);
     BuildDataSetPage(pages);
 
-    pages.ActivePageIndex = 0;
 
     var status = TStatusBar(this);
     status.Parent = this;
     status.Panels.Add();
-    status.Panels.Items[0]
-      ..Width = 120
-      ..Text = 'page count: ${ pages.PageCount }';
+    status.Panels.Items[0].Width = 120;
 
     status.SimpleText = '© dart-vcl [${vcl_lib_version}], ${vcl_lib_date.year}';
 
-    Application.OnMessage = (msg, handled)
+    void UpdateStatusText()
     {
-      if(msg.message==WM_LBUTTONDOWN)
-      {
-        var ctrl = Windows.SendMessage(msg.hwnd, CM_GETINSTANCE);
-        if(ctrl is TWinControl)
-          (pageCtrls as TTabControls).SelectControl(ctrl);
-      }
-    };
+      status.Panels.Items[0].Text = 'page: ${pages.ActivePageIndex + 1} / ${pages.PageCount}';
+    }
+
+    pages.OnChange = (Sender) => UpdateStatusText();
+
+    UpdateStatusText();
   }
 
   static TMenuItem CreateMenuItem(TComponent Owner, String Caption, [int Index=-1/*, TNotifyEvent ev*/])
