@@ -12,12 +12,12 @@ class TUserDialog extends TForm
   {
     AutoSize = true;
     Position = TPosition.OwnerFormCenter;
-    BorderStyle = TFormBorderStyle.Dialog;
+    ClientWidth = 250;
     Caption = 'Registration';
 
     TFlexBox(this)
       ..Parent = this
-      ..Width = 250
+      ..Width = ClientWidth
       ..Align = TAlign.Top
       ..AlignItems = TFlexAlignItem.FlexEnd
       ..Add([

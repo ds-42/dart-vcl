@@ -74,6 +74,7 @@ class TTabFlexControls extends TTabSheet
 
     var flexPanel = TPanel(this)
       ..Align = TAlign.Client
+      ..BevelOuter = TBevelCut.None
       ..Parent = this;
 
     FlexBox = TFlexBox(flexPanel)

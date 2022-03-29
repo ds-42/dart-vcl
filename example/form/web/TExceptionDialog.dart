@@ -6,6 +6,7 @@ class TExceptionDialog extends TForm
 
   TExceptionDialog(TComponent AOwner) : super(AOwner)
   {
+    AutoSize = true;
     ClientWidth = 400;
     Caption = 'Select mode';
     var flex = TFlexBox(this)

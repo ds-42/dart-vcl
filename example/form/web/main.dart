@@ -7,6 +7,7 @@ part 'TDataMap.dart';
 part 'TFlexDialog.dart';
 part 'TExceptionDialog.dart';
 part 'TLabelEdit.dart';
+part 'TAboutForm.dart';
 part 'TMainForm.dart';
 part 'TUserDialog.dart';
 
@@ -16,12 +17,11 @@ part 'TTabFlexControls.dart';
 part 'TTabPanels.dart';
 part 'TTabDataSet.dart';
 
-
 void main() async
 {
-
   Locale.select(TLocale.ENGLISH);
 
+  Application.Title = 'dart-vcl';
   Application.TryBlock(() async
   {
     var form = TMainForm()
