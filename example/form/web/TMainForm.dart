@@ -6,6 +6,10 @@ class TMainForm extends TForm
   {
     Position = TPosition.ScreenCenter;
 
+    Constraints
+        ..MinWidth = 300
+        ..MinHeight = 200;
+
     TMenuItem item;
     Menu = TMainMenu(this);
     item = CreateMenuItem(Menu!, 'File');
@@ -30,7 +34,8 @@ class TMainForm extends TForm
         CreateMenuItem(item, 'Fit to page');
 
     item = CreateMenuItem(Menu!, '?');
-      CreateMenuItem(item, 'About');
+      CreateMenuItem(item, 'About')
+        ..OnClick = (Sender) async { await TAboutForm(this).ShowModal(); };
 
     var pages = TPageControl(this)
       ..Align = TAlign.Client
