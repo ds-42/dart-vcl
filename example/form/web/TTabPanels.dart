@@ -12,7 +12,7 @@ class TTabPanels extends TTabSheet
   TTabPanels(TPageControl pages) : super(pages)
   {
     TPanel(this)
-      ..Caption = 'alTop'
+//      ..Caption = 'alTop'
       ..Align = TAlign.Top
       ..Parent = this;
 
@@ -36,16 +36,21 @@ class TTabPanels extends TTabSheet
       ..Align = TAlign.Client
       ..Parent = this;
 
-    TPanel(panel)
+    var overlay = TPanel(panel)
+      ..BevelOuter = TBevelCut.None
+      ..Align = TAlign.Client
+      ..Parent = panel;
+
+    TPanel(overlay)
       ..SetBounds(10, 10, panel.Width-20, 50)
       ..Caption = 'akRight + akLeft + akTop'
       ..Anchors = TAnchors()<<TAnchorKind.Right<<TAnchorKind.Left<<TAnchorKind.Top
-      ..Parent = panel;
+      ..Parent = overlay;
 
-    TPanel(panel)
+    TPanel(overlay)
       ..SetBounds(10, panel.Height-60, panel.Width-20, 50)
       ..Caption = 'akRight + akLeft + akBottom'
       ..Anchors = TAnchors()<<TAnchorKind.Right<<TAnchorKind.Left<<TAnchorKind.Bottom
-      ..Parent = panel;
+      ..Parent = overlay;
   }
 }
