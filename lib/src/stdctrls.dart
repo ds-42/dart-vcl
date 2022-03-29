@@ -91,10 +91,17 @@ class TCustomLabel extends TWinControl
     return Caption;
   }
 
+  void SetAutoSize(bool Value)
+  {
+    if(WindowHandle != null)
+      (WindowHandle as HLabel).autoSize = Value;
+    super.SetAutoSize(Value);
+  }
+
+
   void CreateWindowHandle(TCreateParams Params)
   {
     WindowHandle = HLabel();
-    (WindowHandle!.handle as LabelElement).text = Params.Caption;
 
   }
 
@@ -251,11 +258,11 @@ class TCustomEdit extends TWinControl
     if(_passwordChar == Value)
       return;
     _passwordChar = Value;
-    if(HandleAllocated())
+    IfHandleAllocated((InputElement input)
     {
-      (Handle.clientHandle as InputElement).type = PasswordChar==''? 'text' : 'password';
+      input.type = PasswordChar==''? 'text' : 'password';
 
-    }
+    });
   }
 
   int get SelStart => GetSelStart();
@@ -264,22 +271,21 @@ class TCustomEdit extends TWinControl
   int GetSelStart()
   {
 
-    if(HandleAllocated())
-      return (Handle.clientHandle as InputElement).selectionStart ?? 0;
-    return 0;
+    return IfHandleAllocated((InputElement input) =>
+      input.selectionStart ?? 0, 0);
   }
 
   void SetSelStart(int Value)
   {
-    if(HandleAllocated())
-      (Handle.clientHandle as InputElement).selectionStart = Value;
+    IfHandleAllocated((InputElement input) =>
+      input.selectionStart = Value );
 
   }
 
   void SetSelectionRange(int start, int length)
   {
-    if(HandleAllocated())
-      (Handle.clientHandle as InputElement).setSelectionRange(start, start+length);
+    IfHandleAllocated((InputElement input) =>
+        input.setSelectionRange(start, start+length) );
   }
 
   int get SelLength => GetSelLength();
@@ -289,9 +295,8 @@ class TCustomEdit extends TWinControl
   {
 
 
-    if(HandleAllocated())
-      return ((Handle.clientHandle as InputElement).selectionEnd??0)-((Handle.clientHandle as InputElement).selectionStart??0);
-    return 0;
+    return IfHandleAllocated((InputElement input) =>
+       (input.selectionEnd??0)-(input.selectionStart??0), 0);
   }
 
   void SetSelLength(int Value)
@@ -308,8 +313,8 @@ class TCustomEdit extends TWinControl
 
   void SelectAll()
   {
-    if(HandleAllocated())
-      (Handle.clientHandle as InputElement).setSelectionRange(0, this.Text.length);
+    IfHandleAllocated((InputElement input) =>
+      input.setSelectionRange(0, this.Text.length) );
 
   }
 
@@ -344,8 +349,8 @@ class TCustomEdit extends TWinControl
 
 
       case CM_ENABLEDCHANGED:
-        if(HandleAllocated())
-          (Handle.clientHandle as InputElement).disabled = !Enabled;
+        IfHandleAllocated((InputElement input) =>
+          input.disabled = !Enabled );
         break;
 
     }
@@ -357,8 +362,8 @@ class TCustomEdit extends TWinControl
         return;
 
       case EM_SETREADONLY:
-        if(HandleAllocated())
-          (Handle.clientHandle as InputElement).readOnly=toBoolDef(Message.WParam, false);
+        IfHandleAllocated((InputElement input) =>
+          input.readOnly=toBoolDef(Message.WParam, false) );
         return;
     }
     super.WndProc(Message);
@@ -1749,7 +1754,7 @@ class TScrollBar extends TWinControl
   TScrollBar(TComponent AOwner) : super(AOwner)
   {
     Width = 121;
-    Height = GetSystemMetrics(SysMetric.CYHSCROLL);
+    Height = GetSystemMetrics(Windows.SM_CYHSCROLL);
     TabStop = true;
     ControlStyle.assign( [ControlStyles.Framed, ControlStyles.DoubleClicks, ControlStyles.Opaque] );
 
@@ -1765,9 +1770,9 @@ class TScrollBar extends TWinControl
 
     // new
     if(Value == TScrollBarKind.Horizontal)
-      SetBounds(Left, Top, Height, GetSystemMetrics(SysMetric.CYHSCROLL));
+      SetBounds(Left, Top, Height, GetSystemMetrics(Windows.SM_CYHSCROLL));
     else
-      SetBounds(Left, Top, GetSystemMetrics(SysMetric.CXVSCROLL), Width);
+      SetBounds(Left, Top, GetSystemMetrics(Windows.SM_CXVSCROLL), Width);
 
     if(HandleAllocated())
       _scrollBar!.kind=Kind;

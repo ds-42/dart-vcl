@@ -55,7 +55,7 @@ class HPopupList extends HPopupControl
           if(control!=null)
           {
             var rect = TRect();
-            Windows.GetWindowRect(control, rect);
+            Windows.GetWindowRect(control!, rect);
             style
               ..left = '${rect.left}px'
               ..top = '${rect.bottom-1}px'
@@ -66,7 +66,7 @@ class HPopupList extends HPopupControl
           break;
 
         case WM_LBUTTONDOWN:
-          TPoint pt = message.LParam;
+          POINT pt = message.LParam;
           var rect = handle.client;
           // test mouse in client rect
           if(pt.x<rect.left || pt.x>rect.right || pt.y<rect.top || pt.y>rect.bottom)

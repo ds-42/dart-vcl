@@ -4,6 +4,12 @@ part of vcl;
 
 extension HtmlElementExtension on Element
 {
+  static RECT make_rect(Rectangle rect)
+  {
+    return RECT(rect.left.truncate(), rect.top.truncate(),
+                rect.right.truncate(), rect.bottom.truncate());
+  }
+
   void setParent(Element? elem)
   {
     if(elem == null)
@@ -12,7 +18,7 @@ extension HtmlElementExtension on Element
       elem.append(this);
   }
 
-  set parentWindow(HWND? hwnd) => setParent(hwnd==null? null : hwnd.handle);
+  set parentWindow(HWND? hwnd) => setParent(hwnd == null? null : hwnd.handle);
 
   HWND?
     get owner => HWND._subElements[this];
@@ -24,21 +30,70 @@ extension HtmlElementExtension on Element
         HWND._subElements[this] = hwnd;
     }
 
+  bool
+    get enabled => style.pointerEvents!='none';
+    set enabled(bool state) => style.pointerEvents = state? '' : 'none';
+
+  
+  bool
+    get visible => style.visibility!='hidden' && style.display!='none';
+    set visible(bool value) => style.display = value? null : 'none';
+
   set left(int? l) => style.left=l==null? null : '${l}px';
   set top(int? t) => style.top=t==null? null : '${t}px';
   set height(int? h) => style.height=h==null? null : '${h}px';
   set width(int? w) => style.width=w==null? null : '${w}px';
 
-  void moveTo(int? l, int? t)
+  bool moveTo(int? l, int? t)
   {
-    style.left=l==null? null : '${l}px';
-    style.top =t==null? null : '${t}px';
+    bool upd = false;
+
+    String? left = l==null? null : '${l}px';
+    if(style.left != left)
+    {
+      style.left = left;
+      upd = true;
+    }
+
+    String? top = t==null? null : '${t}px';
+    if(style.top != top)
+    {
+      style.top = top;
+      upd = true;
+    }
+
+    return upd;
   }
 
-  void setSize(int? w, int? h)
+  bool setSize(int? w, int? h)
   {
-    style.height=h==null? null : '${h}px';
-    style.width =w==null? null : '${w}px';
+    bool upd = false;
+
+    String? width = w==null? null : '${w}px';
+    if(style.width != width)
+    {
+      style.width = width;
+      upd = true;
+    }
+
+    String? height = h==null? null : '${h}px';
+    if(style.height != height)
+    {
+      style.height = height;
+      upd = true;
+    }
+
+    return upd;
+  }
+
+  void updateBounds(int? left, int? top, int? width, int? height, [int? right, int? bottom])
+  {
+    style.left   = left   == null? null : '${left}px';
+    style.top    = top    == null? null : '${top}px';
+    style.right  = right  == null? null : '${right}px';
+    style.bottom = bottom == null? null : '${bottom}px';
+    style.width  = width  == null? null : '${width}px';
+    style.height = height == null? null : '${height}px';
   }
 
   void setMaxLength(int len)
@@ -60,39 +115,77 @@ extension HtmlElementExtension on Element
   {
     if(offsetParent == null)
       return false;
-    var rr = offset;
-    rect
-      ..left=rr.left.truncate()
-      ..top=rr.top.truncate()
-      ..right=rr.right.truncate()
-      ..bottom=rr.bottom.truncate();
+    rect.assign(offsetRect);
     return true;
   }
 
-  RECT get offsetRect
+  SIZE get borderSize
   {
-    var rect = offset;
-    return RECT(rect.left.truncate(), rect.top.truncate(),
-                rect.right.truncate(), rect.bottom.truncate());
+    var b = borderEdge;
+    var m = marginEdge;
+    return SIZE((b.left - m.left).truncate(), (b.top - m.top).truncate());
   }
 
-  TRect get borderRect
-  {
-    var rect = borderEdge;
-    return TRect(rect.left.truncate(), rect.top.truncate(),
-                 rect.right.truncate(), rect.bottom.truncate());
-  }
+  RECT get offsetRect => make_rect(offset);
+
+  RECT get borderRect => make_rect(borderEdge);
 
   int get borderHeight => borderRect.height;
-  int get borderWidht  => borderRect.width;
+  int get borderWidth  => borderRect.width;
 
-  TRect get contentRect
-  {
-    var rect = contentEdge;
-    return TRect(rect.left.truncate(), rect.top.truncate(),
-                 rect.right.truncate(), rect.bottom.truncate());
-  }
+  RECT get contentRect => make_rect(contentEdge);
 
   int get contentHeight => contentRect.height;
   int get contentWidth  => contentRect.width;
+
+  RECT get marginRect => make_rect(marginEdge);
+
+  RECT get paddingRect => make_rect(paddingEdge);
+
+  dynamic invisibilityProc(Function proc)
+  {
+    dynamic processing(Element elem)
+    {
+      if(offsetParent == null)
+      {
+        if(elem.parent == null)
+          return;
+
+        bool mem = elem.style.undefVisibility();
+        dynamic res = processing(elem.parent!);
+        elem.style.defVisibility(mem);
+        return res;
+      }
+      return proc();
+    }
+
+    return processing(this);
+
+  }
+}
+
+extension CssStyleDeclarationExtension on CssStyleDeclaration
+{
+  bool get isDisplay => display != 'none';
+
+  /*  If some element node in the node tree has the display = 'none' property,
+   *  we cannot get the element's metric. defVisibility/undefVisibility temporarily changes
+   *  the visibility property of an element
+   */
+  bool undefVisibility()
+  {
+    bool res = isDisplay;
+    visibility = 'hidden';
+    if(!res)
+      display = null;
+    return res;
+  }
+
+  void defVisibility(bool state)
+  {
+    if(state==false)
+      display = 'none';
+    visibility = null;
+  }
+
 }

@@ -71,6 +71,8 @@ class POINT
 
   POINT( [this.x = 0, this.y = 0] );
 
+  String toString() => 'POINT($x, $y)';
+
   void assign(POINT pt)
   {
     x = pt.x;
@@ -87,6 +89,8 @@ class TPoint extends POINT
 {
 
   TPoint( [int x = 0, int y = 0] ) : super(x, y);
+
+  TPoint.from(POINT pt) : super(pt.x, pt.y);
 
   String toString()
   {
@@ -105,6 +109,8 @@ class SIZE
   int cy;
 
   SIZE( [ this.cx = 0, this.cy = 0] );
+
+  String toString() => 'SIZE($cx, $cy)';
 }
 
 class TSize extends SIZE
@@ -137,8 +143,13 @@ class RECT
   int right;
   int bottom;
 
-  int get height => bottom - top;
-  int get width => right - left;
+  int
+    get height => bottom - top;
+    set height(int value) => bottom = top + value;
+
+  int
+    get width => right - left;
+    set width(int value) => right = left + value;
 
   RECT( [this.left=0, this.top=0, this.right=0, this.bottom=0] );
 
@@ -156,11 +167,44 @@ class RECT
     right = r.right;
     bottom = r.bottom;
   }
-}
 
+  List<POINT> get pts => [POINT(left, top), POINT(right, bottom)];
+
+  void assign_pts(List<POINT> pts)
+  {
+    if(pts.length<2)
+      return;
+
+    left = pts[0].x;
+    top = pts[0].y;
+
+    right = pts[1].x;
+    bottom = pts[1].y;
+  }
+
+}
 
 class TRect extends RECT
 {
+  int
+    get Left => left;
+    set Left(int val) => left = val;
+
+  int
+    get Top => top;
+    set Top(int val) => top = val;
+
+  int
+    get Right => right;
+    set Right(int val) => right = val;
+
+  int
+    get Bottom => bottom;
+    set Bottom(int val) => bottom = val;
+
+  int get Width => width;
+  int get Height => height;
+
   TPoint
     get TopLeft => TPoint(left, top);
     set TopLeft(TPoint pt)
@@ -183,7 +227,7 @@ class TRect extends RECT
   TRect.size(int lft, int top, int width, int height) :
     super(lft, top, lft + width, lft + height);
 
-  TRect.rect(TRect r) :
+  TRect.rect(RECT r) :
     super(r.left, r.top, r.right, r.bottom);
 
   TRect.pts(TPoint p1, TPoint p2) :
@@ -210,24 +254,11 @@ class TRect extends RECT
     bottom++;
   }
 
-  void offset(int dx, int dy)
-  {
-    left+=dx;
-    top+=dy;
-    right+=dx;
-    bottom+=dy;
-  }
+  void offset(int dx, int dy) => OffsetRect(this, dx, dy);
 
-  bool isEmpty()
-  {
-    return (right <= left) || (bottom <= top);
-  }
+  bool isEmpty() => IsRectEmpty(this);
 
-  bool isEqual(TRect r)
-  {
-    return left == r.left && right == r.right &&
-           top == r.top && bottom == r.bottom;
-  }
+  bool isEqual(TRect r) => EqualRect(this, r);
 
   TRect? intersect(TRect rect)
   {
@@ -240,8 +271,7 @@ class TRect extends RECT
     return TRect(l, t, r, b);
   }
 
-  bool accept(int x, int y) =>
-    x>=left && x<right && y>=top && y<bottom;
+  bool accept(int x, int y) => PtInRect(this, POINT(x, y));
 
   bool get isValid => left <= right && top <= bottom;
 
@@ -279,28 +309,62 @@ class TRect extends RECT
 
 }
 
-void OffsetRect(TRect rect, int dx, int dy) =>
-    rect.offset(dx, dy);
 
-bool IntersectRect(TRect rect, TRect r1, TRect r2)
+bool SetRectEmpty(RECT rect)
 {
-  rect.left = r1.left > r2.left? r1.left : r2.left;
-  rect.right = r1.right < r2.right? r1.right : r2.right;
-  rect.top = r1.top > r2.top? r1.top : r2.top;
-  rect.bottom = r1.bottom < r2.bottom? r1.bottom : r2.bottom;
-  if(rect.left>rect.right || rect.top>rect.bottom)
-    return false;
+  rect.left = rect.right = rect.top = rect.bottom = 0;
   return true;
 }
 
-bool PtInRect(TRect rect, TPoint pt) =>
-  rect.accept(pt.x, pt.y);
+bool SetRect(RECT rc, int xLeft, int yTop, int xRight, int yBottom)
+{
+  rc.left = xLeft;
+  rc.top = yTop;
+  rc.right = xRight;
+  rc.bottom = yBottom;
+  return true;
+}
 
-bool IsRectEmpty(TRect rect) =>
-  rect.isEmpty();
+void OffsetRect(RECT rect, int dx, int dy)
+{
+  rect.left+=dx;
+  rect.top+=dy;
+  rect.right+=dx;
+  rect.bottom+=dy;
+}
 
-bool EqualRect(TRect rc1, TRect rc2) =>
-  rc1.isEqual(rc2);
+bool IntersectRect(RECT dest, RECT src1, RECT src2)
+{
+  if (IsRectEmpty(src1) || IsRectEmpty(src2) ||
+     (src1.left >= src2.right) || (src2.left >= src1.right) ||
+     (src1.top >= src2.bottom) || (src2.top >= src1.bottom))
+  {
+    SetRectEmpty( dest );
+    return false;
+  }
+  dest.left   = max( src1.left,   src2.left );
+  dest.right  = min( src1.right,  src2.right );
+  dest.top    = max( src1.top,    src2.top );
+  dest.bottom = min( src1.bottom, src2.bottom );
+  return true;
+}
+
+bool PtInRect(RECT rect, POINT pt)
+{
+  return ((pt.x >= rect.left) && (pt.x < rect.right) &&
+          (pt.y >= rect.top) && (pt.y < rect.bottom));
+}
+
+bool IsRectEmpty(RECT rect)
+{
+  return ((rect.left >= rect.right) || (rect.top >= rect.bottom));
+}
+
+bool EqualRect(RECT rc1, RECT rc2)
+{
+  return rc1.left == rc2.left && rc1.right  == rc2.right &&
+         rc1.top  == rc2.top  && rc1.bottom == rc2.bottom;
+}
 
 
 class XFORM

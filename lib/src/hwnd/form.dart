@@ -129,6 +129,8 @@ class HForm extends HCustomControl
     close.text = '×';
     close.onClick.listen((event) => Close() );
 
+    client.style.zIndex = '0';
+
 
 
     overlay.owner = this;
@@ -136,58 +138,6 @@ class HForm extends HCustomControl
     caption.owner = this;
     close.owner = this;
     client.owner = this;
-
-    WNDPROC? defproc;
-    defproc = Windows.ChangeWindowProc(this, (elem, message)
-    { // mainproc
-      switch(message.Msg)
-      {
-        case WM_LBUTTONDBLCLK:
-          if(_wmHitTest(message.LParam)==Windows.HTCAPTION)
-            Maximize=!Maximize;
-          break;
-
-        case WM_GETTEXT:
-          message.Result = caption.text;
-          break;
-
-        case WM_SETTEXT:
-          caption.text = message.LParam;
-          break;
-
-        case WM_NCHITTEST:
-          TPoint pos = message.LParam;
-          Rectangle c = handle.getBoundingClientRect();
-          pos = TPoint(pos.x - c.left.round(), pos.y-c.top.round());
-          message.Result = _wmHitTest(pos);
-          break;
-
-        case WM_MOUSEMOVE:
-
-          break;
-
-        case WM_WINDOWPOSCHANGING:
-          if(Maximize)
-          {
-            TWMWindowPosMsg msg = TWMWindowPosMsg(message);
-            msg.ElementPos.x = null;
-            msg.ElementPos.y = null;
-          }
-          defproc!(elem, message);
-          break;
-
-        case WM_SHOWWINDOW:
-          if(message.WParam)
-            show();
-          else
-            hide();
-          break;
-
-        default:
-          defproc!(elem, message);
-          break;
-      }
-    });
   }
 
   void release()
@@ -196,15 +146,56 @@ class HForm extends HCustomControl
     super.release();
   }
 
+  void dispatch(Element elem, TMessage message)
+  {
+    switch(message.Msg)
+    {
+
+      case WM_GETTEXT:
+        message.Result = caption.text;
+        break;
+
+      case WM_SETTEXT:
+        caption.text = message.LParam;
+        break;
+
+      case WM_NCHITTEST:
+        POINT pos = message.LParam;
+        Rectangle c = handle.getBoundingClientRect();
+        pos = POINT(pos.x - c.left.round(), pos.y-c.top.round());
+        message.Result = _wmHitTest(pos);
+        break;
+
+      case WM_MOUSEMOVE:
+
+        break;
+
+      case WM_WINDOWPOSCHANGING:
+        var pos = message.LParam as WINDOWPOS;
+        if(!pos.flags.and(Windows.SWP_NOSIZE))
+        {
+          int cy = SysMetric.CaptionCy;
+          if(pos.cx<100) pos.cx=100;
+          if(pos.cy<cy)  pos.cy=cy;
+        }
+        super.dispatch(elem, message);
+        break;
+
+
+
+      default:
+        super.dispatch(elem, message);
+        break;
+    }
+  }
+
   void show()
   {
-    HWND? wnd = ownedWindow;
-    if(wnd == null)
-      wnd = Windows.GetDesktopWindow();
+
     handle.style.zIndex ='${ zOrder+1 }';
-    if(handle.parent == null)
-      handle.parentWindow = wnd;
-    handle.style.visibility=null;
+
+
+    super.show();
   }
 
   void showOverlay()
@@ -217,42 +208,7 @@ class HForm extends HCustomControl
     }
   }
 
-  TRect? _mbounds;
 
-  bool get Maximize => _mbounds != null;
-  set Maximize(bool Value)
-  {
-    if(Maximize == Value)
-      return;
-    if(_mbounds == null)
-    {
-      TRect mem = handle.borderRect;
-      TRect r = document.body!.contentRect;
-      handle.style.margin = '0';
-      Windows.SetWindowPos(this, null, 0, 0, r.width, r.height, 0);
-      if(mem.width==0)
-      {
-        int w = r.width * 2 ~/ 3;
-        mem.left = (r.width - w) ~/ 2;
-        mem.right = mem.left + w;
-      }
-      if(mem.height==0)
-      {
-        int h = r.height * 2 ~/ 3;
-        mem.top = (r.height - h) ~/ 2;
-        mem.bottom = mem.top + h;
-      }
-      _mbounds = mem;
-    }
-    else
-    {
-      handle.style.margin = '5px';
-      TRect bnd = _mbounds!;
-
-      _mbounds=null;
-      Windows.SetWindowPos(this, null, bnd.left, bnd.top, bnd.width, bnd.height, 0);
-    }
-  }
 
   void hide()
   {
@@ -261,6 +217,8 @@ class HForm extends HCustomControl
       overlay.remove();
       _zOrder-=2;
     }
+
+    super.hide();
 
     if(handle.parent == null)
       return;
@@ -271,7 +229,7 @@ class HForm extends HCustomControl
 
 
 
-  int _wmHitTest(TPoint pos)
+  int _wmHitTest(POINT pos)
   {
 
 

@@ -288,10 +288,25 @@ class TFlexBox extends TWinControl
     Height = 40;
   }
 
+  void UpdateShowing()
+  {
+    DisableAlign();
+    super.UpdateShowing();
+    EnableAlign();
+  }
+
   void CreateWindowHandle(TCreateParams Params)
   {
     WindowHandle = HFlexBox();
     WindowHandle!.setColor(Color);
+  }
+
+  void _cmShowingChanged(TMessage Message)
+  {
+    if(_showing)
+      RequestAlign();
+//      Realign();
+    super._cmShowingChanged(Message);
   }
 
   TFlexDirection _flexDirection = TFlexDirection.Row;
@@ -342,7 +357,7 @@ class TFlexBox extends TWinControl
 
   void AlignControls(TControl? AControl, TRect Rect)
   {
-    super.AlignControls(AControl, Rect);
+//    super.AlignControls(AControl, Rect);
     _flexProcessing();
   }
 

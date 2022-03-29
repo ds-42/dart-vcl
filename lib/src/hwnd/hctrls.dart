@@ -23,9 +23,11 @@ class HControl extends HComponent
 
   }
 
-  TRect getBounds()
+  RECT getBounds()
   {
-    return handle.borderRect;
+    return handle.invisibilityProc(() =>
+      handle.borderRect);
+//    return handle.borderRect;
   }
 
   void invalidate()
@@ -56,9 +58,8 @@ class HCustomControl extends HControl
       ..position='absolute';
   }
 
-  HCustomControl.elem(Element _elem) : super(_elem)
-  {
-  }
+  HCustomControl.elem(Element _elem) : super(_elem);
+
 }
 
 class HGraphicControl extends HControl

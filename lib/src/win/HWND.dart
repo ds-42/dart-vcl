@@ -2,7 +2,9 @@ part of vcl;
 
 typedef void WNDPROC(Element elem, TMessage msg);
 
-
+/*
+ *   HTML elements as logic window descriptors (HWND)
+ */
 
 enum WindowProp {
   ChildOwner, // Object as owner of child elements
@@ -92,7 +94,6 @@ class TWndStyle
 
 class CLASS_ID
 {
-  static final _classes = <String>{ };
 
   final String name;
 
@@ -108,12 +109,84 @@ class CLASS_ID
   }
 }
 
-class _HWND { }
+class INITSTRUCT
+{
+  final UINT? exStyle;
+  // final String? className;
+  final String? windowName;
+  final UINT? style;
+  final int? x;
+  final int? y;
+  final int? width;
+  final int? height;
+  final HWND? parent;
+  // final HMENU hMenu;
+  // final HINSTANCE hInstance;
+  final dynamic param;
 
-class HWND extends _HWND
+  INITSTRUCT({ this.exStyle, this.windowName, this.style,
+    this.x, this.y, this.width, this.height, this.parent,
+    this.param});
+}
+
+class HWINDOW
+{
+  const HWINDOW();
+}
+
+class CWND extends HWINDOW
+{
+  final int id;
+  const CWND(this.id) : super();
+}
+
+class HWND extends HWINDOW
 {
   static final _elements = Map<Element, HWND>();
   static final _subElements = Map<Element, HWND>();
+
+  static HWND? findWindow(Element elem) =>
+    _findWindowDef(elem, null);
+
+  static HWND? _findWindowDef(Element elem, HWND? def)
+  {
+
+    HWND findOwnedWindow(HWND hwnd)
+    {
+      HWND? tmp = hwnd;
+      while(tmp!=null)
+      {
+        hwnd = tmp;
+        tmp = _subElements[tmp.handle];
+      }
+      return hwnd;
+    }
+
+    HWND? hwnd = _elements[elem]; // find window by elements
+    if(hwnd==null)
+      hwnd = _subElements[elem]; // find window by sub-elements
+
+    if(hwnd!=null)
+      return findOwnedWindow(hwnd);
+
+    while(true) 
+    {
+      hwnd = _elements[elem];
+      if(hwnd==null)
+      {
+        if(elem.parent == null)
+          break;
+        elem = elem.parent!;
+      }
+      else
+      {
+        if(hwnd.props.contains(WindowProp.ChildOwner))
+          return findOwnedWindow(hwnd); 
+        return def;
+      }
+    }
+    return def;
+  }
 
   final Element handle; /// using html element
 
@@ -122,15 +195,15 @@ class HWND extends _HWND
   Element getClientHandle() => handle;
   Element get clientHandle => getClientHandle();
 
-  WNDPROC _mainProc = _default_element_proc;
+  late final WND _wnd;
 
   HWND._(this.handle)
   {
-    if(_elements.isEmpty)
-      Windows._start();
-
-    if(_elements.containsKey(handle))
+    if(HWND._elements.containsKey(handle))
       throw UnsupportedError('duplicate handles');
+
+    if(HWND._elements.isEmpty)
+      Windows._start();
 
     var cid = classID;
     if(cid.name.isNotEmpty)
@@ -143,10 +216,9 @@ class HWND extends _HWND
       handle.className = cid.name;
     }
 
-    _elements[handle] = this;
+    HWND._elements[handle] = this;
 
-    _mainProc = (elem, message) =>
-      dispatch(elem, message);
+    _wnd = WND(this);
   }
 
   factory HWND(Element? elem)
@@ -154,8 +226,8 @@ class HWND extends _HWND
     if(elem == null)
       elem = document.body;
 
-    HWND? hwnd = _elements[elem];
-    if(hwnd==null)
+    var hwnd = HWND._elements[elem];
+    if(hwnd == null)
       hwnd = HWND._(elem!); // window registry
 
     return hwnd;
@@ -185,19 +257,19 @@ class HWND extends _HWND
     _default_element_proc(elem, message);
   }
 
-  static final DESKTOP = HWND( document.body );
-
-  static final BOTTOM    = _HWND();
-  static final NOTOPMOST = _HWND();
-  static final TOP       = _HWND();
-  static final TOPMOST   = _HWND();
-
   set owner(HWND? hwnd)
   {
     if(hwnd == null)
-      _subElements.remove(handle);
+      HWND._subElements.remove(handle);
     else
-      _subElements[handle] = hwnd;
+      HWND._subElements[handle] = hwnd;
+  }
+
+  HWND? getParent()
+  {
+    if(handle.parent==null)
+      return null;
+    return HWND.findWindow(handle.parent!);
   }
 
   void setParent(HWND? hWndNewParent)
@@ -215,144 +287,39 @@ class HWND extends _HWND
   
   }
 
-  bool get enabled
+  bool
+    get enabled => handle.enabled;
+    set enabled(bool state) => handle.enabled = state;
+
+  bool
+    get visible => handle.visible;
+
+  void show() => _wnd.visible = true;
+  void hide() => _wnd.visible = false;
+
+  bool get_border_size(SIZE size)
   {
-    return style.pointerEvents!='none';
+    return toBoolDef(handle.invisibilityProc(()
+    {
+      if(handle.offsetParent != null)
+      {
+        var bs = handle.borderSize;
+        size.cx = bs.cx;
+        size.cy = bs.cy;
+        return true;
+      }
+      return false;
+    }), false);
   }
 
-  void set enabled(bool state)
+  void set_window_rect(int left, int top, int width, int height)
   {
-    style.pointerEvents = state? '' : 'none';
-  }
-
-
-
-  /// init window
-  static void _init_window(HWND hwnd, HWND? prnt, int? x, int? y, int? cx, int? cy)
-  {
-    hwnd.setParent(prnt);
-    // emulate messages after create window
-    
-
-    var r1 = hwnd.handle.borderEdge;
-    if(x!=null || y!=null || cx!=null || cy!=null)
-      Windows.SetWindowPos(hwnd, null, x, y, cx, cy, 0);
-
-    var r2 = hwnd.handle.borderEdge;
-    if(r1.width==r2.width || r1.height==r2.height)
-    {
-      
-      Windows.SendMessage(hwnd, WM_SIZE, null, TPoint(r2.width.round(), r2.height.round()));
-    }
-  }
-
-  static HWND? findWindow(Element elem) =>
-    HWND._findWindowDef(elem, null);
-
-  static HWND? _findWindowDef(Element elem, HWND? def)
-  {
-
-    HWND findOwnedWindow(HWND hwnd)
-    {
-      HWND? tmp = hwnd;
-      while(tmp!=null)
-      {
-        hwnd = tmp;
-        tmp = HWND._subElements[tmp.handle];
-      }
-      return hwnd;
-    }
-
-    HWND? hwnd = HWND._elements[elem]; // find window by elements
-    if(hwnd==null)
-      hwnd = HWND._subElements[elem]; // find window by sub-elements
-
-    
-    if(hwnd!=null)
-      return findOwnedWindow(hwnd);
-
-    while(true) 
-    {
-      hwnd = HWND._elements[elem];
-      if(hwnd==null)
-      {
-        if(elem.parent == null)
-          break;
-        elem = elem.parent!;
-      }
-      else
-      {
-        if(hwnd.props.contains(WindowProp.ChildOwner))
-          return findOwnedWindow(hwnd); 
-        return def;
-      }
-    }
-    return def;
+    handle.updateBounds(left, top, width, height);
   }
 }
 
 void _default_element_proc(Element elem, TMessage Message)
 {
-
-  void wmWindowPosChanging(TWindowPos pos)
-  {
-
-
-    Rectangle b = elem.borderEdge;
-    Rectangle m = elem.marginEdge;
-
-    String? left, top, width, height;
-
-    String valPx(int val) => val==0? '0' : '${val}px';
-
-    if(pos.x!=null)
-      left = valPx(pos.x!-b.left.toInt()+m.left.toInt());
-    if(pos.y!=null)
-      top = valPx(pos.y!-b.top.toInt()+m.top.toInt());
-    if(pos.cx!=null)
-      width = valPx(pos.cx!);
-    if(pos.cy!=null)
-      height = valPx(pos.cy!);
-
-    bool moved = false;
-    if(left!=null && left!=elem.style.left)
-    {
-      elem.style.left = left;
-      moved = true;
-    }
-
-    if(top!=null && top!=elem.style.top)
-    {
-      elem.style.top = top;
-      moved = true;
-    }
-
-    bool sized = false;
-    if(width!=null && width!=elem.style.width)
-    {
-      elem.style.width = width;
-      sized = true;
-    }
-
-    if(height!=null && height!=elem.style.height)
-    {
-      elem.style.height = height;
-      sized = true;
-    }
-
-    if(elem.parent!=null && (moved || sized))
-    {
-      var hWnd = HWND.findWindow(elem);
-      if(hWnd==null)
-        return;
-
-      Rectangle rect = elem.offset;
-      if(moved)
-        Windows.SendMessage(hWnd, WM_MOVE, null, TPoint(rect.left.toInt(), rect.top.toInt()));
-      if(sized)
-        Windows.SendMessage(hWnd, WM_SIZE, null, TPoint(rect.width.toInt(), rect.height.toInt()));
-    }
-  }
 
   if(Message.Msg is COMBOBOX_MESSAGE || Message.Msg is LISTBOX_MESSAGE)
   {
@@ -368,6 +335,18 @@ void _default_element_proc(Element elem, TMessage Message)
 
   switch(Message.Msg)
   {
+    case WM_NCCREATE:
+      Message.Result = 1;
+      break;
+
+    case WM_CREATE:
+      Message.Result = 0;
+      break;
+
+    case WM_NCCALCSIZE:
+      Message.Result = 0;
+      break;
+
     case WM_GETTEXT:
       if(elem is InputElement)
         Message.Result = elem.value;
@@ -395,11 +374,6 @@ void _default_element_proc(Element elem, TMessage Message)
         elem.disabled = !state;
       break;
 
-    case WM_SHOWWINDOW:
-      elem.style.display = Message.WParam ? null : 'none';
-  
-      break;
-
     case WM_NCHITTEST:
       if(!HWND._elements.containsKey(elem))
       { // unregistered element
@@ -410,7 +384,7 @@ void _default_element_proc(Element elem, TMessage Message)
         }
       }
 
-      TPoint pt = Message.LParam;
+      POINT pt = Message.LParam;
 
       Rectangle rect = elem.getBoundingClientRect();
       if(pt.x>=rect.left && pt.x<=rect.right && pt.y>=rect.top && pt.y<=rect.bottom)
@@ -420,26 +394,21 @@ void _default_element_proc(Element elem, TMessage Message)
       return;
 
     case WM_LBUTTONUP:
-      HWND? wnd = HWND.findWindow(elem);
+      var wnd = HWND.findWindow(elem);
       if(wnd!=null)
       {
-        
-        if(wnd is HButtonControl)
+        if(wnd is HButtonControl) 
         {
           Element? prnt = wnd.handle.parent;
           if(prnt != null)
           {
-            HWND? pWnd = HWND.findWindow(prnt);
+            var pWnd = HWND.findWindow(prnt);
             if(pWnd!=null)
               Windows.SendMessage(pWnd, WM_COMMAND, TCommand(0, 0), wnd);
           }
         }
       }
       return;
-
-    case WM_WINDOWPOSCHANGING:
-      wmWindowPosChanging(Message.LParam);
-      break;
 
     case WM_GETDLGCODE:  
       Message.Result = Windows.DLGC_WANTARROWS | Windows.DLGC_WANTALLKEYS;

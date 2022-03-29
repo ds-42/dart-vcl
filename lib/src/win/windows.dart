@@ -15,7 +15,7 @@ class _mouseHit
   {
     Element elem = Windows.ElemFromEvent(event);
 
-    TPoint pt = TPoint(event.client.x.round(), event.client.y.round());
+    var pt = POINT(event.client.x.round(), event.client.y.round());
     int type = toIntDef(Windows.SendElementMessage(elem, WM_NCHITTEST, null, pt), Windows.HTNOWHERE);
     if(type!=Windows.HTNOWHERE)
     {
@@ -31,6 +31,106 @@ class _mouseHit
   }
 }
 
+/*
+ * Struct pointed to by WM_GETMINMAXINFO lParam
+ */
+class MINMAXINFO
+{
+  var ptReserved = POINT();
+  var ptMaxSize = POINT();
+  var ptMaxPosition = POINT();
+  var ptMinTrackSize = POINT();
+  var ptMaxTrackSize = POINT();
+}
+
+class STYLESTRUCT
+{
+  UINT   styleOld = 0;
+  UINT   styleNew = 0;
+}
+
+class CREATESTRUCT
+{
+    dynamic     lpCreateParams;
+    dynamic     hInstance;
+    HMENU?      hMenu;
+    HWND?       hwndParent;
+    int         cy;
+    int         cx;
+    int         y;
+    int         x;
+    int         style;
+    String      lpszName;
+    String      lpszClass;
+    UINT        dwExStyle;
+
+    CREATESTRUCT(this.dwExStyle, this.lpszClass, this.lpszName, this.style,
+                 this.x, this.y, this.cx, this.cy, this.hwndParent, this.hMenu,
+                 this.hInstance, this.lpCreateParams);
+}
+
+/*
+ * WM_WINDOWPOSCHANGING/CHANGED struct pointed to by lParam
+ */
+class WINDOWPOS
+{
+    HWND     hwnd;
+    HWINDOW? hwndInsertAfter;
+    int      x;
+    int      y;
+    int      cx;
+    int      cy;
+    UINT     flags;
+
+    WINDOWPOS(this.hwnd, this.hwndInsertAfter, this.x, this.y, this.cx, this.cy, this.flags);
+
+    WINDOWPOS.from(WINDOWPOS other) :
+          this(other.hwnd, other.hwndInsertAfter, other.x, other.y, other.cx, other.cy, other.flags);
+}
+
+/*
+ * WM_NCCALCSIZE parameter structure
+ */
+class NCCALCSIZE_PARAMS
+{
+    final List<RECT> rgrc;
+    final WINDOWPOS lppos;
+
+    NCCALCSIZE_PARAMS._(this.rgrc, this.lppos);
+
+    NCCALCSIZE_PARAMS(RECT rgrc0, RECT rgrc1, RECT rgrc2, WINDOWPOS pos) :
+          this._([rgrc0, rgrc1, rgrc2], pos);
+}
+
+class MONITORINFO
+{ 
+  RECT   rcMonitor = RECT();
+  RECT   rcWork = RECT();
+  UINT   dwFlags = 0;
+}
+
+class WINDOWPLACEMENT
+{ 
+  UINT  flags = 0;
+  UINT  showCmd = 0;
+  POINT ptMinPosition = POINT();
+  POINT ptMaxPosition = POINT();
+  RECT  rcNormalPosition = RECT();
+
+}
+
+
+final HWND_DESKTOP   = HWND( document.body );
+
+const HWND_TOP       = CWND(0);
+const HWND_BOTTOM    = CWND(1);
+const HWND_TOPMOST   = CWND(-1);
+const HWND_NOTOPMOST = CWND(-2);
+
+const HWND_BROADCAST = CWND(0xffff);
+const HWND_FFFE      = CWND(0xfffe); // (HWND)0xfffe
+
+typedef HMONITOR = dynamic;
 
 abstract class Windows
 {
@@ -174,18 +274,18 @@ abstract class Windows
       Element? elem = ElemFromEvent(event);
 
 
-      TPoint clientPos;
+      POINT clientPos;
       var hWnd = HWND.findWindow(elem);
       if(hWnd==null)
       {
-        TRect r= elem.borderRect;
+        var r= elem.borderRect;
         int px = event.client.x.toInt()-r.left;
         int py = event.client.y.toInt()-r.top;
-        clientPos = TPoint(px, py);
+        clientPos = POINT(px, py);
       }
       else
       {
-        clientPos = TPoint(event.client.x.toInt(), event.client.y.toInt());
+        clientPos = POINT(event.client.x.toInt(), event.client.y.toInt());
         Windows.ScreenToClient(hWnd, clientPos);
       }
 
@@ -200,48 +300,42 @@ abstract class Windows
 
       if(_capture != null && downPos!=null && hitType!=Windows.HTCLIENT)
       {
-        num dx = event.client.x - downPos!.x;
-        num dy = event.client.y - downPos!.y;
         var hWnd = _capture==null? null : HWND.findWindow(_capture!);
-        if(dx+dy==0 || hWnd==null)
+        if(hWnd is !HWND)
+          return;
+
+        var dx = (event.client.x - downPos!.x).truncate();
+        var dy = (event.client.y - downPos!.y).truncate();
+        if(dx+dy==0)
           return;
         downPos = event.client;
 
+        UINT flags = Windows.SWP_NOACTIVATE | Windows.SWP_NOZORDER;
 
-        Rectangle rect = hWnd.handle.offset;
+        var rect = hWnd.handle.offsetRect;
         switch(hitType)
         {
-          case Windows.HTBOTTOMLEFT:
-            Windows.SetWindowPos(hWnd, null, (rect.left+dx).toInt(), null, (rect.width-dx).toInt(), (rect.height+dy).toInt(), 0);
-            break;
-          case Windows.HTBOTTOMRIGHT:
-            Windows.SetWindowPos(hWnd, null, null, null, (rect.width+dx).toInt(), (rect.height+dy).toInt(), 0);
-            break;
-          case Windows.HTTOPLEFT:
-            Windows.SetWindowPos(hWnd, null, (rect.left+dx).toInt(), (rect.top+dy).toInt(), (rect.width-dx).toInt(), (rect.height-dy).toInt(), 0);
-            break;
-          case Windows.HTTOPRIGHT:
-            Windows.SetWindowPos(hWnd, null, null, (rect.top+dy).toInt(), (rect.width+dx).toInt(), (rect.height-dy).toInt(), 0);
-            break;
-          case Windows.HTTOP:
-            Windows.SetWindowPos(hWnd, null, null, (rect.top+dy).toInt(), null, (rect.height-dy).toInt(), 0);
-            break;
-          case Windows.HTLEFT:
-            Windows.SetWindowPos(hWnd, null, (rect.left+dx).toInt(), null, (rect.width-dx).toInt(), null, 0);
-            break;
-          case Windows.HTRIGHT:
-            Windows.SetWindowPos(hWnd, null, null, null, (rect.width+dx).toInt(), null, 0);
-            break;
-          case Windows.HTBOTTOM:
-            Windows.SetWindowPos(hWnd, null, null, null, null, (rect.height+dy).toInt(), 0);
-            break;
+          case Windows.HTBOTTOMLEFT:   rect.left+=dx;   rect.bottom+=dy; break;
+          case Windows.HTBOTTOMRIGHT:  rect.right+=dx;  rect.bottom+=dy; break;
+          case Windows.HTTOPLEFT:      rect.left+=dx;   rect.top+=dy;    break;
+          case Windows.HTTOPRIGHT:     rect.right+=dx;  rect.top+=dy;    break;
+          case Windows.HTTOP:                           rect.top+=dy;    break;
+          case Windows.HTLEFT:         rect.left+=dx;                    break;
+          case Windows.HTRIGHT:        rect.right+=dx;                   break;
+          case Windows.HTBOTTOM:                        rect.bottom+=dy; break;
           case Windows.HTCAPTION:
-            Windows.SetWindowPos(hWnd, null, (rect.left+dx).toInt(), (rect.top+dy).toInt(), null, null, 0);
+            UINT style = Windows.GetWindowLong(hWnd, Windows.GWL_STYLE);
+            if(style.and(Windows.WS_MAXIMIZE))
+              flags |= Windows.SWP_NOSIZE|Windows.SWP_NOMOVE;
+            else
+              OffsetRect(rect, dx, dy);
             break;
 
           default:
             return;
         }
+        Windows.SetWindowPos(hWnd, null, rect.left, rect.top, rect.width, rect.height, flags);
+
 
       }
 
@@ -270,7 +364,7 @@ abstract class Windows
         _capture = mh.type==0? null : mh.elem;
       }
       MESSAGE msg = [WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN][event.button];
-      SendElementMessage(mh.elem, msg, MouseEventToShiftState(event), TPoint(mh.x, mh.y));
+      SendElementMessage(mh.elem, msg, MouseEventToShiftState(event), POINT(mh.x, mh.y));
 
       if(document.activeElement!=null)
       {
@@ -318,8 +412,7 @@ abstract class Windows
     {
       WheelEvent event = _event as WheelEvent;
       Element elem = ElemFromEvent(event);
-      //if(elem == null)
-      //  return;
+
       TShiftState Shift = TShiftState();
       if(event.ctrlKey)
         Shift << ShiftStates.Ctrl;
@@ -328,7 +421,7 @@ abstract class Windows
       if(event.shiftKey)
         Shift << ShiftStates.Shift;
 
-      TRect r= elem.contentRect;
+      var r= elem.contentRect;
       int px = event.client.x.toInt()-r.left;
       int py = event.client.y.toInt()-r.top;
 
@@ -436,7 +529,6 @@ abstract class Windows
       if(Result == false)
         event.preventDefault();
 
-
     }
 
     dynamic doKeyUp(Event _event)
@@ -454,8 +546,6 @@ abstract class Windows
         event.preventDefault();
 
     }
-
-
 
     window.addEventListener('blur',       doBlur,       true); _doBlur = doBlur;
     window.addEventListener('copy',       doCopy,       true); _doCopy = doCopy;
@@ -502,7 +592,6 @@ abstract class Windows
     _doTouchMove.cancel();
     _doTouchEnd.cancel();
 
-
     _active = false;
   }
 
@@ -512,14 +601,14 @@ abstract class Windows
     if(HWND._elements.containsKey(elem))
       return elem;
 
-    HWND? sub = HWND._subElements[elem];
+    var sub = HWND._subElements[elem];
     if(sub == null)
     {
       while(elem != null)
       {
         if(elem is TableElement)
         {
-          HWND? hwnd = HWND._subElements[elem];
+          var hwnd = HWND._subElements[elem];
           elem = hwnd==null? null : hwnd.handle;
           break;
         }
@@ -556,8 +645,8 @@ abstract class Windows
     if(_capture!=null)
       return _capture!;
 
-    HWND? hwnd = HWND.findWindow(event.target as Element);
-    return hwnd==null? event.target as Element : hwnd.handle;
+    var hwnd = HWND.findWindow(event.target as Element);
+    return hwnd is HWND? hwnd.handle : event.target as Element;
 
 
   }
@@ -567,9 +656,6 @@ abstract class Windows
 
   static int _sysFontSize = 10;
   static int get sysFontSize => _sysFontSize;
-
-
-
 
 
   static var _iState = false;
@@ -643,7 +729,7 @@ abstract class Windows
     css.fontStyle = (font==null)? "" : (font.Italic? "italic" : "normal");
   }
 
-  static IsFocused(HWND hwnd)
+  static bool IsFocused(HWND hwnd)
   {
     Element? f = document.activeElement;
     while(f!=null)
@@ -783,12 +869,6 @@ abstract class Windows
   }
 
 
-
-
-/// ***********************
-
-
-
   /*
    * Scroll Bar Constants
    */
@@ -919,6 +999,17 @@ abstract class Windows
   static const int VK_F24 =           0x87;
 
 
+  static const int GWL_HWNDPARENT      = -8;
+  static const int GWL_STYLE           = -16;
+  static const int GWL_EXSTYLE         = -20;
+  static const int GWL_USERDATA        = -21;
+
+  static const int GWLP_WNDPROC        = -4;
+  static const int GWLP_HINSTANCE      = -6;
+  static const int GWLP_HWNDPARENT     = -8;
+  static const int GWLP_USERDATA       =-21;
+  static const int GWLP_ID             =-12;
+
   /*
    * WM_ACTIVATE state values
    */
@@ -931,34 +1022,53 @@ abstract class Windows
    * WM_NCHITTEST and MOUSEHOOKSTRUCT Mouse Position Codes
    */
 
-  static const int HTTRANSPARENT      = -1; // В окне, в текущий момент закрытом другим окном  того же самого потока
-  static const int HTNOWHERE          = 0;  // На экранном фоне или на разделительной линии между окнами
-  static const int HTCLIENT           = 1;  // В рабочей области
-  static const int HTCAPTION          = 2;  // В области заголовка
-/*  static const int HTSYSMENU          = 3; // В Системном меню или на кнопке Закрыть (Close) в дочернем окне
-  static const int HTGROWBOX          = 4;  // На блоке управления размером (то же самое, что и HTSIZE)
-  static const int HTSIZE             = THitTest.GROWBOX; // На блоке управления размером (то же самое, что и HTGROWBOX)
-  static const int HTMENU             = 5;  // В меню
-  static const int HTHSCROLL          = 6;  // На горизонтальной линейке прокрутки
-  static const int HTVSCROLL          = 7;  // На вертикальной линейке прокрутки
-  static const int HTMINBUTTON        = 8;  // На кнопке свертывания окна (Minimize)
-  static const int HTMAXBUTTON        = 9;  // На кнопке развертывания окна (Maximize)*/
-  static const int HTLEFT             = 10; // На левой рамке окна
-  static const int HTRIGHT            = 11; // На правой рамке окна
-  static const int HTTOP              = 12; // На горизонтальной верхней рамке окна
-  static const int HTTOPLEFT          = 13; // На левом верхнем угле рамки окна
-  static const int HTTOPRIGHT         = 14; // На правом верхнем угле рамки окна
-  static const int HTBOTTOM           = 15; // На горизонтальной нижней рамке окна
-  static const int HTBOTTOMLEFT       = 16; // В левом нижнем угле рамки окна
-  static const int HTBOTTOMRIGHT      = 17; // В правом нижнем угле рамки окна
-/*  static const int HTBORDER           = 18; // В границах окна, которое не имеет рамки установки размеров окна
-  static const int HTREDUCE           = THitTest.MINBUTTON; // На кнопке свертывания окна (Minimize)
-  static const int HTZOOM             = THitTest.MAXBUTTON;
-  static const int HTSIZEFIRST        = THitTest.LEFT;
-  static const int HTSIZELAST         = THitTest.BOTTOMRIGHT;
-  static const int HTOBJECT           = 19;
-  static const int HTCLOSE            = 20; // На кнопке Закрыть (Close)
-  static const int HTHELP             = 21; // На кнопке Справка (Help)*/
+  static const int HTTRANSPARENT      = -1; 
+  static const int HTNOWHERE          = 0;  
+  static const int HTCLIENT           = 1;  
+  static const int HTCAPTION          = 2;  
+
+  static const int HTLEFT             = 10; 
+  static const int HTRIGHT            = 11; 
+  static const int HTTOP              = 12; 
+  static const int HTTOPLEFT          = 13; 
+  static const int HTTOPRIGHT         = 14; 
+  static const int HTBOTTOM           = 15; 
+  static const int HTBOTTOMLEFT       = 16; 
+  static const int HTBOTTOMRIGHT      = 17; 
+
+
+
+  /*
+   * WM_SIZE message wParam values
+   */
+  static const int SIZE_RESTORED       = 0;
+  static const int SIZE_MINIMIZED      = 1;
+  static const int SIZE_MAXIMIZED      = 2;
+  static const int SIZE_MAXSHOW        = 3;
+  static const int SIZE_MAXHIDE        = 4;
+
+  /*
+   * Obsolete constant names
+   */
+  static const int SIZENORMAL          = SIZE_RESTORED;
+  static const int SIZEICONIC          = SIZE_MINIMIZED;
+  static const int SIZEFULLSCREEN      = SIZE_MAXIMIZED;
+  static const int SIZEZOOMSHOW        = SIZE_MAXSHOW;
+  static const int SIZEZOOMHIDE        = SIZE_MAXHIDE;
+
+
+  /*
+   * WM_NCCALCSIZE "window valid rect" return values
+   */
+  static const int WVR_ALIGNTOP        = 0x0010;
+  static const int WVR_ALIGNLEFT       = 0x0020;
+  static const int WVR_ALIGNBOTTOM     = 0x0040;
+  static const int WVR_ALIGNRIGHT      = 0x0080;
+  static const int WVR_HREDRAW         = 0x0100;
+  static const int WVR_VREDRAW         = 0x0200;
+  static const int WVR_REDRAW          = WVR_HREDRAW | WVR_VREDRAW;
+  static const int WVR_VALIDRECTS      = 0x0400;
+
 
   /*
    * Key State Masks for Mouse Messages
@@ -972,42 +1082,72 @@ abstract class Windows
   static const int MK_XBUTTON2         = 0x0040;
 
 
+  /*
+   * Window Styles
+   */
+  static const int WS_OVERLAPPED       = 0x00000000;
+  static const int WS_POPUP            = 0x80000000;
+  static const int WS_CHILD            = 0x40000000;
+  static const int WS_MINIMIZE         = 0x20000000;
+  static const int WS_VISIBLE          = 0x10000000;
+  static const int WS_DISABLED         = 0x08000000;
+  static const int WS_CLIPSIBLINGS     = 0x04000000;
+  static const int WS_CLIPCHILDREN     = 0x02000000;
+  static const int WS_MAXIMIZE         = 0x01000000;
+  static const int WS_CAPTION          = 0x00C00000;     /* WS_BORDER | WS_DLGFRAME  */
+  static const int WS_BORDER           = 0x00800000;
+  static const int WS_DLGFRAME         = 0x00400000;
+  static const int WS_VSCROLL          = 0x00200000;
+  static const int WS_HSCROLL          = 0x00100000;
+  static const int WS_SYSMENU          = 0x00080000;
+  static const int WS_THICKFRAME       = 0x00040000;
+  static const int WS_GROUP            = 0x00020000;
+  static const int WS_TABSTOP          = 0x00010000;
+
+  static const int WS_MINIMIZEBOX      = 0x00020000;
+  static const int WS_MAXIMIZEBOX      = 0x00010000;
+
+
+  /*
+   * Extended Window Styles
+   */
+  static const int WS_EX_DLGMODALFRAME     = 0x00000001;
+  static const int WS_EX_NOPARENTNOTIFY    = 0x00000004;
+  static const int WS_EX_TOPMOST           = 0x00000008;
+
+  static const int WS_EX_MDICHILD          = 0x00000040;
+
+  static const int WS_EX_WINDOWEDGE        = 0x00000100;
+
+
+  static const int WS_EX_CONTROLPARENT = 0x00010000;
+  static const int WS_EX_STATICEDGE    = 0x00020000;
+
+  static const int WS_EX_LAYERED           = 0x00080000;
+
+  static const int WS_EX_NOINHERITLAYOUT   = 0x00100000; // Disable inheritence of mirroring by children**/
+  static const int WS_EX_LAYOUTRTL         = 0x00400000; // Right to left mirroring
+
 
   /*
    * Predefined Clipboard Formats
    */
-//  static const int CF_TEXT =            1; /* text format */
-//  static const int CF_BITMAP =          2; /* bitmap format */
-
-//  static const int CF_RTFTEXT =       100; /* rtf format */
-//  static const int CF_FTEXT =         101; /* delta text format */
-//  static const int CF_HTML =          102; /* html format */
 
   static const String CF_TEXT =       'text/plain'; /* text format */
   static const String CF_FTEXT =      'text/fstr';  /* delta text format */
   static const String CF_HTML =       'text/html';  /* html format */
   static const String CF_RTFTEXT =    'text/rtf';   /* rtf format */
 
-  static const String CF_EDITOR =     'application/editor.delta'; /* editor format */
-
+  static const WPF_RESTORETOMAXIMIZED      = 0x0002;
 
 
   static dynamic SendMessage(HWND hwnd, MESSAGE message, [dynamic wParam, dynamic lParam] )
   {
-    dynamic DispatchMessage(MSG msg)
-    {
-      TMessage Message = TMessage(msg.message);
-      Message.WParam=msg.wParam;
-      Message.LParam=msg.lParam;
-      hwnd._mainProc(hwnd.handle, Message);
-      return Message.Result;
-    }
-
     dynamic ProcessMessage(MSG msg)
     {
 
       if(_application == null)
-        return DispatchMessage(msg);
+        return hwnd._wnd.dispatch(msg);
       else
       {
         var OnMessage = _application!.OnMessage;
@@ -1021,16 +1161,14 @@ abstract class Windows
              !_application!.IsDlgMsg(msg))
           {
             // TranslateMessage(Message);
-            return DispatchMessage(msg);
+            return hwnd._wnd.dispatch(msg);
           }
     
         return null;
       } 
     }
 
-    ///  Некоторые элементы [HScrollBar] могут являтся частью компонента, для перенаправления
-    ///  событий владельцу выполняется уточнение получателя
-    HWND? tmp = HWND._findWindowDef(hwnd.handle, hwnd);
+    var tmp = HWND._findWindowDef(hwnd.handle, hwnd);
     if(tmp==null)
       return null;
     hwnd = tmp;
@@ -1038,6 +1176,13 @@ abstract class Windows
     var msg = MSG(hwnd, message, wParam, lParam);
     return ProcessMessage(msg);
   }
+
+
+  static dynamic PostMessage(HWND hWnd, MESSAGE Msg, dynamic wParam, dynamic lParam)
+  {
+    return null; // dummy
+  }
+
 
   static bool RegisterClass(CLASS_ID cid)
   {
@@ -1054,8 +1199,18 @@ abstract class Windows
   }
 
 
-  static bool IsChild(HWND hWndParent, HWND? hWnd) =>
-      hWnd!=null && hWnd.handle.parent==hWndParent.handle;
+  static const CW_USEDEFAULT       = 0x80000000;
+  
+  static void InitWindow(HWND hwnd, INITSTRUCT params) =>
+    hwnd._wnd.init(params);
+
+  static bool IsWindow(HWND hWnd)
+  {
+    return true;
+  }
+
+  static bool IsChild(HWND hWndParent, HWND hWnd) =>
+      hWnd.handle.parent==hWndParent.handle;
 
   static bool DestroyWindow(HWND hWnd)
   {
@@ -1065,80 +1220,18 @@ abstract class Windows
 
   static bool ShowWindow(HWND hWnd, int nCmdShow)
   {
-    switch(nCmdShow)
-    {
-      case Windows.SW_HIDE:
-        if(Windows.IsWindowVisible(hWnd))
-          SendMessage(hWnd, WM_SHOWWINDOW, false, null);
-        return true;
-
-      case Windows.SW_SHOW:
-      case Windows.SW_SHOWNOACTIVATE:
-        if(!Windows.IsWindowVisible(hWnd))
-          SendMessage(hWnd, WM_SHOWWINDOW, true, null);
-        return true;
-
-      default:
-        return false;
-    }
+    return _winpos.show_window(hWnd, nCmdShow);
   }
 
-
-  static bool SetWindowPos(HWND hWnd, _HWND? hWndInsertAfter, int? x, int? y, int? cX, int? cY, int flags)
-  {
-    
-    if(hWndInsertAfter == HWND.TOPMOST)
-      hWnd.style.zIndex = '9999';
-
-    TWindowPos pos = TWindowPos();
-    pos.hwnd = hWnd;
-    pos.hwndInsertAfter = hWndInsertAfter;
-    pos.x = x;
-    pos.y = y;
-    pos.cx = cX;
-    pos.cy = cY;
-    pos.flags = flags;
-
-    if(flags.and(Windows.SWP_NOMOVE))
-    {
-      pos.x = null;
-      pos.y = null;
-    }
-
-    if(flags.and(Windows.SWP_NOSIZE))
-    {
-      pos.cx = null;
-      pos.cy = null;
-    }
-
-    if(pos.x!=null || pos.y!=null || pos.cx!=null || pos.cy!=null)
-    {
-      
-      SendMessage(hWnd, WM_WINDOWPOSCHANGING, null, pos);
-
-      SendMessage(hWnd, WM_WINDOWPOSCHANGED, null, pos);
-    }
-
-    if(flags.and(Windows.SWP_SHOWWINDOW|Windows.SWP_HIDEWINDOW))
-    {
-      bool show = flags.and(Windows.SWP_SHOWWINDOW);
-      SendMessage(hWnd, WM_SHOWWINDOW, show, null);
-    }
-    return true;
-  }
+  static BOOL SetWindowPos(HWND hWnd, HWINDOW? hWndInsertAfter, int x, int y, int cX, int cY, int flags) =>
+    _winpos.SetWindowPos(hWnd, hWndInsertAfter, x, y, cX, cY, flags);
 
 
-  static bool IsWindowVisible(HWND hWnd)
-  {
-    return hWnd.style.visibility!='hidden' && hWnd.style.display!='none';
-  }
+  static bool IsWindowVisible(HWND hWnd) => hWnd.visible;
 
-  static bool IsIconic(HWND? hWnd)
-  {
+  static bool IsIconic(HWND hWnd) => _winpos.IsIconic(hWnd) == TRUE;
 
-    return false;
-  }
-
+  static bool IsZoomed(HWND hWnd) => _winpos.IsZoomed(hWnd) == TRUE;
 
   /*
    * SetWindowPos Flags
@@ -1161,11 +1254,6 @@ abstract class Windows
   static const int SWP_DEFERERASE      = 0x2000;
   static const int SWP_ASYNCWINDOWPOS  = 0x4000;
 
-
-
-
-
-
   static HWND? SetFocus(HWND hWnd)
   {
     Element? elem = document.activeElement;
@@ -1180,8 +1268,8 @@ abstract class Windows
 
   static HWND? GetActiveWindow()
   {
+
     return _activeWindow;
-//    return document.activeElement;
   }
 
   static HWND? GetFocus()
@@ -1191,31 +1279,27 @@ abstract class Windows
     return HWND.findWindow(document.activeElement!);
   }
 
-
-
   static HWND? GetCapture()
   {
     var elem = Windows._capture;
     return elem==null? null : HWND.findWindow(elem);
   }
 
-
-  static HWND? SetCapture(HWND hwnd)
+  static HWND? SetCapture(HWND? hwnd)
   {
+    if(hwnd == null)
+      return null;
+
     var res = GetCapture();
     Windows._capture = hwnd.handle;
     return res;
   }
-
 
   static bool ReleaseCapture()
   {
     Windows._capture = null;
     return true;
   }
-
-
-
 
   static bool EnableWindow(HWND hWnd, bool bEnable)
   {
@@ -1226,16 +1310,34 @@ abstract class Windows
   static bool IsWindowEnabled(HWND hWnd)
   {
     return hWnd.enabled;
-    
-    
   }
 
+  /*
+   * GetSystemMetrics() codes
+   */
+
+  static const int SM_CXVSCROLL            = 2;
+  static const int SM_CYHSCROLL            = 3;
+  static const int SM_CYCAPTION            = 4;
+  static const int SM_CXBORDER             = 5;
+  static const int SM_CYBORDER             = 6;
+
+  static const int SM_CYMENU               = 15;
+
+  static const int SM_CXMINTRACK           = 34;
+  static const int SM_CYMINTRACK           = 35;
+
+  static const int SM_CXMINIMIZED          = 57;
+  static const int SM_CYMINIMIZED          = 58;
+  static const int SM_CXMAXTRACK           = 59;
+  static const int SM_CYMAXTRACK           = 60;
+
+  static int GetSystemMetrics(int nIndex) =>
+    __sysparams.GetSystemMetrics(nIndex);
 
   static HMENU CreateMenu() => HMENU(HMENU.MAINMENU);
 
   static HMENU CreatePopupMenu() => HMENU(HMENU.POPUPMENU);
-
-
 
   static bool UpdateWindow(HWND hwnd)
   {
@@ -1251,42 +1353,39 @@ abstract class Windows
 
   static HWND? SetActiveWindow(HWND? hwnd)
   {
-    HWND? elem = _activeWindow;
+    var elem = _activeWindow;
     if(_activeWindow != null)
       SendMessage(_activeWindow!, WM_ACTIVATE, MAKELONG(WA_INACTIVE, 0), hwnd);
 
     _activeWindow = hwnd;
+
     if(_activeWindow != null)
       SendMessage(_activeWindow!, WM_ACTIVATE, MAKELONG(WA_ACTIVE, 0), elem);
     return elem;
 
   }
 
-
+  static BOOL SetForegroundWindow( HWND hWnd ) => 1; /* dummy */
 
   static bool ValidateRect(HWND hWnd, TRect rect)
   {
     return true;
   }
 
-
   static void SetWindowText(HWND hWnd, String text)
   {
     SendMessage(hWnd, WM_SETTEXT, null, text);
   }
 
-
-
-  static bool GetWindowRect(HWND? hWnd, RECT rect)
+  static bool GetWindowRect(HWND hwnd, RECT rect)
   {
-    if(hWnd==null)
-      return false;
-    if(hWnd.handle.offsetParent==null)
-      return false;
-    rect.assign(hWnd.handle.borderRect);
-    return true;
+    var elem = hwnd.handle;
+    return toBoolDef(elem.invisibilityProc(()
+    {
+      rect.assign(elem.borderRect);
+      return true;
+    }), false);
   }
-
 
   /*
    * MessageBox() Flags
@@ -1327,72 +1426,62 @@ abstract class Windows
   static const int MB_ICONINFORMATION      =  MB_ICONASTERISK;
   static const int MB_ICONSTOP             =  MB_ICONHAND;
 
-  
-
-  static TPoint GetCursorPos()
+  static POINT GetCursorPos()
   {
     return _mousePos.copy();
   }
 
+  static BOOL HideCaret( HWND hWnd ) => TRUE; // dummy
 
-  static bool ClientToScreen(HWND? hWnd, POINT pt)
+  static BOOL ShowCaret( HWND hWnd ) => TRUE; // dummy
+
+  static bool ClientToScreen(HWND hWnd, POINT pt)
   {
-    if(hWnd==null)
-      return false;
+    var elem = hWnd.handle;
+    return toBoolDef(elem.invisibilityProc(()
+    {
+      if(elem.offsetParent!=null)
+      {
+        var rect = hWnd.clientHandle.borderRect;
 
-    var rect = hWnd.clientHandle.borderEdge;
-    pt.x += rect.left.round();
-    pt.y += rect.top.round();
+        pt.x += rect.left;
+        pt.y += rect.top;
+      }
+    }), false);
 
-    return true;
   }
 
-  static bool ScreenToClient(HWND? hWnd, POINT pt)
+  static bool ScreenToClient(HWND hWnd, POINT pt)
   {
-    if(hWnd==null)
-      return false;
+    var elem = hWnd.handle;
+    return toBoolDef(elem.invisibilityProc(()
+    {
+      if(elem.offsetParent!=null)
+      {
+        var rect = hWnd.clientHandle.borderRect;
 
-    var rect = hWnd.clientHandle.borderEdge;
-    pt.x -= rect.left.round();
-    pt.y -= rect.top.round();
+        pt.x -= rect.left;
+        pt.y -= rect.top;
+      }
+    }), false);
 
-    return true;
   }
 
-
-
-  static HWND? WindowFromPoint(TPoint Pos)
+  static HWND? WindowFromPoint(POINT Pos)
   {
     Element? elem = document.elementFromPoint(Pos.x, Pos.y);
     return elem==null? null : HWND.findWindow(elem);
-//  return document.elementFromPoint(Pos.x, Pos.y);
   }
 
+  static dynamic GetWindowLong(HWND hWnd, int nIndex) =>
+    hWnd._wnd.getWindowLong(nIndex);
 
-  static WNDPROC ChangeWindowProc(HWND hwnd, WNDPROC proc)
-  {
+  static WNDPROC ChangeWindowProc(HWND hwnd, WNDPROC proc) =>
+      hwnd._wnd.setWndProc(proc);
 
-    WNDPROC last = hwnd._mainProc;
-    hwnd._mainProc = proc;
-    return last;
-  }
+  static HWND GetDesktopWindow() => HWND_DESKTOP;
 
-
-
-  static HWND GetDesktopWindow() => HWND.DESKTOP;
-
-  static HWND? GetParent(HWND? hWnd)
-  {
-    if(hWnd == null)
-      return null;
-
-    Element? elem = hWnd.handle.parent;
-    if(elem==null)
-      return null;
-    return HWND.findWindow(elem);
-  }
-
-
+  static HWND? GetParent(HWND hWnd) => hWnd._wnd.parent;
 
   static bool EnumThreadWindows(dynamic dwThreadId, WNDENUMPROC lpfn, dynamic lParam)
   {
@@ -1402,7 +1491,17 @@ abstract class Windows
     return true;
   }
 
-
+  /*
+   * GetWindow() Constants
+   */
+  static const int GW_HWNDFIRST        = 0;
+  static const int GW_HWNDLAST         = 1;
+  static const int GW_HWNDNEXT         = 2;
+  static const int GW_HWNDPREV         = 3;
+  static const int GW_OWNER            = 4;
+  static const int GW_CHILD            = 5;
+  static const int GW_ENABLEDPOPUP     = 6;
+  static const int GW_MAX              = 6;
 
   /*
    * User Button Notification Codes
@@ -1410,9 +1509,6 @@ abstract class Windows
   static const int BN_CLICKED           = 0;
 
   static const BN_DOUBLECLICKED         = 5;
-
-
-
 
   /*
    * Dialog Codes
@@ -1429,8 +1525,6 @@ abstract class Windows
   static const int DLGC_STATIC          = 0x0100;      /* Static item: don't include       */
   static const int DLGC_BUTTON          = 0x2000;      /* Button item: can be checked      */
 
-
-
   /*
    * Combo Box return Values
    */
@@ -1438,6 +1532,38 @@ abstract class Windows
   static const int CB_ERR               = -1;
   static const int CB_ERRSPACE          = -2;
 
+/*
+ * Multimonitor API.
+ */
+
+  static const int MONITOR_DEFAULTTONULL       = 0x00000000;
+  static const int MONITOR_DEFAULTTOPRIMARY    = 0x00000001;
+  static const int MONITOR_DEFAULTTONEAREST    = 0x00000002;
 
 
+  static HMONITOR MonitorFromWindow( HWND? hwnd, UINT flags)
+  {
+    return __sysparams.monitor_from_window( hwnd, flags, __sysparams.get_thread_dpi() /* 0 ??? */ );
+  }
+
+ static BOOL GetMonitorInfo( HMONITOR hMonitor, MONITORINFO lpmi) =>
+   __sysparams.get_monitor_info(hMonitor, lpmi);
+
+  /*
+   * The "real" ancestor window
+   */
+  static const int GA_PARENT       = 1;
+
+  /* undocumented SWP flags - from SDK 3.1 */
+  static const int SWP_NOCLIENTSIZE    = 0x0800;
+  static const int SWP_NOCLIENTMOVE    = 0x1000;
+  static const int SWP_STATECHANGED    = 0x8000;
+
+  static void WARN(String data, [ List? args ])
+  {
+    if(args==null)
+      print(data);
+    else
+    print(SysUtils.Format(data, args));
+  }
 }

@@ -177,7 +177,7 @@ class TCustomTabControl extends TWinControl
     if(_updating)
       return;
     if(HandleAllocated())
-      Windows.SendMessage(Handle, WM_SIZE, null/*SIZE_RESTORED*/, TSize(Width, Height));
+      Windows.SendMessage(Handle, WM_SIZE, Windows.SIZE_RESTORED, SIZE(Width, Height));
     Realign();
   }
 
@@ -253,6 +253,16 @@ class TTabSheet extends TWinControl
 
 
 
+  void CreateParams(TCreateParams Params)
+  {
+    super.CreateParams(Params);
+    Params.X = null;
+    Params.Y = null;
+    Params.Width = null;
+    Params.Height = null;
+    Params.Style |= Windows.WS_VISIBLE;
+  }
+
 
   void CreateWindowHandle(TCreateParams Params) // new
   {
@@ -263,10 +273,6 @@ class TTabSheet extends TWinControl
     var ctrl = pages.WindowHandle as HPageControl;
     var tab = ctrl.findTabSheet(this)!;
 
-    Params.X = null;
-    Params.Y = null;
-    Params.Width = null;
-    Params.Height = null;
     
 
 /*    if(Params.Caption.isNotEmpty)

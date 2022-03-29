@@ -234,4 +234,9 @@ class HTabSheet extends HCustomControl
     }
   }
 
+  void set_window_rect(int left, int top, int width, int height)
+  {
+    // client - autosized
+  }
+
 }

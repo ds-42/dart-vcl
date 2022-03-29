@@ -2,9 +2,8 @@ part of vcl;
 
 enum TScrollBarKind { Horizontal, Vertical }
   
-enum TFormBorderStyle { None, Sizeable, Dialog, }
-
-enum TBorderStyle { None, Single }
+enum TFormBorderStyle { None, Single, Sizeable, Dialog, ToolWindow, SizeToolWin }
+typedef TBorderStyle = TFormBorderStyle;
 
 
 TClass HintWindowClass = THintWindow.classType;
@@ -32,7 +31,7 @@ HWND? FindTopMostWindow(HWND ActiveWindow)
   bool DoFindWindow(HWND hWnd, dynamic Param)
   {
     if((hWnd != TaskActiveWindow) && (hWnd != Application._handle) &&
-      Windows.IsWindowVisible(hWnd) && Windows.IsWindowEnabled(hWnd))
+        Windows.IsWindowVisible(hWnd) && Windows.IsWindowEnabled(hWnd))
     {
       if(TaskFirstWindow == null)
         TaskFirstWindow = hWnd;
@@ -124,7 +123,7 @@ class TScrollingWinControl extends TWinControl
   void CreateWnd()
   {
     super.CreateWnd();
-    Windows.SetActiveWindow(Handle); // new
+    
     
   }
 
@@ -202,7 +201,18 @@ class TScrollingWinControl extends TWinControl
     {
       super._wmSize(Message);
       TWindowState NewState = TWindowState.Normal;
-
+      switch(Message.SizeType)
+      {
+        case Windows.SIZENORMAL:
+          NewState = TWindowState.Normal;
+          break;
+        case Windows.SIZEICONIC:
+          NewState = TWindowState.Minimized;
+          break;
+        case Windows.SIZEFULLSCREEN:
+          NewState = TWindowState.Maximized;
+          break;
+      }
       Resizing(NewState);
     }
     finally
@@ -236,7 +246,7 @@ class TScrollingWinControl extends TWinControl
 enum TFormStyle { Normal, MDIChild, MDIForm, StayOnTop }
 
 
-enum TPosition { Designed, Default, DefaultSizeOnly,
+enum TPosition { Designed, Default, DefaultPosOnly, DefaultSizeOnly,
                  ScreenCenter, DesktopCenter, MainFormCenter, OwnerFormCenter }
 
 enum TCloseAction {None, Hide, Free, Minimize}
@@ -315,7 +325,10 @@ class TCustomForm extends TScrollingWinControl
 {
   HForm? _form;
 
-  static List ShowCommands = [Windows.SW_SHOWNORMAL, Windows.SW_SHOWMINNOACTIVE, Windows.SW_SHOWMAXIMIZED];
+  static Map ShowCommands = {
+    TWindowState.Normal: Windows.SW_SHOWNORMAL,
+    TWindowState.Minimized: Windows.SW_SHOWMINNOACTIVE,
+    TWindowState.Maximized: Windows.SW_SHOWMAXIMIZED };
 
   TWinControl? _activeControl;
   TWinControl?
@@ -369,13 +382,12 @@ class TCustomForm extends TScrollingWinControl
         return;
       _windowState = Value;
       if(!ComponentState.contains(ComponentStates.Designing) && Showing)
-        Windows.ShowWindow(Handle, ShowCommands[Value.index]);
+        Windows.ShowWindow(Handle, ShowCommands[Value]);
 
-      // new
-      if(WindowState==TWindowState.Maximized && _form!=null)
-        _form!.Maximize = true;
     }
-    
+
+  bool _sizeChanging = false;
+
   bool _keyPreview = false;
   bool
     get KeyPreview => _keyPreview;
@@ -561,8 +573,8 @@ class TCustomForm extends TScrollingWinControl
 
   TRect GetClientMetric()
   {
-    int cxb = GetSystemMetrics(SysMetric.CXBORDER);
-    int cyb = GetSystemMetrics(SysMetric.CYBORDER);
+    int cxb = GetSystemMetrics(Windows.SM_CXBORDER);
+    int cyb = GetSystemMetrics(Windows.SM_CYBORDER);
     return TRect(cxb,cyb,cxb,cyb);
   }
 
@@ -570,10 +582,10 @@ class TCustomForm extends TScrollingWinControl
   {
     int cyc = 0;
     if(BorderStyle!=TBorderStyle.None)
-      cyc+=GetSystemMetrics(SysMetric.CYCAPTION);
+      cyc+=GetSystemMetrics(Windows.SM_CYCAPTION);
     TRect r = GetClientMetric();
     if(Menu != null)
-      cyc+= GetSystemMetrics(SysMetric.CYMENU);
+      cyc+= GetSystemMetrics(Windows.SM_CYMENU);
     return TRect(0, 0, Width-r.left-r.right-2, Height-cyc-r.top-r.bottom-2);
 
   }
@@ -654,6 +666,21 @@ class TCustomForm extends TScrollingWinControl
           Activate();
         break;
 
+      case WM_WINDOWPOSCHANGING:
+        if ((ComponentState * [ComponentStates.Loading, ComponentStates.Designing]).isEqual([ComponentStates.Loading]))
+        {
+          WINDOWPOS pos = Message.LParam;
+
+          if(([TPosition.Default, TPosition.DefaultPosOnly].contains(Position)) &&
+            (WindowState != TWindowState.Maximized))
+              pos.flags|=Windows.SWP_NOMOVE;
+
+          if(([TPosition.Default, TPosition.DefaultSizeOnly].contains(Position)) &&
+            ([TBorderStyle.Sizeable, TBorderStyle.SizeToolWin].contains(BorderStyle)))
+              pos.flags |= Windows.SWP_NOSIZE;
+        }
+        break;
+
     default:
 
       break;
@@ -670,7 +697,7 @@ class TCustomForm extends TScrollingWinControl
   {
     super.AlignControls(AControl, Rect);
     if(ClientHandle != null)
-      Windows.SetWindowPos(_clientHandle!, HWND.BOTTOM, Rect.left, Rect.top, Rect.width,
+      Windows.SetWindowPos(_clientHandle!, HWND_BOTTOM, Rect.left, Rect.top, Rect.width,
           Rect.height, Windows.SWP_NOZORDER | Windows.SWP_NOACTIVATE);
   }
 
@@ -722,22 +749,25 @@ class TCustomForm extends TScrollingWinControl
       if(Parent == null && ParentWindow == null)
       {
         Params.WndParent = Application.Handle;
-        
+        Params.Style &= ~(Windows.WS_CHILD | Windows.WS_GROUP | Windows.WS_TABSTOP);
       }
 
-      TFormBorderStyle CreateStyle = _borderStyle;
-
-      if((FormStyle == TFormStyle.MDIChild) )
-      {
-        CreateStyle = TFormBorderStyle.Sizeable;
-      }
-
-      Params.Width = Width;
-      Params.Height = Height;
-      switch(CreateStyle)
+      if ((ComponentState.contains(ComponentStates.Designing)) && (Parent == null))
+        Params.Style |= Windows.WS_CAPTION | Windows.WS_THICKFRAME | Windows.WS_MINIMIZEBOX |
+                        Windows.WS_MAXIMIZEBOX | Windows.WS_SYSMENU;
+      else
       {
 
+        TFormBorderStyle CreateStyle = _borderStyle;
+        if((FormStyle == TFormStyle.MDIChild) && [TFormBorderStyle.None, TFormBorderStyle.Dialog].contains(CreateStyle))
+          CreateStyle = TFormBorderStyle.Sizeable;
+        switch(CreateStyle)
+        {
+
+        }
+
       }
+
 
   }
 
@@ -752,18 +782,13 @@ class TCustomForm extends TScrollingWinControl
 
     /// new ///
     var form = _form = HCustomForm(this);
+
+    //form.hide();
     form.ownedWindow = Params.WndParent;
     form.Title = _borderStyle != TBorderStyle.None;
     form.setColor(Color);
-    if(WindowState == TWindowState.Maximized)
-    {
-      form.Maximize = true;
-      Params.X=null;
-      Params.Y=null;
-      Params.Width=null;
-      Params.Height=null;
-    }
-    form.show();
+
+//    form.show();
 
     form.caption.text = Params.Caption;
     WindowHandle = _form;
@@ -771,12 +796,12 @@ class TCustomForm extends TScrollingWinControl
     TRect r = GetClientMetric();
     int cyc = 0;
     if(BorderStyle != TBorderStyle.None)
-      cyc+=GetSystemMetrics(SysMetric.CYCAPTION);
+      cyc+=GetSystemMetrics(Windows.SM_CYCAPTION);
 
     if(Menu != null)
     {
       form.Menu = Menu!.Handle;
-      cyc += GetSystemMetrics(SysMetric.CYMENU);
+      cyc += GetSystemMetrics(Windows.SM_CYMENU);
     }
 
     form.client.style
@@ -983,6 +1008,66 @@ class TCustomForm extends TScrollingWinControl
 
 
 
+  void _wmShowWindow(TWMShowWindow Message)
+  {
+
+      switch(Message.Status)
+      {
+
+        default:
+          super.Dispatch(Message.handle);
+          break;
+      }
+  }
+
+
+
+  void _wmGetMinMaxInfo(TWMGetMinMaxInfo Message)
+  {
+    if(!(ComponentState.contains(ComponentStates.Reading)) && _sizeChanging)
+    {
+      var mmi = Message.MinMaxInfo;
+      if(Constraints.MinWidth > 0)
+        mmi.ptMinTrackSize.x = Constraints.MinWidth;
+      if(Constraints.MinHeight > 0)
+        mmi.ptMinTrackSize.y = Constraints.MinHeight;
+      if(Constraints.MaxWidth > 0)
+        mmi.ptMaxTrackSize.x = Constraints.MaxWidth;
+      if(Constraints.MaxHeight > 0)
+        mmi.ptMaxTrackSize.y = Constraints.MaxHeight;
+
+      var MinWidth = Integer(mmi.ptMinTrackSize.x);
+      var MinHeight = Integer(mmi.ptMinTrackSize.y);
+      var MaxWidth = Integer(mmi.ptMaxTrackSize.x);
+      var MaxHeight = Integer(mmi.ptMaxTrackSize.y);
+      ConstrainedResize(MinWidth, MinHeight, MaxWidth, MaxHeight);
+      mmi.ptMinTrackSize.x = MinWidth.Value;
+      mmi.ptMinTrackSize.y = MinHeight.Value;
+      mmi.ptMaxTrackSize.x = MaxWidth.Value;
+      mmi.ptMaxTrackSize.y = MaxHeight.Value;
+    }
+    super.Dispatch(Message.handle);
+  }
+
+  void _wmWindowPosChanging(TWMWindowPosMsg Message)
+  {
+//    with Message.WindowPos^ do
+    var pos = Message.WindowPos;
+    _sizeChanging = (!ComponentState.contains(ComponentStates.Reading) &&
+                     !ComponentState.contains(ComponentStates.Destroying)) &&
+        (pos.flags & Windows.SWP_NOSIZE == 0) && ((pos.cx != Width) || (pos.cy != Height));
+    try
+    {
+      super._wmWindowPosChanging(Message);
+    }
+    finally
+    {
+      _sizeChanging = false;
+    }
+  }
+
+
+
   void Close() async
   {
     if(FormState.contains(FormStates.Modal))
@@ -1185,7 +1270,9 @@ class TCustomForm extends TScrollingWinControl
       case CM_DEACTIVATE:         _cmDeactivate(Message); break;
 
       case WM_ACTIVATE:           _wmActivate(Message); break;
+      case WM_SHOWWINDOW:         _wmShowWindow(TWMShowWindow(Message)); break;
       case WM_NCHITTEST:          Message.Result = _wmHitTest(Message);  break;
+      case WM_GETMINMAXINFO:      _wmGetMinMaxInfo(TWMGetMinMaxInfo(Message)); break;
 
       default:
         super.Dispatch(Message);
@@ -1296,7 +1383,12 @@ class TCustomForm extends TScrollingWinControl
                   (Screen.DesktopHeight - Height) ~/ 2);
           }
           _position = TPosition.Designed;
+          if(FormStyle == TFormStyle.MDIChild)
+          {
 
+          }
+          else
+            Windows.ShowWindow(Handle, ShowCommands[_windowState]);
         }
         else
         {
@@ -1455,8 +1547,9 @@ class TScreen extends TComponent
       {
         if(form.HandleAllocated())
         {
-          if(form._form!.Maximize)
-            Windows.SetWindowPos(form._form!, null, 0, 0, _width, _height, 0);
+          int style = Windows.GetWindowLong(form.Handle, Windows.GWL_STYLE);
+          if(style.and(Windows.WS_MAXIMIZE))
+            Windows.SetWindowPos(form.Handle, null, 0, 0, _width, _height, Windows.SWP_NOZORDER | Windows.SWP_NOACTIVATE);
         }
       });
     });
@@ -1519,7 +1612,7 @@ class TScreen extends TComponent
         {
           // Reset the cursor to the default by sending a WM_SETCURSOR to the
           // window under the cursor
-          TPoint P = Windows.GetCursorPos();
+          var P = Windows.GetCursorPos();
           var Handle = Windows.WindowFromPoint(P);
           if((Handle != null) )
           {
@@ -1686,22 +1779,23 @@ TObject? CreateObjectInstance(Type type, TComponent Owner)
 class TApplication extends TComponent
 {
   HWND? _handle;
-  HWND? get Handle => _handle;
-  set Handle(HWND? Value)
-  {
-    if(!_handleCreated && (Value != _handle))
+  HWND?
+    get Handle => _handle;
+    set Handle(HWND? Value)
     {
-      if(_handle != null)
+      if(!_handleCreated && (Value != _handle))
       {
-
-      }
-      _handle = Value;
-      if(_handle != null)
-      {
-
+        if(_handle != null)
+        {
+  
+        }
+        _handle = Value;
+        if(_handle != null)
+        {
+  
+        }
       }
     }
-  }
 
 
   TForm? _mainForm;
@@ -1784,7 +1878,7 @@ class TApplication extends TComponent
 
     if(msg.message >= WM_KEYFIRST && msg.message <= WM_KEYLAST)
     {
-      HWND? Wnd = null; //GetCapture();
+      var Wnd = Windows.GetCapture();
       if(Wnd == null)
       {
         Wnd = msg.hwnd;
@@ -1924,7 +2018,7 @@ class TApplication extends TComponent
 
   TControl? DoMouseIdle()
   {
-    TPoint P = Windows.GetCursorPos();
+    var P = TPoint.from( Windows.GetCursorPos() );
     TControl? Result = FindDragTarget(P, true);
     if(Result != null && Result.ComponentState.contains(ComponentStates.Designing))
       Result = null;
@@ -2013,7 +2107,7 @@ class TApplication extends TComponent
       {
         TForm Form = Screen.Forms[i];
         if(Form.Visible && ((Form.ParentWindow == null) || Form.HandleAllocated() ||
-          !Windows.IsChild(Form.Handle, Form.ParentWindow)))
+          !Windows.IsChild(Form.Handle, Form.ParentWindow!)))
         {
           SetVisible(true);
           return;
@@ -2086,13 +2180,14 @@ class TApplication extends TComponent
 
   void HintMouseMessage(TControl Control, TMessage Message)
   {
-    TControl? NewHintControl = GetHintControl(FindDragTarget(Control.ClientToScreen(Message.LParam), true));
+    TPoint pt = Control.ClientToScreen(TPoint.from(Message.LParam));
+    TControl? NewHintControl = GetHintControl(FindDragTarget(pt, true));
     if((NewHintControl == null) || !NewHintControl.ShowHint)
       CancelHint();
     else
     {
       if( (NewHintControl != _hintControl) ||
-         (!PtInRect(_hintCursorRect, Control.ClientToScreen(Message.LParam))) )
+         (!PtInRect(_hintCursorRect, pt)) )
       {
         bool WasHintActive = _hintActive;
         var Pause = TPointer(WasHintActive? _hintShortPause : _hintPause);
@@ -2102,7 +2197,7 @@ class TApplication extends TComponent
         {
           _hintActive = WasHintActive;
           _hintControl = NewHintControl;
-          ActivateHint(Windows.GetCursorPos());
+          ActivateHint(TPoint.from(Windows.GetCursorPos()));
         }
         else
         {
@@ -2120,7 +2215,7 @@ class TApplication extends TComponent
     StopHintTimer();
     if(show)
     {
-      TPoint p = Windows.GetCursorPos();
+      var p = TPoint.from( Windows.GetCursorPos() );
       ActivateHint(p);
     }
     else
@@ -2190,7 +2285,7 @@ class TApplication extends TComponent
       else
       if((_hintControl is TWinControl) &&
         ((_hintControl as TWinControl).ParentWindow != null))
-          Windows.ClientToScreen((_hintControl as TWinControl).ParentWindow, ParentOrigin);
+          Windows.ClientToScreen((_hintControl as TWinControl).ParentWindow!, ParentOrigin);
       OffsetRect(HintInfo.CursorRect, ParentOrigin.x - ClientOrigin.x,  ParentOrigin.y - ClientOrigin.y);
       HintInfo.CursorPos = _hintControl!.ScreenToClient(CursorPos);
       HintInfo.HintStr = GetShortHint(GetHint(_hintControl));

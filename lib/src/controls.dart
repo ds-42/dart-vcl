@@ -223,11 +223,14 @@ typedef TAnchors = Set<TAnchorKind>;
 class TCreateParams
 {
   String Caption = '';
+  UINT Style = 0;
+  UINT ExStyle = 0;
   HWND? WndParent;
   int? X;
   int? Y;
   int? Width;
   int? Height;
+  dynamic Param;
   
 }
 
@@ -284,8 +287,9 @@ TWinControl? FindElementControl(Element? elem)
 
 TWinControl? FindControl(HWND? hwnd)
 {
-  if(hwnd == null)
+  if(hwnd==null)
     return null;
+
   dynamic Result = Windows.SendMessage(hwnd, CM_GETINSTANCE);
   if(Result is TWinControl)
     return Result;
@@ -343,7 +347,7 @@ void SetCaptureControl(TControl? Control)
 
 TWinControl? FindVCLWindow(TPoint Pos)
 {
-  HWND? Handle = Windows.WindowFromPoint(Pos);
+  var Handle = Windows.WindowFromPoint(Pos);
   TWinControl? Result;
   while(Handle != null)
   {
@@ -554,9 +558,10 @@ class TControl extends TComponent
 
   }
 
-  TWndMethod? _windowProc;
-  TWndMethod? get WindowProc => _windowProc;
-
+  TWndMethod _windowProc = (message){}; // dummy
+  TWndMethod
+    get WindowProc => _windowProc;
+    set WindowProc(TWndMethod value) => _windowProc = value;
 
   int _left = 0;
   int _top = 0;
@@ -1201,8 +1206,8 @@ class TControl extends TComponent
   {
     if(Parent != null)
       Parent!.ShowControl(this);
-
-    Visible = true;
+    if (!ComponentState.contains(ComponentStates.Designing) || !ControlStyle.contains(ControlStyles.NoDesignVisible))
+      Visible = true;
   }
 
   void Update()
@@ -1329,7 +1334,7 @@ class TControl extends TComponent
 
   TPoint CalcCursorPos()
   {
-    var Result = Windows.GetCursorPos();
+    var Result = TPoint.from(Windows.GetCursorPos());
     return ScreenToClient(Result);
   }
 
@@ -1363,7 +1368,7 @@ class TControl extends TComponent
     Message.WParam=wParam;
     Message.LParam=lParam;
     Message.Result=result;
-    WindowProc!(Message);
+    WindowProc(Message);
     return Message.Result;
   }
 
@@ -1430,7 +1435,7 @@ class TControl extends TComponent
     }
   }
 
-  void WndProc(TMessage Message)
+  void WndProc(TMessage Message) // TControl::WndProc
   {
 
     TCustomForm? Form;
@@ -1773,11 +1778,12 @@ class TControl extends TComponent
       _parent!.Perform(CM_MOUSELEAVE, 0, this);
   }
 
-  void _cmVisibleChanged(TMessage Message) {
+  void _cmVisibleChanged(TMessage Message)
+  {
     if(!ComponentState.contains(ComponentStates.Designing) ||
-        (ControlStyle.contains(ControlStyles.NoDesignVisible))) {
-      InvalidateControl(
-          true, Visible && (ControlStyle.contains(ControlStyles.Opaque)));
+        (ControlStyle.contains(ControlStyles.NoDesignVisible)))
+    {
+      InvalidateControl(true, Visible && (ControlStyle.contains(ControlStyles.Opaque)));
     }
   }
 
@@ -1822,9 +1828,20 @@ class TControl extends TComponent
   {
     super.Dispatch(Message.handle);
     // Update min/max width/height to actual extents control will allow
+    if((ComponentState * [ComponentStates.Reading, ComponentStates.Loading]).isEmpty)
+    {
+      if((Constraints.MaxWidth > 0) && (Width > Constraints.MaxWidth))
+        Constraints._maxWidth = Width;
+      else
+      if((Constraints.MinWidth > 0) && (Width < Constraints.MinWidth))
+        Constraints._minWidth = Width;
+      if((Constraints.MaxHeight > 0) && (Height > Constraints.MaxHeight))
+        Constraints._maxHeight = Height;
+      else
+      if((Constraints.MinHeight > 0) && (Height < Constraints.MinHeight))
+        Constraints._minHeight = Height;
 
-
-
+    }
   }
 }
 
@@ -2082,7 +2099,7 @@ class TWinControl extends TControl
           if(Control.Parent!.HandleAllocated())
             ParentSize = Control.Parent!.ClientRect.BottomRight;
           else
-            ParentSize = new TPoint(Control.Parent!.Width, Control.Parent!.Height);
+            ParentSize = TPoint(Control.Parent!.Width, Control.Parent!.Height);
           if(Control.Anchors.contains(TAnchorKind.Right))
             if(Control.Anchors.contains(TAnchorKind.Left))
               // The AnchorRules.X is the original width
@@ -2266,11 +2283,6 @@ class TWinControl extends TControl
     if(!HandleAllocated() || ComponentState.contains(ComponentStates.Destroying))
       return;
 
-    _alignControls(AControl);
-  }
-
-  void _alignControls(TControl? AControl)
-  {
     if(_alignLevel != 0)
       ControlState<<ControlStates.AlignmentNeeded;
     else
@@ -2394,7 +2406,7 @@ class TWinControl extends TControl
   {
     for(int i=0; i<ControlCount; i++)
     {
-      Controls[i].WindowProc!(Message);
+      Controls[i].WindowProc(Message);
       if(Message.Result != 0)
         return;
     }
@@ -2411,21 +2423,37 @@ class TWinControl extends TControl
 
   
 
-  void CreateParams(TCreateParams Params)
+  void AddBiDiModeExStyle(TPointer<UINT> ExStyle)
   {
 
-      Params.Caption = _text;
+  }
 
-      Params.X = _left;
-      Params.Y = _top;
-      Params.Width = _width;
-      Params.Height = _height;
-      if(Parent != null)
-        Params.WndParent = Parent!.Handle;
-      else
-        Params.WndParent = _parentWindow;
+  void CreateParams(TCreateParams Params)
+  {
+    Params.Caption = _text;
+    Params.Style = Windows.WS_CHILD | Windows.WS_CLIPSIBLINGS;
+    var lpExStyle = TPointer(Params.ExStyle);
+    AddBiDiModeExStyle(lpExStyle);
+    Params.ExStyle = lpExStyle.Value;
+    if (ControlStyle.contains(ControlStyles.AcceptsControls))
+    {
+      Params.Style |= Windows.WS_CLIPCHILDREN;
+      Params.ExStyle |= Windows.WS_EX_CONTROLPARENT;
+    }
+    if (!(ComponentState.contains(ComponentStates.Designing)) && !Enabled)
+      Params.Style |= Windows.WS_DISABLED;
+    if(_tabStop)
+      Params.Style |= Windows.WS_TABSTOP;
+    Params.X = _left;
+    Params.Y = _top;
+    Params.Width = _width;
+    Params.Height = _height;
+    if(Parent != null)
+      Params.WndParent = Parent!.Handle;
+    else
+      Params.WndParent = _parentWindow;
 
-    
+  
   }
 
   WNDPROC? _defWndProc;
@@ -2436,26 +2464,22 @@ class TWinControl extends TControl
     TCreateParams Params = TCreateParams();
     CreateParams(Params);
 
-      if((Params.WndParent == null) )
+      if((Params.WndParent == null) && (Params.Style & Windows.WS_CHILD != 0))
         if((Owner != null) && (Owner!.ComponentState.contains(ComponentStates.Reading)) &&
           (Owner is TWinControl))
           Params.WndParent = (Owner as TWinControl).Handle;
         else
           throw EInvalidOperation.CreateFmt(Consts.SParentRequired, [Name]);
 
+
     CreateWindowHandle(Params);
 
     if(WindowHandle == null)
       throw UnsupportedError("RaiseLastOSError");
 
+    var hwnd = WindowHandle!;
 
-
-    if(Cursor!=TCursor.Default)
-      WindowHandle!.clientHandle.style.cursor = Cursor.name;
-
-
-    /// new ///*
-    _defWndProc = Windows.ChangeWindowProc(_handle!, (elem, message)
+    _defWndProc = Windows.ChangeWindowProc(hwnd, (elem, message)
     {
       if(message.Msg == CM_GETINSTANCE)
         message.Result = this;
@@ -2463,8 +2487,27 @@ class TWinControl extends TControl
         WndProc(message);
     });
 
+    Windows.InitWindow(hwnd, INITSTRUCT(
+      exStyle: Params.ExStyle,
+      windowName: Params.Caption,
+      style: Params.Style,
+      x: Params.X,
+      y: Params.Y,
+      width: Params.Width,
+      height: Params.Height,
+      parent: Params.WndParent,
+      param: Params.Param));
 
-    HWND._init_window(WindowHandle!, Params.WndParent, Params.X, Params.Y, Params.Width, Params.Height);
+
+
+    if(Cursor!=TCursor.Default)
+      hwnd.clientHandle.style.cursor = Cursor.name;
+
+
+    /// new ///*
+
+
+
     /// new *///
 
 
@@ -2473,7 +2516,6 @@ class TWinControl extends TControl
     Perform(WM_SETFONT, null, 1);
     if(AutoSize)
       AdjustSize();
-
   }
 
   void CreateWindowHandle(TCreateParams Params)
@@ -2513,10 +2555,19 @@ class TWinControl extends TControl
     _handle = null;
   }
 
-
+  HWINDOW? PrecedingWindow(TWinControl Control)
+  {
+    for( int i = _winControls.indexOf(Control) + 1; i < _winControls.length; i++)
+    {
+      var Result = _winControls[i]._handle;
+      if(Result != null)
+        return Result;
+    }
+    return HWND_TOP;
+  }
 
   TNotifyEvent? _onCreateHandle;
-  TNotifyEvent?
+  TNotifyEvent? // new
     get OnCreateHandle => _onCreateHandle;
     set OnCreateHandle(TNotifyEvent? Value) => _onCreateHandle = Value;
 
@@ -2526,9 +2577,13 @@ class TWinControl extends TControl
     {
       CreateWnd();
 
+      if(Parent != null)
+        Windows.SetWindowPos(_handle!, Parent!.PrecedingWindow(this), 0, 0, 0, 0,
+            Windows.SWP_NOMOVE | Windows.SWP_NOSIZE | Windows.SWP_NOACTIVATE);
       for(int i = 0; i<ControlCount; i++)
         Controls[i].UpdateAnchorRules();
-      if(OnCreateHandle != null)
+
+      if(OnCreateHandle != null) // new
         OnCreateHandle!(this);
     }
   }
@@ -2562,7 +2617,6 @@ class TWinControl extends TControl
 
   void UpdateShowing()
   {
-
     bool ShowControl = (_visible || ComponentState.contains(ComponentStates.Designing) &&
       !ControlStyle.contains(ControlStyles.NoDesignVisible) &&
       !ControlState.contains(ControlStates.ReadingState));
@@ -2664,7 +2718,7 @@ class TWinControl extends TControl
       case WM_NCHITTEST:
         super.WndProc(Message);
         if(Message.Result == Windows.HTTRANSPARENT &&
-          ControlAtPos(ScreenToClient(Message.LParam), false) != null)
+          ControlAtPos(ScreenToClient(TPoint.from(Message.LParam)), false) != null)
             Message.Result = Windows.HTCLIENT;
         return;
 
@@ -2814,7 +2868,7 @@ class TWinControl extends TControl
   }
 
 
-  void Dispatch(TMessage Message)
+  void Dispatch(TMessage Message) // TWinControl::Dispatch
   {
     switch(Message.Msg)
     {
@@ -2832,7 +2886,6 @@ class TWinControl extends TControl
       case CM_SETFOCUS:           _cmSetFocus(Message); break;
       case CM_SHOWINGCHANGED:     _cmShowingChanged(Message); break;
       case CM_SHOWHINTCHANGED:    _cmShowHintChanged(Message); break;
-      case CM_VISIBLECHANGED:     _cmVisibleChanged(Message); break;
 
       case CN_KEYDOWN:            _cnKeyDown(TWMKey(Message)); break;
       case CN_KEYUP:              _cnKeyUp(TWMKey(Message)); break;
@@ -2874,28 +2927,26 @@ class TWinControl extends TControl
     if((ALeft != _left) || (ATop != _top) ||
       (AWidth != _width) || (AHeight != _height))
     {
-      _left = ALeft;
+/*      _left = ALeft;
       _top = ATop;
       _width = AWidth;
-      _height = AHeight;
+      _height = AHeight;*/
 
-      if(HandleAllocated() && !Windows.IsIconic(_handle))
+      if(HandleAllocated() && !Windows.IsIconic(_handle!))
         Windows.SetWindowPos(_handle!, null, ALeft, ATop, AWidth, AHeight, Windows.SWP_NOZORDER | Windows.SWP_NOACTIVATE);
       else
       {
-
+        _left = ALeft;
+        _top = ATop;
+        _width = AWidth;
+        _height = AHeight;
         if(HandleAllocated())
         {
 
         }
-        else
-        { // new
-          _alignControls(null); 
-        }
       }
       UpdateAnchorRules();
       RequestAlign();
-
     }
   }
 
@@ -2936,17 +2987,14 @@ class TWinControl extends TControl
     if(_parent != null)
     {
       int N = TopMost? _parent!._winControls.length - 1 : 0;
-      int M = 0;
-      if(_parent!._controls != null)
-        M = _parent!._controls.length;
+      int M = _parent!._controls.length;
       SetZOrderPosition(M + N);
     }
     else
     if(_handle != null)
     {
-///    WindowPos: array[Boolean] of Word = (HWND_BOTTOM, HWND_TOP);
-///      SetWindowPos(FHandle, WindowPos[TopMost], 0, 0, 0, 0,
-///        SWP_NOMOVE + SWP_NOSIZE);
+      Windows.SetWindowPos(_handle!, TopMost? HWND_TOP : HWND_BOTTOM, 0, 0, 0, 0,
+        Windows.SWP_NOMOVE + Windows.SWP_NOSIZE);
     }
   }
 
@@ -3061,7 +3109,7 @@ class TWinControl extends TControl
 
   TPoint GetClientOrigin()
   {
-    if(ParentWindow == HWND.DESKTOP) // new;
+    if(ParentWindow == HWND_DESKTOP) // new;
       return TPoint(_left, _top);
 
     var result = TPoint(0, 0);
@@ -3089,31 +3137,86 @@ class TWinControl extends TControl
     return _handle != null;
   }
 
-  void UpdateBounds()
-
+  dynamic IfHandleAllocated<T>(dynamic Function(T client) proc, [dynamic res]) // new
   {
-    if(_handle==null)
-      return;
-    if(_handle!.handle.offsetParent==null)
+    if(_handle != null)
+      return proc(_handle!.clientHandle as T);
+    return res;
+  }
+
+  void UpdateBounds()
+  {
+
+    var Rect = TRect(_left, _top, _left+_width, _top+_height);
+    
+
+    if(Windows.IsIconic(_handle!))
     {
+      throw UnimplementedError();
 
     }
-    TRect rect = TRect();
+    else
+      Windows.GetWindowRect(_handle!, Rect);
 
+    if(Windows.GetWindowLong(_handle!, Windows.GWL_STYLE) & Windows.WS_CHILD != 0)
+    {
+      HWND? ParentHandle = Windows.GetWindowLong(_handle!, Windows.GWL_HWNDPARENT);
+      if(ParentHandle != null)
+      {
+        var TopLeft     = Rect.TopLeft;
+        var BottomRight = Rect.BottomRight;
+        Windows.ScreenToClient(ParentHandle, TopLeft);
+        Windows.ScreenToClient(ParentHandle, BottomRight);
+        Rect.left    = TopLeft.x;
+        Rect.top     = TopLeft.y;
+        Rect.right   = BottomRight.x;
+        Rect.bottom  = BottomRight.y;
+      }
+    }
+    _left = Rect.Left;
+    _top = Rect.Top;
+    _width = Rect.Width;
+    _height = Rect.Height;
+    UpdateAnchorRules();
+
+/*    if(_handle==null)
+      return;
+/**    if(_handle!.handle.offsetParent==null)
+    {
+      print(_handle!.handle.getOffsetRect(rect));
+    }**/
+    TRect rect = TRect();
+/**    print(_handle!.handle.offsetRect);
+    print(_handle!.handle.borderRect);
+    print(_handle!.handle.contentRect);**/
     if(Windows.IsIconic(_handle))
     {
-
+/**      WindowPlacement.Length := SizeOf(WindowPlacement);
+      GetWindowPlacement(FHandle, @WindowPlacement);
+      Rect := WindowPlacement.rcNormalPosition;**/
     }
     else
     if(!_handle!.handle.getOffsetRect(rect))
       return;
 
+/**      Windows.GetWindowRect(_handle, Rect);
 
+/**    if GetWindowLong(FHandle, GWL_STYLE) and WS_CHILD <> 0 then
+    begin**/
+      var ParentHandle = Windows.GetParent(_handle);
+///      ParentHandle := GetWindowLong(FHandle, GWL_HWNDPARENT);
+      if(ParentHandle != null)
+      {
+        Windows.ScreenToClient(ParentHandle, Rect.TopLeft);
+        Windows.ScreenToClient(ParentHandle, Rect.BottomRight);
+      }
+/**    end;*/
+**/
     _left = rect.left;
     _top = rect.top;
     _width = rect.width;
     _height = rect.height;
-    UpdateAnchorRules();
+    UpdateAnchorRules();**/
   }
 
   void GetTabOrderList(List<TWinControl> list)
@@ -3473,7 +3576,7 @@ class TWinControl extends TControl
   {
     if(Windows.GetCapture() == null)
     {
-      TPoint P = Windows.GetCursorPos();
+      var P = TPoint.from(Windows.GetCursorPos());
       if(FindDragTarget(P, false) == this)
         Perform(WM_SETCURSOR, Handle, Windows.HTCLIENT);
     }
@@ -3495,7 +3598,7 @@ class TWinControl extends TControl
   void _cmChildKey(TMessage Message)
   {
     if(_parent != null)
-      _parent!.WindowProc!(Message);
+      _parent!.WindowProc(Message);
   }
 
   void _cmDialogChar(TMessage Message/* TCMDialogChar*/)
@@ -3574,10 +3677,10 @@ class TWinControl extends TControl
 
   void _cmShowingChanged(TMessage Message)
   {
-    int flags = Windows.SWP_NOSIZE + Windows.SWP_NOMOVE +
-                Windows.SWP_NOZORDER + Windows.SWP_NOACTIVATE +
+    int flags = Windows.SWP_NOSIZE | Windows.SWP_NOMOVE |
+                Windows.SWP_NOZORDER | Windows.SWP_NOACTIVATE |
                 (Showing? Windows.SWP_SHOWWINDOW : Windows.SWP_HIDEWINDOW);
-    Windows.SetWindowPos(_handle!, null, null, null, null, null, flags);
+    Windows.SetWindowPos(_handle!, null, 0, 0, 0, 0, flags);
   }
 
   void _cmShowHintChanged(TMessage Message)
@@ -3692,9 +3795,11 @@ class TWinControl extends TControl
 
   void _wmNCHitTest(TMessage Message)
   {
+    if (ComponentState.contains(ComponentStates.Designing) && (_parent != null))
+      Message.Result = Windows.HTCLIENT;
+    else
+      super.Dispatch(Message);
 
-
-    super.Dispatch(Message);
   }
 
   _wmSetCursor(TMessage Message)
@@ -3710,7 +3815,7 @@ class TWinControl extends TControl
           TCursor Cursor = Screen.Cursor;
           if(Cursor == TCursor.Default)
           {
-            TPoint P = Windows.GetCursorPos();
+            var P = TPoint.from(Windows.GetCursorPos());
             var Control = ControlAtPos(ScreenToClient(P), false);
             if(Control != null)
               if(Control.ComponentState.contains(ComponentStates.Designing))
@@ -3801,31 +3906,42 @@ class TWinControl extends TControl
     
   }
 
-  void _wmWindowPosChanging(TWMWindowPosMsg Message)
-  {
-    if(ComponentState.contains(ComponentStates.Reading) || ComponentState.contains(ComponentStates.Destroying))
-      return;
-
-    if(Message.ElementPos.cx!=null || Message.ElementPos.cy!=null)
-    {
-      Integer cx = Integer(Message.ElementPos.cx==null? Width : Message.ElementPos.cx!);
-      Integer cy = Integer(Message.ElementPos.cy==null? Height : Message.ElementPos.cy!);
-      bool upd = CheckNewSize(cx, cy);
-      Message.ElementPos.cx = upd? cx.Value : null;
-      Message.ElementPos.cy = upd? cy.Value : null;
-
-    }
-    super._wmWindowPosChanging(Message);
-  }
-
   void _wmWindowPosChanged(TWMWindowPosMsg Message)
   {
+    var flags = Message.WindowPos.flags;
 
+    bool Framed = _ctl3D && (ControlStyle.contains(ControlStyles.Framed)) && (Parent != null) &&
+      (flags & Windows.SWP_NOREDRAW == 0);
+    bool Moved = (flags & Windows.SWP_NOMOVE == 0) && Windows.IsWindowVisible(_handle!);
+    bool Sized = (flags & Windows.SWP_NOSIZE == 0) && Windows.IsWindowVisible(_handle!);
+    if(Framed && (Moved || Sized))
+      InvalidateFrame();
     if(!ControlState.contains(ControlStates.DestroyingHandle))
       UpdateBounds();
-
+    super._wmWindowPosChanged(Message);
+    if(Framed && ((Moved || Sized) || (flags & (Windows.SWP_SHOWWINDOW | Windows.SWP_HIDEWINDOW) != 0)))
+      InvalidateFrame();
   }
 
+  void _wmWindowPosChanging(TWMWindowPosMsg Message)
+  {
+    if((ComponentState * [ComponentStates.Reading, ComponentStates.Destroying]).isEmpty)
+    {
+      var pos = Message.WindowPos;
+
+      if(!pos.flags.and(Windows.SWP_NOSIZE))
+      {
+        Integer cx = Integer(pos.cx);
+        Integer cy = Integer(pos.cy);
+        if(!CheckNewSize(cx, cy))
+          pos.flags |= Windows.SWP_NOSIZE;
+        pos.cx = cx.Value;
+        pos.cy = cy.Value;
+      }
+    }
+    super._wmWindowPosChanging(Message);
+
+  }
 
 }
 
@@ -3865,7 +3981,7 @@ class THintWindow extends TCustomControl
 
   THintWindow(TComponent AOwner) : super(AOwner)
   {
-    Visible = false; // new
+
 
   }
 
@@ -3879,17 +3995,20 @@ class THintWindow extends TCustomControl
   void CreateParams(TCreateParams Params)
   {
     super.CreateParams(Params);
-    Params.WndParent = HWND.DESKTOP;
+
+    Params.Style = Windows.WS_POPUP | Windows.WS_BORDER;
 
   }
 
   void CreateWindowHandle(TCreateParams Params)
   {
     WindowHandle = HHint();
-    WindowHandle!
-      ..handle.text = Params.Caption;
   }
 
+  void _wmNCHitTest(TMessage Message)
+  {
+    Message.Result = Windows.HTTRANSPARENT;
+  }
   
 
   bool IsHintMsg(MSG Msg)
@@ -3936,8 +4055,8 @@ class THintWindow extends TCustomControl
         Rect.left = Screen.DesktopLeft;
       if(Rect.bottom < Screen.DesktopTop)
         Rect.bottom = Screen.DesktopTop;
-      Handle.setParent(HWND.DESKTOP); // new
-      Windows.SetWindowPos(Handle, HWND.TOPMOST,
+
+      Windows.SetWindowPos(Handle, HWND_TOPMOST,
           Rect.left, Rect.top, Width, Height, Windows.SWP_NOACTIVATE);
       if((Windows.GetTickCount() - _lastActive > 250) && (AHint.length < 100) )
       {
@@ -3968,16 +4087,21 @@ class THintWindow extends TCustomControl
     Element? prnt = elem.parent;
     if(prnt==null)
       document.body!.append(elem);
-    elem.style.width = null;
-    elem.style.height = null;
-    elem.style.display = 'inline-block';
-    elem.text = AHint;
-    var rect = elem.borderRect;
-    if(rect.width > w)
+
+    var rect = RECT();
+    elem.invisibilityProc(()
     {
-      elem.width = w;
+      elem.style.width = null;
+      elem.style.height = null;
+      elem.style.display = 'inline-block';
+      elem.text = AHint;
       rect = elem.borderRect;
-    }
+      if(rect.width > w)
+      {
+        elem.width = w;
+        rect = elem.borderRect;
+      }
+    });
     if(prnt==null)
       elem.remove();
 
@@ -3986,17 +4110,17 @@ class THintWindow extends TCustomControl
 
   
 
-  void WndProc(TMessage Message)
+  /*void WndProc(TMessage Message)
   {
     switch(Message.Msg)
     {
       case WM_SHOWWINDOW:
-        if(HandleAllocated() && Message.WParam == false)
+        if(Message.WParam == false && HandleAllocated())
           Handle.handle.remove();
         break;
     }
     super.WndProc(Message);
-  }
+  }*/
 }
 
 

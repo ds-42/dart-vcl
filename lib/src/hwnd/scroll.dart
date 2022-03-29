@@ -265,12 +265,12 @@ class _scrollMetric
 
   void CalcMetric()
   {
-    TRect r = owner.handle.borderRect;
+    var r = owner.handle.borderRect;
 
-    frstBtn  = r.copy();
-    scndBtn  = r.copy();
-    workArea = r.copy();
-    thumbArea= r.copy();
+    frstBtn  = TRect.rect(r);
+    scndBtn  = TRect.rect(r);
+    workArea = TRect.rect(r);
+    thumbArea= TRect.rect(r);
 
     if(owner.kind==TScrollBarKind.Horizontal)
     {
@@ -300,12 +300,12 @@ class _scrollMetric
     }
   }
 
-  bool ptInFirst(TPoint pt) => PtInRect(frstBtn, pt);
-  bool ptInSecond(TPoint pt) => PtInRect(scndBtn, pt);
-  bool ptInWorkArea(TPoint pt) => PtInRect(workArea, pt);
-  bool ptInThumbArea(TPoint pt) => PtInRect(thumbArea, pt);
+  bool ptInFirst(POINT pt) => PtInRect(frstBtn, pt);
+  bool ptInSecond(POINT pt) => PtInRect(scndBtn, pt);
+  bool ptInWorkArea(POINT pt) => PtInRect(workArea, pt);
+  bool ptInThumbArea(POINT pt) => PtInRect(thumbArea, pt);
 
-  bool ptBeforeThumb(TPoint pt)
+  bool ptBeforeThumb(POINT pt)
   {
     TRect r = workArea.copy();
     if(owner.kind==TScrollBarKind.Horizontal)
@@ -315,7 +315,7 @@ class _scrollMetric
     return PtInRect(r, pt);
   }
 
-  bool ptAfterThumb(TPoint pt)
+  bool ptAfterThumb(POINT pt)
   {
     TRect r = workArea.copy();
     if(owner.kind==TScrollBarKind.Horizontal)
@@ -346,7 +346,7 @@ class HScrollBar extends HCustomControl
     handle.append(scroll);
     scroll.append(client);
 
-    TPoint downPos = TPoint();
+    var downPos = POINT();
     bool downThumb=false;
 
     void ScrollEvent()
@@ -491,7 +491,7 @@ class HScrollBar extends HCustomControl
 
   _scrollMetric metric([int defSize = 0])
   {
-    TRect rect = scroll.contentRect;
+    var rect = scroll.contentRect;
 
     if(kind == TScrollBarKind.Horizontal)
     {

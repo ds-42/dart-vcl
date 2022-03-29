@@ -1,3 +1,7 @@
+## [1.2.0]
+
+- Update win core
+
 ## [1.1.1]
 
 - Update TComboBox

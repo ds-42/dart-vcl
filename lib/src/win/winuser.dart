@@ -29,6 +29,8 @@ class MSG
   dynamic lParam;
 
   MSG(this.hwnd, this.message, this.wParam, this.lParam);
+
+	String toString() => 'msg: $message (0x${message.id.asHex(4)}), wParam: $wParam, lParam: $lParam';
 }
 
 class TMessage
@@ -40,7 +42,7 @@ class TMessage
 
   TMessage(this.Msg, [this.WParam, this.LParam, this.Result]);
 
-  String toString() => 'msg: $Msg, wParam: $WParam, lParam: $LParam, Result: $Result';
+  String toString() => 'msg: $Msg (0x${Msg.id.asHex(4)}), wParam: $WParam, lParam: $LParam, Result: $Result';
 }
 
 class TCustomMessage
@@ -60,15 +62,15 @@ class TCustomMessage
   String toString() => 'type: $runtimeType, msg: $Msg, wParam: $WParam, lParam: $LParam';
 }
 
-class TWMCommand extends TCustomMessage
+/*
+struct TWMNoParams
 {
-  int   get ItemID => (WParam as TCommand).ID;
-  int   get NotifyCode => (WParam as TCommand).Notify;
-  HWND? get Ctl => LParam;
-
-  TWMCommand(TMessage message) : super(message);
-}
-
+	unsigned Msg;
+	Word Unused[4];
+	int Result;
+} ;
+#pragma pack(pop)
+**/
 class TWMKey extends TCustomMessage
 {
   int get CharCode => WParam;
@@ -79,41 +81,10 @@ class TWMKey extends TCustomMessage
 class TWMMouse extends TCustomMessage
 {
   TShiftState get Shift => WParam;
-  int get XPos => (LParam as TPoint).x;
-  int get YPos => (LParam as TPoint).y;
-  TPoint get Pos => LParam;
+  int get XPos => (LParam as POINT).x;
+  int get YPos => (LParam as POINT).y;
+  TPoint get Pos => TPoint.from(LParam);
   TWMMouse(TMessage message) : super(message);
-}
-
-class TWMMove extends TCustomMessage
-{
-  int get XPos => (LParam as TPoint).x;
-  int get YPos => (LParam as TPoint).y;
-  TWMMove(TMessage message) : super(message);
-}
-
-class NMHDR
-{
-  final HWND?     hwndFrom;
-  final int       idFrom;
-  final int       code;         // NM_ code
-
-  NMHDR(this.hwndFrom, this.idFrom, this.code);
-}
-
-class TWMNotify extends TCustomMessage
-{
-  int get IDCtrl => WParam as int;
-  NMHDR get NMHdr => LParam as NMHDR;
-  TWMNotify(TMessage message) : super(message);
-}
-
-class TWheelInfo
-{
-  int WhellDelta;
-  TShiftState ShiftState;
-
-  TWheelInfo(this.WhellDelta, this.ShiftState);
 }
 
 class TWMMouseWheel extends TCustomMessage
@@ -125,11 +96,40 @@ class TWMMouseWheel extends TCustomMessage
   TWMMouseWheel(TMessage message) : super(message);
 }
 
-class TWMSize extends TCustomMessage
+
+class TWMWindowPosMsg extends TCustomMessage
 {
-  int get Width => (LParam as TSize).cx;
-  int get Height => (LParam as TSize).cy;
-  TWMSize(TMessage message) : super(message);
+  WINDOWPOS get WindowPos => (LParam as WINDOWPOS);
+  TWMWindowPosMsg(TMessage message) : super(message);
+}
+
+class TWMCommand extends TCustomMessage
+{
+  int   get ItemID => (WParam as TCommand).ID;
+  int   get NotifyCode => (WParam as TCommand).Notify;
+  HWND? get Ctl => LParam;
+
+  TWMCommand(TMessage message) : super(message);
+}
+
+class TWMGetMinMaxInfo extends TCustomMessage
+{
+  MINMAXINFO get MinMaxInfo => LParam;
+  TWMGetMinMaxInfo(TMessage message) : super(message);
+}
+
+class TWMMove extends TCustomMessage
+{
+  int get XPos => (LParam as POINT).x;
+  int get YPos => (LParam as POINT).y;
+  TWMMove(TMessage message) : super(message);
+}
+
+class TWMNotify extends TCustomMessage
+{
+  int get IDCtrl => WParam as int;
+  NMHDR get NMHdr => LParam as NMHDR;
+  TWMNotify(TMessage message) : super(message);
 }
 
 class TWMPaint extends TCustomMessage
@@ -137,27 +137,43 @@ class TWMPaint extends TCustomMessage
   TWMPaint(TMessage message) : super(message);
 }
 
-class TWMWindowPosMsg extends TCustomMessage
+class TWMShowWindow extends TCustomMessage
 {
-  TWindowPos get ElementPos => (LParam as TWindowPos);
-  TWMWindowPosMsg(TMessage message) : super(message);
+  BOOL get Show => WParam as int;
+  int  get Status => LParam as int;
+  TWMShowWindow(TMessage message) : super(message);
 }
 
-class TWindowPos
+class TWMSize extends TCustomMessage
 {
-  HWND? hwnd;
-  dynamic hwndInsertAfter;
-  int? x;
-  int? y;
-  int? cx;
-  int? cy;
-  int? flags;
-
-  toString() => 'x: $x, y: $y, cx: $cx, cy: $cy, flags: $flags';
+  int get Width => (LParam as SIZE).cx;
+  int get Height => (LParam as SIZE).cy;
+  int get SizeType => WParam as int;
+  TWMSize(TMessage message) : super(message);
 }
 
-const MESSAGE WM_MOVE                = MESSAGE(0x0003, 'WM_MOVE'); // wParam: null, lParam TPoint
-const MESSAGE WM_SIZE                = MESSAGE(0x0005, 'WM_SIZE'); // wParam: null, lParam TSize
+
+
+class NMHDR
+{
+  final HWND?     hwndFrom;
+  final int       idFrom;
+  final int       code;         // NM_ code
+
+  NMHDR(this.hwndFrom, this.idFrom, this.code);
+}
+
+class TWheelInfo
+{
+  int WhellDelta;
+  TShiftState ShiftState;
+
+  TWheelInfo(this.WhellDelta, this.ShiftState);
+}
+
+const MESSAGE WM_CREATE              = MESSAGE(0x0001, 'WM_CREATE');
+const MESSAGE WM_MOVE                = MESSAGE(0x0003, 'WM_MOVE'); // wParam: null, lParam: POINT
+const MESSAGE WM_SIZE                = MESSAGE(0x0005, 'WM_SIZE'); // wParam: int, lParam: SIZE
 const MESSAGE WM_ACTIVATE            = MESSAGE(0x0006, 'WM_ACTIVATE'); //wParamHi: active, wParamLo: minimized, lParam: prevElem
 const MESSAGE WM_SETFOCUS            = MESSAGE(0x0007, 'WM_SETFOCUS'); // wParam: node
 const MESSAGE WM_KILLFOCUS           = MESSAGE(0x0008, 'WM_KILLFOCUS'); // wParam: node
@@ -168,11 +184,15 @@ const MESSAGE WM_GETTEXT             = MESSAGE(0x000D, 'WM_GETTEXT');
 const MESSAGE WM_PAINT               = MESSAGE(0x000F, 'WM_PAINT');
 const MESSAGE WM_SHOWWINDOW          = MESSAGE(0x0018, 'WM_SHOWWINDOW');
 const MESSAGE WM_SETCURSOR           = MESSAGE(0x0020, 'WM_SETCURSOR');
+const MESSAGE WM_CHILDACTIVATE       = MESSAGE(0x0022, 'WM_CHILDACTIVATE');
+const MESSAGE WM_GETMINMAXINFO       = MESSAGE(0x0024, 'WM_GETMINMAXINFO');
 const MESSAGE WM_SETFONT             = MESSAGE(0x0030, 'WM_SETFONT');
 
 const MESSAGE WM_WINDOWPOSCHANGING   = MESSAGE(0x0046, 'WM_WINDOWPOSCHANGING'); // wParam: null, lParam TElementPos
 const MESSAGE WM_WINDOWPOSCHANGED    = MESSAGE(0x0047, 'WM_WINDOWPOSCHANGED'); // wParam: null, lParam TElementPos
 const MESSAGE WM_NOTIFY              = MESSAGE(0x004E, 'WM_NOTIFY');
+const MESSAGE WM_NCCREATE            = MESSAGE(0x0081, 'WM_NCCREATE');
+const MESSAGE WM_NCCALCSIZE          = MESSAGE(0x0083, 'WM_NCCALCSIZE');
 const MESSAGE WM_NCHITTEST           = MESSAGE(0x0084, 'WM_NCHITTEST');
 const MESSAGE WM_GETDLGCODE          = MESSAGE(0x0087, 'WM_GETDLGCODE');
 
@@ -186,22 +206,24 @@ const MESSAGE WM_KEYLAST             = WM_UNICHAR;
 const MESSAGE WM_COMMAND             = MESSAGE(0x0111, 'WM_COMMAND');
 const MESSAGE WM_HSCROLL             = MESSAGE(0x0114, 'WM_HSCROLL'); // wParam: SCROLLPOS, lParam: null
 const MESSAGE WM_VSCROLL             = MESSAGE(0x0115, 'WM_VSCROLL'); // wParam: SCROLLPOS, lParam: null
-const MESSAGE WM_MOUSEDOWN           = MESSAGE(0x01FE, 'WM_MOUSEDOWN'); // wParam: MouseEvent, lParam: TPoint(x, y)
+const MESSAGE WM_MOUSEDOWN           = MESSAGE(0x01FE, 'WM_MOUSEDOWN'); // wParam: MouseEvent, lParam: POINT(x, y)
 
 const MESSAGE WM_MOUSEFIRST          = WM_MOUSEMOVE;
-const MESSAGE WM_MOUSEMOVE           = MESSAGE(0x0200, 'WM_MOUSEMOVE'); // wParam: TShiftSate, lParam: TPoint(x, y)
-const MESSAGE WM_LBUTTONDOWN         = MESSAGE(0x0201, 'WM_LBUTTONDOWN'); // wParam: TShiftSate, lParam: TPoint(x, y)
-const MESSAGE WM_LBUTTONUP           = MESSAGE(0x0202, 'WM_LBUTTONUP'); // wParam: TShiftSate, lParam: TPoint(x, y)
-const MESSAGE WM_LBUTTONDBLCLK       = MESSAGE(0x0203, 'WM_LBUTTONDBLCLK'); // wParam: TShiftSate, lParam: TPoint(x, y)
+const MESSAGE WM_MOUSEMOVE           = MESSAGE(0x0200, 'WM_MOUSEMOVE'); // wParam: TShiftSate, lParam: POINT(x, y)
+const MESSAGE WM_LBUTTONDOWN         = MESSAGE(0x0201, 'WM_LBUTTONDOWN'); // wParam: TShiftSate, lParam: POINT(x, y)
+const MESSAGE WM_LBUTTONUP           = MESSAGE(0x0202, 'WM_LBUTTONUP'); // wParam: TShiftSate, lParam: POINT(x, y)
+const MESSAGE WM_LBUTTONDBLCLK       = MESSAGE(0x0203, 'WM_LBUTTONDBLCLK'); // wParam: TShiftSate, lParam: POINT(x, y)
 
-const MESSAGE WM_RBUTTONDOWN         = MESSAGE(0x0204, 'WM_RBUTTONDOWN'); // wParam: TShiftSate, lParam: TPoint(x, y)
-const MESSAGE WM_RBUTTONUP           = MESSAGE(0x0205, 'WM_RBUTTONUP'); // wParam: TShiftSate, lParam: TPoint(x, y)
-const MESSAGE WM_RBUTTONDBLCLK       = MESSAGE(0x0206, 'WM_RBUTTONDBLCLK'); // wParam: TShiftSate, lParam: TPoint(x, y)
-const MESSAGE WM_MBUTTONDOWN         = MESSAGE(0x0207, 'WM_MBUTTONDOWN'); // wParam: TShiftSate, lParam: TPoint(x, y)
-const MESSAGE WM_MBUTTONUP           = MESSAGE(0x0208, 'WM_MBUTTONUP'); // wParam: TShiftSate, lParam: TPoint(x, y)
-const MESSAGE WM_MBUTTONDBLCLK       = MESSAGE(0x0209, 'WM_MBUTTONDBLCLK'); // wParam: TShiftSate, lParam: TPoint(x, y)
-const MESSAGE WM_MOUSEWHEEL          = MESSAGE(0x020A, 'WM_MOUSEWHEEL'); // wParam: TWhellInfo, lParam: TPoint
+const MESSAGE WM_RBUTTONDOWN         = MESSAGE(0x0204, 'WM_RBUTTONDOWN'); // wParam: TShiftSate, lParam: POINT(x, y)
+const MESSAGE WM_RBUTTONUP           = MESSAGE(0x0205, 'WM_RBUTTONUP'); // wParam: TShiftSate, lParam: POINT(x, y)
+const MESSAGE WM_RBUTTONDBLCLK       = MESSAGE(0x0206, 'WM_RBUTTONDBLCLK'); // wParam: TShiftSate, lParam: POINT(x, y)
+const MESSAGE WM_MBUTTONDOWN         = MESSAGE(0x0207, 'WM_MBUTTONDOWN'); // wParam: TShiftSate, lParam: POINT(x, y)
+const MESSAGE WM_MBUTTONUP           = MESSAGE(0x0208, 'WM_MBUTTONUP'); // wParam: TShiftSate, lParam: POINT(x, y)
+const MESSAGE WM_MBUTTONDBLCLK       = MESSAGE(0x0209, 'WM_MBUTTONDBLCLK'); // wParam: TShiftSate, lParam: POINT(x, y)
+const MESSAGE WM_MOUSEWHEEL          = MESSAGE(0x020A, 'WM_MOUSEWHEEL'); // wParam: TWhellInfo, lParam: POINT
 const MESSAGE WM_MOUSELAST           = WM_MOUSEWHEEL;
+
+const MESSAGE WM_PARENTNOTIFY        = MESSAGE(0x0210, 'WM_PARENTNOTIFY'); // wParam: MESSAGE, lParam: HWND
 
 const MESSAGE WM_COPY                = MESSAGE(0x0301, 'WM_COPY');  // wParam: DataTransfer, lParam ClipboardEvent
 const MESSAGE WM_CUT                 = MESSAGE(0x0301, 'WM_CUT');   // wParam: DataTransfer, lParam ClipboardEvent

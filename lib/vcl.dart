@@ -37,9 +37,7 @@ part 'src/dbconst.dart';
 part 'src/dbgrids.dart';
 
 
-part 'src/hwnd/HWND.dart';
 part 'src/hwnd/hctrls.dart';
-
 part 'src/hwnd/base.dart';
 part 'src/hwnd/buttons.dart';
 part 'src/hwnd/combobox.dart';
@@ -80,10 +78,18 @@ part 'src/ext/sysdate.dart';
 part 'src/ext/systime.dart';
 part 'src/ext/time.dart';
 part 'src/ext/types_ext.dart';
-part 'src/ext/winuser.dart';
-part 'src/ext/windows.dart';
+part 'src/win/winuser.dart';
+
+part 'src/win/HWND.dart';
+part 'src/win/sysparams.dart';
+part 'src/win/USER_Driver.dart';
+part 'src/win/win.dart';
+part 'src/win/window.dart';
+part 'src/win/winpos.dart';
+part 'src/win/windows.dart';
+part 'src/win/WND.dart';
 
 
 
-final String vcl_lib_version = '1.1.1';
-final DateTime vcl_lib_date = DateTime(2022, 03, 11);
+final String vcl_lib_version = '1.2.0';
+final DateTime vcl_lib_date = DateTime(2022, 03, 29);

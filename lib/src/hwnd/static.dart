@@ -14,6 +14,36 @@ class HLabel extends HControl
   }
 
   HLabel() : super( LabelElement() );
+
+  bool _autoSize = true;
+  bool
+    get autoSize => _autoSize;
+    set autoSize(bool value) => _autoSize = value;
+
+  void set_window_rect(int left, int top, int width, int height)
+  {
+    if(autoSize)
+      handle.updateBounds(left, top, null, null);
+    else
+      super.set_window_rect(left, top, width, height);
+  }
+
+  void dispatch(Element elem, TMessage message)
+  {
+    switch(message.Msg)
+    {
+      case WM_NCCREATE:
+        CREATESTRUCT cs = message.LParam;
+        handle.text = cs.lpszName;
+        super.dispatch(elem, message);
+        break;
+
+      default:
+        super.dispatch(elem, message);
+        break;
+    }
+  }
+
 }
 
 class HHint extends HComponent
@@ -36,4 +66,21 @@ class HHint extends HComponent
   }
 
   HHint() : super( DivElement() );
+
+  void dispatch(Element elem, TMessage message)
+  {
+    switch(message.Msg)
+    {
+      case WM_NCCREATE:
+        CREATESTRUCT cs = message.LParam;
+        handle.text = cs.lpszName;
+        super.dispatch(elem, message);
+        break;
+
+      default:
+        super.dispatch(elem, message);
+        break;
+    }
+    super.dispatch(elem, message);
+  }
 }

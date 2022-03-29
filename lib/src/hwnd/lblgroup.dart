@@ -8,9 +8,9 @@ class HLabelGroup extends HControl
   void defineClassRule(TWndStyle rule)
   {
     rule.add('',
-        '${ rule.block }'
-            '${ rule.inline }'
-            '${ rule.no_select }');
+      '${ rule.flex }'
+      '${ rule.inline }'
+      '${ rule.no_select }');
   }
 
 

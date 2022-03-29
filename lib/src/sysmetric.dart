@@ -16,6 +16,8 @@ class _sys_metric
   int  IBorderCx = 0;
   int  IBorderCy = 0;
   int  MenuCy = 0;
+  int  MinimizedCx = 160;
+  int  MinimizedCy = 28;
   int  ShortDateCx = 0;
   bool SmartMode = false;
 
@@ -43,7 +45,7 @@ class _sys_metric
     e1.append(table);
     document.body!.append(e1);
 
-    TRect r1, r2;
+    RECT r1, r2;
 
     
     CellCy = th.clientHeight;
@@ -149,6 +151,8 @@ abstract class SysMetric
   static int  get InputCy      => Metric.InputCy;
   static int  get InputCx      => Metric.InputCx;
   static int  get MenuCy       => Metric.MenuCy;
+  static int  get MinimizedCx  => Metric.MinimizedCx;
+  static int  get MinimizedCy  => Metric.MinimizedCy;
   static int  get ShortDateCx  => Metric.ShortDateCx;
   static bool get SmartMode    => Metric.SmartMode;
   static int  get VScrollCx    => Metric.VScrollCx;
@@ -157,26 +161,24 @@ abstract class SysMetric
   static int  get ScreenHeight => window.screen!.height ?? 0;
   static int  get ScreenWidth  => window.screen!.width  ?? 0;
 
-// System metrics
-  static const int CXVSCROLL            =  2;
-  static const int CYHSCROLL            =  3;
-  static const int CYCAPTION            =  4;
-  static const int CXBORDER             =  5;
-  static const int CYBORDER             =  6;
-  static const int CYMENU               = 15;
-
 }
 
 int GetSystemMetrics(int nIndex)
 {
   switch(nIndex)
   {
-    case SysMetric.CXVSCROLL:   return SysMetric.VScrollCx;
-    case SysMetric.CYHSCROLL:   return SysMetric.HScrollCy;
-    case SysMetric.CYCAPTION:   return SysMetric.CaptionCy;
-    case SysMetric.CXBORDER:    return SysMetric.BorderCx;
-    case SysMetric.CYBORDER:    return SysMetric.BorderCy;
-    case SysMetric.CYMENU:      return SysMetric.MenuCy;
+    case Windows.SM_CXVSCROLL:    return SysMetric.VScrollCx;
+    case Windows.SM_CYHSCROLL:    return SysMetric.HScrollCy;
+    case Windows.SM_CYCAPTION:    return SysMetric.CaptionCy;
+    case Windows.SM_CXBORDER:     return SysMetric.BorderCx;
+    case Windows.SM_CYBORDER:     return SysMetric.BorderCy;
+    case Windows.SM_CYMENU:       return SysMetric.MenuCy;
+    case Windows.SM_CXMINIMIZED:  return 160;
+    case Windows.SM_CYMINIMIZED:  return 28;
+    case Windows.SM_CXMINTRACK:   return 136;
+    case Windows.SM_CYMINTRACK:   return 39;
+    case Windows.SM_CXMAXTRACK:   return Screen.Width;
+    case Windows.SM_CYMAXTRACK:   return Screen.Height;
   }
   return 0;
 }
