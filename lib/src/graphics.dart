@@ -35,80 +35,169 @@ class TDIBSection
 {
   final dsBm = BITMAP();
 
-
-  TDIBSection get copy
+  TDIBSection()
   {
-    var res = TDIBSection();
-    res.dsBm.assign(dsBm);
-    return res;
+
+  }
+
+  TDIBSection.from(TDIBSection source)
+  {
+    dsBm.assign(source.dsBm);
   }
 }
 
+abstract class TResData
+{
+  HGDIOBJ? _handle;
 
+  final TGraphicsObject Owner;
+
+  TResData(this.Owner);
+
+  void Invalidate()
+  {
+    _handle = null;
+    Owner.Changed();
+  }
+
+  HGDIOBJ get Handle
+  {
+    if(_handle == null)
+      _handle = CreateHandle();
+    return _handle!;
+  }
+
+  void Assign(TResData Source);
+
+  HGDIOBJ CreateHandle();
+
+  void SelectHandle(HGDIOBJ obj);
+
+}
 
 enum TFontStyle { Bold, Italic, Underline, StrikeOut }
 
 typedef TFontStyles = Set<TFontStyle>;
 
-
-
-
-
-class TFontData
+class TFontData extends TResData
 {
-  int    Alpha = 255;
-  TColor Color =clBlack;
+  TColor Color = clBlack;
   bool   Italic = false;
   double Size = 10;
   String Name = 'Arial';
   bool   Underline = false;
   int    Weight = Windows.FW_NORMAL;
- 
 
-  TFontData();
 
-  TFontData.style(this.Size, this.Name, this.Weight, this.Italic, this.Underline, this.Color, this.Alpha);
+  TFontData(TGraphicsObject Owner) : super(Owner);
+
+  void SelectHandle(HGDIOBJ obj)
+  {
+    if(obj is !HFONT)
+      return;
+
+    bool upd = false;
+
+    if(Color     != obj.color)     { upd = true; Color = obj.color; }
+    if(Italic    != obj.italic)    { upd = true; Italic = obj.italic; }
+    if(Size      != obj.size)      { upd = true; Size = obj.size; }
+    if(Name      != obj.name)      { upd = true; Name = obj.name; }
+    if(Underline != obj.underline) { upd = true; Underline = obj.underline; }
+    if(Weight    != obj.weight)    { upd = true; Weight = obj.weight; }
+
+    if(upd)
+      Invalidate();
+  }
+
+  HGDIOBJ CreateHandle()
+  {
+    return HFONT(Size, Name, Weight, Italic, Underline, Color);
+  }
+
+  void Assign(TResData Source)
+  {
+    if(Source is TPenData)
+      SelectHandle(Source.Handle);
+  }
+
 }
 
 
-
-class TPenData
+class TPenData extends TResData
 {
-
-  TColor    Color = clBlack;
-  double    Width = 1.0;
+  TColor Color = clBlack;
+  double Width = 1;
   TPenStyle Style = psSolid;
 
-  TPenData();
+  TPenData(TGraphicsObject Owner) : super(Owner);
 
-  TPenData.from(TPenData src)
+  void SelectHandle(HGDIOBJ obj)
   {
-    Color = src.Color;
-    Width = src.Width;
-    Style = src.Style;
+    if(obj is !HPEN)
+      return;
+
+    bool upd = false;
+
+    if(Color != obj.color) { upd = true; Color = obj.color; }
+    if(Width != obj.width) { upd = true; Width = obj.width; }
+    if(Style != obj.Style) { upd = true; Style = obj.Style; }
+
+    if(upd)
+      Invalidate();
   }
 
-  TPenData.style(this.Color, this.Width, this.Style);
+  HGDIOBJ CreateHandle()
+  {
+    return HPEN(Color, Width, Style);
+  }
+
+  void Assign(TResData Source)
+  {
+    if(Source is TPenData)
+      SelectHandle(Source.Handle);
+  }
+
 }
 
 enum TBrushStyle { Solid, Clear, Horizontal, Vertical,
-                   FDiagonal, BDiagonal, Cross, DiagCross }
+  FDiagonal, BDiagonal, Cross, DiagCross }
 
-class TBrushData
+class TBrushData extends TResData
 {
+  TColor Color = clWhite;
 
-  int         Alpha;
-  TColor      Color;
-  TBrushStyle Style;
+  TBrushStyle Style = TBrushStyle.Solid;
 
+  TBrushData(TGraphicsObject Owner) : super(Owner);
 
+  void SelectHandle(HGDIOBJ obj)
+  {
+    if(obj is !HBRUSH)
+      return;
 
-  TBrushData() : this.style(clWhite, 255, TBrushStyle.Solid);
+    bool upd = false;
 
-  TBrushData.style(this.Color, this.Alpha, this.Style);
+    if(Color != obj.color) { upd = true; Color = obj.color; }
+    if(Style != obj.style) { upd = true; Style = obj.style; }
+
+    if(upd)
+      Invalidate();
+  }
+
+  HGDIOBJ CreateHandle()
+  {
+    return HBRUSH(Color, Style);
+  }
+
+  void Assign(TResData Source)
+  {
+    if(Source is TBrushData)
+      SelectHandle(Source.Handle);
+  }
+
 }
 
- 
+
 
 enum TCanvasStates { HandleValid, FontValid, PenValid, BrushValid }
 
@@ -118,124 +207,112 @@ Set<TCanvasStates> csAllValid = {
   TCanvasStates.PenValid,
   TCanvasStates.BrushValid };
 
+typedef TCanvasState = Set<TCanvasStates>;
 
 
 
-abstract class TGraphicsObject extends TPersistent
+abstract class TGraphicsObject<T extends TResData> extends TPersistent
 {
+  late T _resource;
+
   TNotifyEvent? _onChange;
   TNotifyEvent?
     get OnChange => _onChange;
-    set OnChange(TNotifyEvent? Value) => _onChange=Value;
-
-
-
-  void Changed()
-  {
-    if(OnChange != null)
-      OnChange!(this);
-  }
-
-
-}
-
-class TFont extends TGraphicsObject
-{
-
-
-  final _fontData = TFontData();
-
-  TFont() : super()
-  {
-
-  }
-
-  String toString()
-  {
-    return '{'
-      'name: $Name, '
-      'size: $Size, '
-      'weight: $Weight, '
-      'italic: $Italic, '
-      'underline: $Underline'
-    '}';
-  }
-
-
-  void Changed()
-  {
-    super.Changed();
-
-  }
+    set OnChange(TNotifyEvent? Value) => _onChange = Value;
 
   void Assign(TPersistent Source)
   {
-    if(Source is TFont)
-    {
-      Alpha     = Source.Alpha;
-      Color     = Source.Color;
-      Italic    = Source.Italic;
-      Name      = Source.Name;
-      Size      = Source.Size;
-      Underline = Source.Underline;
-      Weight    = Source.Weight;
+    if(Source is TGraphicsObject)
+      _resource.SelectHandle(Source.Handle);
+    else
+      super.Assign(Source);
+  }
 
+  void Changed()
+  {
+    if(_onChange != null)
+      _onChange!(this);
+  }
 
-      return;
-    }
-    super.Assign(Source);
+  bool HandleAllocated()
+  {
+    return _resource._handle != null;
+  }
+
+  HGDIOBJ get Handle
+  {
+    return _resource.Handle;
+  }
+
+  void set Handle(HGDIOBJ Value)
+  {
+    _resource.SelectHandle(Value);
+  }
+
+}
+
+class TFont extends TGraphicsObject<TFontData>
+{
+  String toString()
+  {
+    return
+      'TFont({'
+        'name: $Name, '
+        'size: $Size, '
+        'weight: $Weight, '
+        'italic: $Italic, '
+        'underline: $Underline'
+        ')';
   }
 
 
 
-  int
-    get Alpha => _fontData.Alpha;
-    set Alpha(int Value)
-    {
-      if(Alpha == Value)
-        return;
-      _fontData.Alpha = Value;
-      Changed();
-    }
+  TFont() : super()
+  {
+    _resource = TFontData(this);
+
+  }
 
   TColor
-    get Color => _fontData.Color;
+    get Color => _resource.Color;
     set Color(TColor Value)
     {
-      if(Color == Value)
+      if(_resource.Color == Value)
         return;
-      _fontData.Color = Value;
-      Changed();
+      _resource.Color = Value;
+      _resource.Invalidate();
     }
 
+
+
   String
-    get Name => _fontData.Name;
+    get Name => _resource.Name;
     set Name(String Value)
     {
-      if(Name == Value)
+      if(_resource.Name == Value)
         return;
-      _fontData.Name = Value;
-      Changed();
+      _resource.Name = Value;
+      _resource.Invalidate();
     }
 
   double
-    get Size => _fontData.Size;
+    get Size => _resource.Size; 
     set Size(double Value)
     {
-      if(Size == Value)
+      if(_resource.Size == Value)
         return;
-      _fontData.Size = Value;
-      Changed();
+      _resource.Size = Value; 
+      _resource.Invalidate();
     }
 
   int
-    get Weight => _fontData.Weight;
+    get Weight => _resource.Weight;
     set Weight(int Value)
     {
-      if(Weight == Value)
+      if(_resource.Weight == Value)
         return;
-      _fontData.Weight = Value;
-      Changed();
+      _resource.Weight = Value;
+      _resource.Invalidate();
     }
 
   bool
@@ -243,23 +320,23 @@ class TFont extends TGraphicsObject
     set Bold(bool Value) => Weight = Value? Windows.FW_BOLD : Windows.FW_NORMAL;
 
   bool
-    get Italic => _fontData.Italic;
+    get Italic => _resource.Italic;
     set Italic(bool Value)
     {
-      if(Italic == Value)
+      if(_resource.Italic == Value)
         return;
-      _fontData.Italic = Value;
-      Changed();
+      _resource.Italic = Value;
+      _resource.Invalidate();
     }
 
   bool
-    get Underline => _fontData.Underline;
+    get Underline => _resource.Underline;
     set Underline(bool Value)
     {
-      if(Underline == Value)
+      if(_resource.Underline == Value)
         return;
-      _fontData.Underline = Value;
-      Changed();
+      _resource.Underline = Value;
+      _resource.Invalidate();
     }
 
   TFontStyles get Style
@@ -276,143 +353,129 @@ class TFont extends TGraphicsObject
 
   void set Style(TFontStyles Value)
   {
-    Bold = Value.contains(TFontStyle.Bold);
-
+    _resource.SelectHandle(HFONT(
+        Size,
+        Name,
+        Value.contains(TFontStyle.Bold)? Windows.FW_BOLD : Windows.FW_NORMAL,
+        Value.contains(TFontStyle.Italic),
+        Value.contains(TFontStyle.Underline),
+        Color ));
   }
 
 
 }
 
-
-class TPen extends TGraphicsObject
+class TPen extends TGraphicsObject<TPenData>
 {
 
 
-  final _penData = TPenData();
-
-  TPenData save() => TPenData.from(_penData);
-
-  void restore(TPenData data)
+  TPen() : super()
   {
-    Color = data.Color;
-    Width = data.Width;
-    Style = data.Style;
+    _resource = TPenData(this);
+
   }
 
-
-
   TColor
-    get Color => _penData.Color;
-
+    get Color => _resource.Color;
     set Color(TColor Value)
     {
-      if(_penData.Color == Value)
+      if(_resource.Color == Value)
         return;
-      _penData.Color = Value;
-      Changed();
+      _resource.Color = Value;
+      _resource.Invalidate();
     }
 
 
 
-  TPenStyle get Style => _penData.Style;
+  TPenStyle
+    get Style => _resource.Style;
+    set Style(TPenStyle Value)
+    {
+      if(_resource.Style == Value)
+        return;
+      _resource.Style = Value;
+      _resource.Invalidate();
+    }
 
-  void set Style(TPenStyle Value)
-  {
-    if(_penData.Style == Value)
-      return;
-    _penData.Style = Value;
-    Changed();
-  }
+  double
+    get Width => _resource.Width;
+    set Width(double Value)
+    {
+      if(Value < 0)
+        return;
 
-  double get Width => _penData.Width;
-  void set Width(double Value)
-  {
-    if(Value<=0 || _penData.Width==Value)
-      return;
-    _penData.Width = Value;
-    Changed();
-  }
+      if(_resource.Width == Width)
+        return;
+      _resource.Width = Value;
+      _resource.Invalidate();
+    }
 }
- 
 
-class TBrush extends TGraphicsObject
+
+class TBrush extends TGraphicsObject<TBrushData>
 {
-
-
-  final _brushData = TBrushData();
-
-
-  int
-    get Alpha => _brushData.Alpha;
-    set Alpha(int Value)
-    {
-      if(_brushData.Alpha==Value)
-        return;
-      _brushData.Alpha=Value;
-      Changed();
-    }
+  TBrush()
+  {
+    _resource = TBrushData(this);
+  }
 
   TColor
-    get Color => _brushData.Color;
+    get Color => _resource.Color;
     set Color(TColor Value)
     {
-      if(_brushData.Color==Value)
+      if(_resource.Color == Value)
         return;
-      _brushData.Color=Value;
-      Changed();
+      _resource.Color = Value;
+      _resource.Invalidate();
     }
-
-
 
   TBrushStyle
-    get Style => _brushData.Style;
+    get Style => _resource.Style;
     set Style(TBrushStyle Value)
     {
-      if(_brushData.Style==Value)
+      if(_resource.Style == Value)
         return;
-      _brushData.Style=Value;
-      if(_brushData.Style == TBrushStyle.Clear)
-        _brushData.Color = clWhite;
-      Changed();
+      _resource.Style = Value;
+      if(_resource.Style == TBrushStyle.Clear)
+        _resource.Color = clWhite;
+      _resource.Invalidate();
     }
 
-
 }
-
-
 
 
 
 class TCanvas extends TPersistent
 {
+  HDC? _handle;
+  HDC
+    get Handle => GetHandle();
+    set Handle(HDC? Value) => SetHandle(Value);
 
-
-  int _lockCount = 0;
-  int get LockCount => _lockCount;
-
-  final _pen = TPen();
-  TPen get Pen => _pen;
-  
-
-  final _brush = TBrush();
-  TBrush get Brush => _brush;
-  
+  final State = Set<TCanvasStates>();
 
   final _font = TFont();
   TFont
     get Font => _font;
     set Font(TFont Value) => _font.Assign(Value);
 
-  final State = Set<TCanvasStates>();
+  final _pen = TPen();
+  TPen
+    get Pen => _pen;
+    set Pen(TPen Value) => _pen.Assign(Value);
 
-  HDC? _handle;
-  HDC
-    get Handle => GetHandle();
-    set Handle(HDC? Value) => SetHandle(Value);
+  final _brush = TBrush();
+  TBrush
+    get Brush => _brush;
+    set Brush(TBrush Value) => _brush.Assign(Value);
+
+
+  int _lockCount = 0;
+  int get LockCount => _lockCount;
+
 
   TCanvas() : super()
-  {
-
+  { 
     _font.OnChange = (Sender)
     {
       if(State.contains(TCanvasStates.FontValid))
@@ -442,10 +505,8 @@ class TCanvas extends TPersistent
 
   }
 
-  void Init()
-  {
-    _handle!.init();
-  }
+
+
 
 
 
@@ -481,7 +542,8 @@ class TCanvas extends TPersistent
 
 
 
-  bool HandleAllocated() {
+  bool HandleAllocated()
+  {
     return _handle != null;
   }
 
@@ -502,7 +564,7 @@ class TCanvas extends TPersistent
     Changing();
     RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid } );
     _handle!
-      ..beginPath()
+//      ..beginPath() /* reset moveto point */
       ..lineTo(X, Y)
       ..stroke();
     Changed();
@@ -510,9 +572,9 @@ class TCanvas extends TPersistent
 
   void Lock()
   {
-
+    
     _lockCount++;
-
+    
   }
 
   void MoveTo(int X, int Y)
@@ -523,67 +585,8 @@ class TCanvas extends TPersistent
 
 
 
-  void Polygon1(List<TPoint> pts)
-  {
-    if(pts.isEmpty)
-      return;
 
-    Changing();
-    RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid, TCanvasStates.BrushValid } );
-    _handle!.beginPath();
-    for(var pt in pts)
-    {
-      if(pt==pts.first)
-        _handle!.moveTo(pt.x, pt.y);
-      else
-        _handle!.lineTo(pt.x, pt.y);
-    }
-    _handle!.lineTo(pts.first.x, pts.first.y);
-    if(Brush.Style == TBrushStyle.Solid)
-      _handle!.fill();
-    _handle!.stroke();
-    Changed();
-  }
 
-  void polyline(num X, num Y, List<num> pts, [bool lock=false] )
-  {
-    if(pts.isEmpty)
-      return;
-
-    Changing();
-    RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid, TCanvasStates.BrushValid } );
-
-    
-    _handle!.beginPath();
-
-    bool first = true;
-    num? x;
-    for(var y in pts)
-    {
-      if(x==null)
-        x = y;
-      else
-      {
-        if(first)
-        {
-          _handle!.moveTo(X+x, Y+y);
-          first = false;
-        }
-        else
-          _handle!.lineTo(X+x, Y+y);
-
-        x = null;
-      }
-    }
-    if(lock)
-    {
-      _handle!.lineTo(X+pts[0], Y+pts[1]);
-      if(Brush.Style == TBrushStyle.Solid)
-        _handle!.fill();
-    }
-    _handle!.stroke();
-    Changed();
-  }
 
   void Polyline(List<TPoint> pts)
   {
@@ -604,18 +607,10 @@ class TCanvas extends TPersistent
     Changed();
   }
 
-  
 
-  void StrokeRectangle(int X1, int Y1, int X2, int Y2)
-  {
-    Changing();
-    RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid } );
-    _handle!
-      ..beginPath()
-      ..rect(X1, Y1, X2-X1, Y2-Y1)
-      ..stroke();
-    Changed();
-  }
+
+
+
 
   void Rectangle(int X1, int Y1, int X2, int Y2)
   {
@@ -632,25 +627,17 @@ class TCanvas extends TPersistent
 
 
 
-
   void RoundRect(num X1, num Y1, num X2, num Y2, num X3, num Y3)
   {
     Changing();
-
-
+    
+    
     Changed();
   }
 
 
 
-  void StrokeText(int X, int Y, String Text)
-  {
-    Changing();
-    
-    
-    _handle!.fillText(X, Y, Text);
-    Changed();
-  }
+
 
   void TextOut(int X, int Y, String Text)
   {
@@ -663,7 +650,10 @@ class TCanvas extends TPersistent
 
 
 
-  TSize TextExtent(String text) => TSize(TextWidth(text), TextHeight(text));
+  TSize TextExtent(String text)
+  {
+    return TSize(TextWidth(text), TextHeight(text));
+  }
 
   int TextWidth(String text) => TextWidthR8(text).round();
 
@@ -714,6 +704,7 @@ class TCanvas extends TPersistent
   {
     if(_handle == Value)
       return;
+
     if(_handle !=null)
     {
 
@@ -728,9 +719,9 @@ class TCanvas extends TPersistent
     }
   }
 
-  void RequiredState(Set<TCanvasStates> ReqState)
+  void RequiredState(TCanvasState ReqState)
   {
-    Set<TCanvasStates> NeededState = ReqState.difference(State);
+    TCanvasState NeededState = ReqState.difference(State);
     if(NeededState.isNotEmpty)
     {
       if(NeededState.contains(TCanvasStates.HandleValid))
@@ -761,15 +752,12 @@ class TCanvas extends TPersistent
 
   void CreateFont()
   {
-    if(Brush.Color!=Font.Color || Brush.Alpha!=Font.Alpha)
+    if(Brush.Color!=Font.Color)
       Brush.Changed();
 
     _handle!.selectFont(Font.Size, Font.Name, Font.Weight, Font.Italic);
     _handle!.fillColor = Font.Color;
-    if(Font.Alpha!=255)
-      _handle!.fillStyle = Font.Color.alpha_s(Font.Alpha);
-    else
-      _handle!.fillColor = Font.Color;
+
 
 
   }
@@ -784,13 +772,10 @@ class TCanvas extends TPersistent
 
   void CreateBrush()
   {
-    if(Font.Color!=Brush.Color || Font.Alpha!=Brush.Alpha)
+    if(Font.Color!=Brush.Color)
       Font.Changed();
 
-    if(Brush.Alpha!=255)
-      _handle!.fillStyle = Brush.Color.alpha_s(Brush.Alpha);
-    else
-      _handle!.fillColor = Brush.Color;
+
 
 
   }
@@ -798,14 +783,21 @@ class TCanvas extends TPersistent
 }
 
 
-abstract class TGraphic extends TInterfacedPersistent 
+abstract class TGraphic extends TInterfacedPersistent
 {
-
-
   TNotifyEvent? _onChange;
   TNotifyEvent?
     get OnChange => _onChange;
     set OnChange(TNotifyEvent? Value) => _onChange = Value;
+
+
+  void Changed(TObject Sender)
+  {
+    _modified = true;
+    if(OnChange!=null)
+      OnChange!(this);
+  }
+
 
   void Draw(TCanvas ACanvas, TRect Rect);
 
@@ -817,22 +809,6 @@ abstract class TGraphic extends TInterfacedPersistent
 
   set Height(int Value) => SetHeight(Value);
   void SetHeight(int Value);
-
-
-  int get Width => GetWidth();
-  int GetWidth();
-
-  set Width(int Value) => SetWidth(Value);
-  void SetWidth(int Value);
-
-  void Changed(TObject Sender)
-  {
-    _modified = true;
-    if(OnChange!=null)
-      OnChange!(this);
-  }
-
-
 
   bool _modified = false;
   bool
@@ -846,17 +822,22 @@ abstract class TGraphic extends TInterfacedPersistent
     }
 
 
+  int get Width => GetWidth();
+  int GetWidth();
+
+  set Width(int Value) => SetWidth(Value);
+  void SetWidth(int Value);
+
+
 }
 
 
-/// TBitmapCanvas
-/// Create a canvas that gets its DC from the memory DC cache
-
+// TBitmapCanvas
+// Create a canvas that gets its DC from the memory DC cache
 class TBitmapCanvas extends TCanvas
 {
-
-
   final TBitmap Bitmap;
+
 
   TBitmapCanvas(this.Bitmap) : super();
 
@@ -874,7 +855,8 @@ class TBitmapCanvas extends TCanvas
     {
       Bitmap.HandleNeeded();
 
-      HDC H = CreateCompatibleDC(null);
+
+        HDC H = CreateCompatibleDC(null);
 
       Handle = H;
       UpdateSize();
@@ -901,13 +883,13 @@ class TBitmapCanvas extends TCanvas
 
 }
 
-
 abstract class TSharedImage
 {
   int _refCount = 0;
   int get RefCount => _refCount;
 
-  void FreeHandle();
+
+    void FreeHandle();
 
   void Reference()
   {
@@ -920,9 +902,10 @@ abstract class TSharedImage
     if(RefCount == 0)
     {
       FreeHandle();
-
+      
     }
   }
+
 }
 
 class TBitmapImage extends TSharedImage
@@ -935,23 +918,18 @@ class TBitmapImage extends TSharedImage
   TMemoryStream? _saveStream; // Save original RLE stream until image is modified**/
   bool _OS2Format = false;  // Write BMP file header, color table in OS/2 format
 
-
-
-
   void FreeHandle()
   {
 
   }
-
 }
 
-/// TBitmap
-
+ 
 
 HBITMAP CopyBitmap(HBITMAP? Handle, HPALETTE? OldPalette, HPALETTE? NewPalette,
-  TDIBSection DIB, TCanvas? Canvas)
+    TDIBSection DIB, TCanvas? Canvas)
 {
-  return HBITMAP(); // заглушка
+  return HBITMAP(); // dummy
 
 }
 
@@ -959,9 +937,8 @@ HBITMAP CopyBitmap(HBITMAP? Handle, HPALETTE? OldPalette, HPALETTE? NewPalette,
 
 class TBitmap extends TGraphic
 {
-
-
   TBitmapImage _image = TBitmapImage();
+
 
   TBitmap() : super()
   {
@@ -978,7 +955,7 @@ class TBitmap extends TGraphic
     try
     {
       HPALETTE? NewPalette;
-
+      
       HBITMAP NewHandle = CopyBitmap(AHandle, APalette, NewPalette, DIB, _canvas);
       NewImage(NewHandle, NewPalette, DIB, _image._OS2Format);
     }
@@ -988,18 +965,19 @@ class TBitmap extends TGraphic
     }
   }
 
+
   // Called by the FCanvas whenever an operation is going to be performed on the
-  //  bitmap that would modify it.  Since modifications should only affect this
-  //  TBitmap, the handle needs to be 'cloned' if it is being refered to by more
-  //  than one TBitmap
+  // bitmap that would modify it.  Since modifications should only affect this
+  // TBitmap, the handle needs to be 'cloned' if it is being refered to by more
+  // than one TBitmap
   void Changing(TObject Sender)
   {
-
+    
   }
 
   void Changed(TObject Sender)
   {
-
+    
     super.Changed(Sender);
   }
 
@@ -1029,7 +1007,7 @@ class TBitmap extends TGraphic
       if(_canvas == null)    // possible recursion
       {
         _canvas = TBitmapCanvas(this);
-
+        
       }
     }
     return _canvas!;
@@ -1089,7 +1067,7 @@ class TBitmap extends TGraphic
     {
       Image._handle = NewHandle;
       Image._palette = NewPalette;
-      Image._DIB = NewDIB.copy;
+      Image._DIB = TDIBSection.from(NewDIB);
       Image._OS2Format = OS2Format;
       if(Image._DIB.dsBm.bmBits != null)
         Image._DIBHandle = Image._handle;
@@ -1128,7 +1106,7 @@ class TBitmap extends TGraphic
       if(_image._DIB.dsBm.bmHeight == Value)
         return;
       HandleNeeded();
-      TDIBSection DIB = _image._DIB.copy;
+      var DIB = TDIBSection.from(_image._DIB);
       DIB.dsBm.bmHeight = Value;
       (Canvas as TBitmapCanvas).UpdateSize(); // new
 
@@ -1143,7 +1121,7 @@ class TBitmap extends TGraphic
     if(_image._DIB.dsBm.bmWidth == Value)
       return;
     HandleNeeded();
-    TDIBSection DIB = _image._DIB.copy;
+    var DIB = TDIBSection.from(_image._DIB);
     DIB.dsBm.bmWidth = Value;
     (Canvas as TBitmapCanvas).UpdateSize(); // new
 
@@ -1152,5 +1130,5 @@ class TBitmap extends TGraphic
   }
 
 
-
 }
+ 
