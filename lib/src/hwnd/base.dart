@@ -49,11 +49,13 @@ class HSelect extends HControl
 
   void defineClassRule(TWndStyle rule)
   {
+    rule.addFocusStyle();
     rule.add('',
-      '${ rule.block }');
+      '${ rule.block }'
+      '${ rule.borderBox }'
+      '${ rule.softBorder }');
     rule.add('option',
       'user-select: none;');
-
   }
 
   HSelect() : super( SelectElement() );
