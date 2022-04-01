@@ -375,30 +375,73 @@ TControl? FindDragTarget(TPoint Pos, bool AllowDisabled)
 
 
 
+
 // TControlCanvas
 
 class TControlCanvas extends TCanvas
 {
   final TControl Control;
-///  CanvasRenderingContext2D _deviceContext;
+  HDC? _deviceContext;
+  HWND? _windowHandle;
+
 
 
   TControlCanvas(this.Control);
 
-  void CreateHandle()
+
+  static void FreeDeviceContexts()
+//    I: Integer;
   {
 
   }
 
+  void Destroy()
+  {
+    FreeHandle();
+    super.Destroy();
+  }
+
+  void CreateHandle()
+  {
+    if(_deviceContext == null)
+    { 
+      try
+      { 
+        var wh = TPointer(_windowHandle);
+        _deviceContext = Control.GetDeviceContext(wh);
+        _windowHandle = wh.Value;
+
+      }
+      finally
+      {
+
+      }
+    }
+    Handle = _deviceContext;
+    UpdateTextFlags();
+  }
+
+  void FreeHandle()
+  {
+    if(_deviceContext != null)
+    {
+      Handle = null;
+      
+      Windows.ReleaseDC(_windowHandle!, _deviceContext!);
+      _deviceContext = null;
+    }
+  }
 
 
-static void FreeDeviceContexts()
-{
 
+  void UpdateTextFlags()
+  {
+
+  }
 }
 
 
-}
+
 
 class TSizeConstraints extends TPersistent
 {
@@ -1138,23 +1181,23 @@ class TControl extends TComponent
 
   void SetZOrderPosition(int Position)
   {
-    if(_parent != null)
-    {
-      int i = _parent!._controls.indexOf(this);
-      if(i >= 0)
-      {
-        int Count = _parent!._controls.length;
-        if(Position < 0)
-          Position = 0;
-        if(Position >= Count)
-          Position = Count - 1;
-        if(Position != i)
-        {
-          _parent!._controls.removeAt(i);
-          _parent!._controls.insert(Position, this);
-          InvalidateControl(Visible, true);
+    if(_parent == null)
+      return;
 
-        }
+    int i = _parent!._controls.indexOf(this);
+    if(i >= 0)
+    {
+      int Count = _parent!._controls.length;
+      if(Position < 0)
+        Position = 0;
+      if(Position >= Count)
+        Position = Count - 1;
+      if(Position != i)
+      {
+        _parent!._controls.removeAt(i);
+        _parent!._controls.insert(Position, this);
+        InvalidateControl(Visible, true);
+
       }
     }
   }
@@ -1169,11 +1212,11 @@ class TControl extends TComponent
       SetZOrderPosition(0);
   }
 
-  HDC? GetDeviceContext()
+  HDC? GetDeviceContext(TPointer<HWND?> WindowHandle)
   {
     if(Parent == null)
       throw EInvalidOperation.CreateFmt(Consts.SParentRequired, [Name]);
-    HDC? Result = Parent!.GetDeviceContext();
+    HDC? Result = Parent!.GetDeviceContext(WindowHandle);
 
     return Result;
   }
@@ -2962,24 +3005,37 @@ class TWinControl extends TControl
     if(_parent == null)
       return;
 
-    if(_parent!._controls != null)
-      Position-=_parent!._controls.length;
-    int I = _parent!._winControls.indexOf(this);
-    if(I >= 0)
+    int i = _parent!._winControls.indexOf(this);
+    if(i >= 0)
     {
       int Count = _parent!._winControls.length;
       if(Position < 0)      Position = 0;
       if(Position >= Count) Position = Count - 1;
-      if(Position != I)
+      if(Position != i)
       {
-        _parent!._winControls.removeAt(I);
+        _parent!._winControls.removeAt(i);
         _parent!._winControls.insert(Position, this);
       }
     }
-    if(_handle != null)
-    {
 
-    }
+    if(_handle == null)
+      return;
+
+    HWINDOW Pos;
+    if(Position == 0)
+      Pos = HWND_BOTTOM;
+    else
+    if(Position == _parent!._winControls.length - 1)
+      Pos = HWND_TOP;
+    else
+    if(Position > i)
+      Pos = (_parent!._winControls[Position + 1]).Handle;
+    else
+    if(Position < i)
+      Pos = (_parent!._winControls[Position]).Handle;
+    else
+      return;
+    Windows.SetWindowPos(_handle!, Pos, 0, 0, 0, 0, Windows.SWP_NOMOVE + Windows.SWP_NOSIZE);
   }
 
   void SetZOrder(bool TopMost)
@@ -2998,11 +3054,17 @@ class TWinControl extends TControl
     }
   }
 
-  HDC? GetDeviceContext()
+  HDC? GetDeviceContext(TPointer<HWND?> WindowHandle)
   {
-
-    return null;
-
+    HDC? Result;
+    if(ComponentState.contains(ComponentStates.Designing))
+      Result = Windows.GetDCEx(Handle, null, Windows.DCX_CACHE | Windows.DCX_CLIPSIBLINGS);
+    else
+      Result = Windows.GetDC(Handle);
+    if(Result == null)
+      throw EOutOfResources.CreateRes(Consts.SWindowDCError);
+    WindowHandle.Value = _handle;
+    return Result;
   }
 
 

@@ -323,8 +323,6 @@ class HCustomForm extends HForm
 
 class TCustomForm extends TScrollingWinControl
 {
-  HForm? _form;
-
   static Map ShowCommands = {
     TWindowState.Normal: Windows.SW_SHOWNORMAL,
     TWindowState.Minimized: Windows.SW_SHOWMINNOACTIVE,
@@ -427,6 +425,9 @@ class TCustomForm extends TScrollingWinControl
     }
 
     
+  late final TControlCanvas _canvas;
+  TCanvas get Canvas => _canvas;
+
   TMainMenu? _menu;
   TMainMenu?
     get Menu => _menu;
@@ -452,19 +453,20 @@ class TCustomForm extends TScrollingWinControl
         {
           if(HandleAllocated())
           {
-            if(_form!.Menu != Menu!.Handle)
-              _form!.Menu = Menu!.Handle;
-            Value.WindowHandle = _form;
+            var form = WindowHandle as HForm;
+            if(form.Menu != Menu!.Handle)
+              form.Menu = Menu!.Handle;
+            Value.WindowHandle = form;
           }
         }
         else
         if(FormStyle != TFormStyle.MDIChild)
           if(HandleAllocated())
-            _form!.Menu=null;
+            (WindowHandle as HForm).Menu=null;
       }
       else
       if(HandleAllocated())
-        _form!.Menu=null;
+        (WindowHandle as HForm).Menu=null;
       if(Active)
         MergeMenu(true);
       RefreshMDIMenu();
@@ -480,7 +482,8 @@ class TCustomForm extends TScrollingWinControl
     if(_modalResult == Value)
       return;
     _modalResult = Value;
-     (_form as HCustomForm).ModalResult = Value;
+    if(HandleAllocated())
+       (WindowHandle as HCustomForm).ModalResult = Value;
   }
     
   TNotifyEvent? _onActivate;
@@ -503,6 +506,11 @@ class TCustomForm extends TScrollingWinControl
     get OnHide => _onHide;
     set OnHide(TNotifyEvent? Value) => _onHide=Value;
 
+  TNotifyEvent? _onPaint;
+  TNotifyEvent?
+    get OnPaint => _onPaint;
+    set OnPaint(TNotifyEvent? Value) => _onPaint;
+
   TNotifyEvent? _onShow;
   TNotifyEvent?
     get OnShow => _onShow;
@@ -524,6 +532,8 @@ class TCustomForm extends TScrollingWinControl
     Top = 0;
     Width = 320;
     Height = 240;
+
+    _canvas = TControlCanvas(this);
 
     Visible = false;
     ParentColor = false;
@@ -781,7 +791,7 @@ class TCustomForm extends TScrollingWinControl
   {
 
     /// new ///
-    var form = _form = HCustomForm(this);
+    var form = WindowHandle = HCustomForm(this);
 
     //form.hide();
     form.ownedWindow = Params.WndParent;
@@ -791,7 +801,6 @@ class TCustomForm extends TScrollingWinControl
 //    form.show();
 
     form.caption.text = Params.Caption;
-    WindowHandle = _form;
 
     TRect r = GetClientMetric();
     int cyc = 0;
@@ -804,22 +813,14 @@ class TCustomForm extends TScrollingWinControl
       cyc += GetSystemMetrics(Windows.SM_CYMENU);
     }
 
-    form.client.style
-      ..left = '${r.left}px'
-      ..top = '${r.top+cyc}px'
-      ..right = '${r.right}px'
-      ..bottom = '${r.bottom}px';
+    r.top += cyc;
+    form.insetRect(r);
   }
 
   void DestroyWindowHandle()
   {
 
       super.DestroyWindowHandle();
-    if(_form != null)
-    {
-      _form!.release();
-      _form=null;
-    }
 
   }
 
@@ -995,6 +996,12 @@ class TCustomForm extends TScrollingWinControl
       _onDeactivate!(this);
   }
 
+  void Paint()
+  {
+    if (_onPaint != null)
+      _onPaint!(this);
+  }
+
 
 
   void Resizing(TWindowState State)
@@ -1158,7 +1165,9 @@ class TCustomForm extends TScrollingWinControl
     try
     {
       Show();
-      _form!.showOverlay();
+
+      var form = Handle as HCustomForm;
+      form.showOverlay();
 
       try
       {
@@ -1169,7 +1178,7 @@ class TCustomForm extends TScrollingWinControl
 
         ModalResult = TModalResult.None;
 
-        _modalResult = await (_form as HCustomForm).ShowModal();
+        _modalResult = await form.ShowModal();
 
         Windows.SendMessage(Handle, CM_DEACTIVATE, 0, 0);
         if(Windows.GetActiveWindow() != Handle)
@@ -1439,12 +1448,13 @@ class TCustomForm extends TScrollingWinControl
 
   void _wmActivate(TMessage Message)// TWMActivate
   {
-    if(_form != null)
+    if(HandleAllocated())
     {
+      var form = WindowHandle as HForm;
       if(LOWORD(Message.WParam)==0)
-        _form!.title.classes.add('inactive');
+        form.title.classes.add('inactive');
       else
-        _form!.title.classes.remove('inactive');
+        form.title.classes.remove('inactive');
     }
 
 

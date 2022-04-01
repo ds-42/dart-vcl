@@ -81,12 +81,13 @@ class HForm extends HCustomControl
   final close = AnchorElement();
   final overlay = DivElement();
 
+  CanvasElement? canvas;
+
   HWND? ownedWindow;
 
   Element getClientHandle() => client;
 
   void Close() => hide();
-
 
 
 
@@ -144,6 +145,60 @@ class HForm extends HCustomControl
   {
     overlay.remove();
     super.release();
+  }
+
+  void insetRect(RECT rect)
+  {
+    _wnd.inset_rect.assign(rect);
+
+    client.style
+      ..left = '${rect.left}px'
+      ..top = '${rect.top}px'
+      ..right = '${rect.right}px'
+      ..bottom = '${rect.bottom}px';
+
+    if(canvas != null)
+    {
+      canvas!.style
+        ..left = '${rect.left}px'
+        ..top = '${rect.top}px';
+//        ..right = '${rect.right}px'
+//        ..bottom = '${rect.bottom}px';
+//      canvas!.width = 300;
+//      canvas!.height = 300;
+    }
+  }
+
+  void _updateCanvasSize()
+  {
+    var rect = _wnd.client_rect;
+    int w = rect.width - 2;
+    int h = rect.height - 2;
+
+    var cnv = canvas!;
+    cnv.style.left = '${rect.left}px';
+    cnv.style.top = '${rect.top}px';
+    if(cnv.width!=w) cnv.width=w;
+    if(cnv.height!=h) cnv.height=h;
+  }
+
+  void canvasNeeded()
+  {
+    if(canvas==null)
+    {
+      canvas = CanvasElement()
+        ..style.position = 'absolute'
+        ..style.zIndex = '-1';
+      _updateCanvasSize();
+      handle.insertBefore(canvas!, client);
+    }
+  }
+
+  void set_window_rect(int left, int top, int width, int height)
+  {
+    if(canvas!=null)
+      _updateCanvasSize();
+    super.set_window_rect(left, top, width, height);
   }
 
   void dispatch(Element elem, TMessage message)
