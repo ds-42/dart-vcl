@@ -44,8 +44,46 @@ abstract class __windows
   {
     HWND? retval;
 
+    if (rel == Windows.GW_OWNER)  /* this one may be available locally */
+    {
+      WND win = get_win_ptr( hwnd );
+      if (win.isDesktop) return null;
+      if (!win.isOtherProcess)
+      {
+         
+         
+         return retval;
+      }
+      /* else fall through to server call */
+    }
+    retval = get_window_tree_request(hwnd, rel);
 
     return retval;
+  }
+
+  static HWND? get_window_tree_request(HWND hwnd, UINT rel) // new
+  {
+    var parent = hwnd.handle.parent;
+    if(parent == null)
+      return null;
+
+    Node? node;
+    switch(rel)
+    {
+      case Windows.GW_HWNDFIRST:
+        node = parent.nodes.last;
+        break;
+      case Windows.GW_HWNDLAST:
+        node = parent.nodes.first;
+        break;
+/*      case Windows.GW_HWNDNEXT:  return hwnd; // dummy
+      default:
+        throw UnimplementedError();**/
+    }
+
+    if(node is Element)
+      return HWND._findWindowDef(node, hwnd);
+    return null; //hwnd;
   }
 
   static HWND? NtUserGetAncestor( HWINDOW? hwnd, UINT type )

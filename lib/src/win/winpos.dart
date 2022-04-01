@@ -669,7 +669,6 @@ abstract class _winpos // WINPOS_
 
     if (SWP_DoWinPosChanging( winpos, old_window_rect, old_client_rect,
                               new_window_rect, new_client_rect ) == 0) return done();
-
     /* Fix redundant flags */
     if (fixup_flags( winpos, old_window_rect, parent_x, parent_y ) == 0)
       return done();

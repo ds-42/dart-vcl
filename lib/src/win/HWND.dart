@@ -129,7 +129,7 @@ class INITSTRUCT
     this.param});
 }
 
-class HWINDOW
+abstract class HWINDOW
 {
   const HWINDOW();
 }

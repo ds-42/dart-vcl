@@ -431,15 +431,8 @@ abstract class __win
 
   static HWND? GetWindow( HWND hwnd, UINT rel )
   {
-    switch(rel)
-    {
-      case Windows.GW_HWNDFIRST: return hwnd; // dummy
-      case Windows.GW_HWNDLAST:  return hwnd; // dummy
-      case Windows.GW_HWNDNEXT:  return hwnd; // dummy
-      default:
-        throw UnimplementedError();
-    }
     
+    __windows.get_window_relative(hwnd, rel);
   }
 
 }

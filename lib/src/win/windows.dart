@@ -1367,6 +1367,36 @@ abstract class Windows
 
   static BOOL SetForegroundWindow( HWND hWnd ) => 1; /* dummy */
 
+
+  static HDC? GetDC(HWND? hWnd) =>
+    __painting.GetDC(hWnd);
+
+  static HDC? GetDCEx(HWND? hWnd, dynamic /*HRGN*/ hrgnClip, UINT flags) =>
+    __painting.GetDCEx(hWnd ?? HWND_DESKTOP, hrgnClip, flags);
+
+  /*
+   * GetDCEx() flags
+   */
+  static const int DCX_WINDOW           = 0x00000001;
+  static const int DCX_CACHE            = 0x00000002;
+  static const int DCX_NORESETATTRS     = 0x00000004;
+  static const int DCX_CLIPCHILDREN     = 0x00000008;
+  static const int DCX_CLIPSIBLINGS     = 0x00000010;
+  static const int DCX_PARENTCLIP       = 0x00000020;
+  static const int DCX_EXCLUDERGN       = 0x00000040;
+  static const int DCX_INTERSECTRGN     = 0x00000080;
+  static const int DCX_EXCLUDEUPDATE    = 0x00000100;
+  static const int DCX_INTERSECTUPDATE  = 0x00000200;
+  static const int DCX_LOCKWINDOWUPDATE = 0x00000400;
+  static const int DCX_USESTYLE         = 0x00010000;
+  static const int DCX_NORECOMPUTE      = 0x00100000;
+  static const int DCX_VALIDATE         = 0x00200000;
+
+
+
+  static int ReleaseDC(HWND hWnd, HDC hDC) => 0; // dummy
+
+
   static bool ValidateRect(HWND hWnd, TRect rect)
   {
     return true;
@@ -1502,6 +1532,9 @@ abstract class Windows
   static const int GW_CHILD            = 5;
   static const int GW_ENABLEDPOPUP     = 6;
   static const int GW_MAX              = 6;
+
+  static HWND? GetWindow( HWND hWnd, UINT uCmd) =>
+      __win.GetWindow(hWnd, uCmd);
 
   /*
    * User Button Notification Codes

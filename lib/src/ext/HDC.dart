@@ -1,5 +1,41 @@
 part of vcl;
 
+abstract class HGDIOBJ
+{
+
+}
+
+class HFONT extends HGDIOBJ
+{
+  final TColor color;
+  final bool   italic;
+  final double size;
+  final String name;
+  final bool   underline;
+  final int    weight;
+
+  HFONT(this.size, this.name, this.weight, this.italic, this.underline, this.color);
+}
+
+class HPEN extends HGDIOBJ
+{
+  final TColor    color;
+  final double    width;
+  final TPenStyle Style;
+
+  HPEN(this.color, this.width, this.Style);
+
+  HPEN.from(HPEN source) : this(source.color, source.width, source.Style);
+}
+
+class HBRUSH extends HGDIOBJ
+{
+  final TColor      color;
+  final TBrushStyle style;
+
+  HBRUSH(this.color, this.style);
+}
+
 class DEVCAPS
 {
   HDC _ctx;

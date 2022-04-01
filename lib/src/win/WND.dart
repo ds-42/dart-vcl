@@ -131,12 +131,20 @@ class WND
     hwnd.set_window_rect(left-border_size.cx, top-border_size.cy, width, height);
   }
 
+  RECT inset_rect = RECT();
+
   RECT get client_rect
   {
-    if(hwnd.clientHandle.offsetParent == null)
-      return window_rect;
-    return hwnd.clientHandle.offsetRect;
+    int w = window_rect.width;
+    int h = window_rect.height;
+    var rect = RECT(inset_rect.left, inset_rect.top, w - inset_rect.right, h - inset_rect.bottom);
+    if(rect.left<0) rect.left = 0;
+    if(rect.top<0) rect.top = 0;
+    if(rect.right<rect.left) rect.right=rect.left;
+    if(rect.bottom<rect.top) rect.bottom=rect.top;
+    return rect;
   }
+
 
   POINT min_pos = POINT();
 
@@ -147,9 +155,27 @@ class WND
   BOOL set_window_pos(HWINDOW? insert_after, UINT swp_flags,
       RECT winRect, RECT client_rect, List<RECT>? valid_rects )
   {
-    switch(insert_after)
+    if(!swp_flags.and(Windows.SWP_NOZORDER) && insert_after != null)
     {
-      case HWND_TOP: hwnd.style.zIndex = '9999'; break;
+      var parent = hwnd.handle.parent;
+      if(parent!=null)
+      {
+        switch(insert_after)
+        {
+          case HWND_BOTTOM:
+            parent.nodes.insert(0, hwnd.handle);
+            break;
+          case HWND_TOP:
+            parent.nodes.add(hwnd.handle);
+            break;
+          case HWND_NOTOPMOST:
+            hwnd.style.zIndex = null;
+            break;
+          case HWND_TOPMOST:
+            hwnd.style.zIndex = '9999';
+            break;
+        }
+      }
     }
 
     int px = window_rect.left;
