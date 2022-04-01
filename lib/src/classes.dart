@@ -58,6 +58,8 @@ class EStringListError extends TException
 class EOutOfResources extends EOutOfMemory
 {
   EOutOfResources(String msg) : super(msg);
+
+  EOutOfResources.CreateRes(dynamic ident) : super.CreateRes(ident);
 }
 
 class EInvalidOperation extends TException

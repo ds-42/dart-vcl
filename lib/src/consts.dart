@@ -6,6 +6,8 @@ abstract class Consts
 
   static const SNoCanvasHandle = 'Canvas does not allow drawing';
   
+  static const SWindowDCError = 'Error creating window device context';
+
   static const SCannotFocus = 'Cannot focus a disabled or invisible window';
   static const SParentRequired = 'Control \'%s\' has no parent window';
 

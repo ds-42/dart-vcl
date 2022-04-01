@@ -57,11 +57,16 @@ class EHeapException extends TException
 {
   EHeapException(String msg) : super(msg);
 
+  EHeapException.CreateRes(dynamic ident) : super.CreateRes(ident);
+
+
 }
 
 class EOutOfMemory extends EHeapException
 {
   EOutOfMemory(String msg) : super(msg);
+
+  EOutOfMemory.CreateRes(dynamic ident) : super.CreateRes(ident);
 }
 
 
