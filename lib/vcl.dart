@@ -50,11 +50,11 @@ part 'src/hwnd/groupbox.dart';
 part 'src/hwnd/lblgroup.dart';
 part 'src/hwnd/memo.dart';
 part 'src/hwnd/menu.dart';
-part 'src/hwnd/pagecontrol.dart';
 part 'src/hwnd/popuplist.dart';
 part 'src/hwnd/scroll.dart';
 part 'src/hwnd/static.dart';
 part 'src/hwnd/statusbar.dart';
+part 'src/hwnd/tabcontrol.dart';
 
 
 part 'src/ext/CHAR.dart';
@@ -81,6 +81,7 @@ part 'src/ext/types_ext.dart';
 part 'src/win/winuser.dart';
 
 part 'src/win/HWND.dart';
+part 'src/win/painting.dart';
 part 'src/win/sysparams.dart';
 part 'src/win/USER_Driver.dart';
 part 'src/win/win.dart';

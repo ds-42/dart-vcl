@@ -21,7 +21,7 @@ class TTabStrings extends TStrings
   void Clear()
   {
     if(TabControl.HandleAllocated())
-      if(PerformHandle(TCM_DELETEALLITEMS, 0, 0) == 0)
+      if(toIntDef(PerformHandle(TCM_DELETEALLITEMS, 0, 0), 0) == 0)
         TabControlError(ComStrs.sTabFailClear);
     TabControl.TabsChanged();
   }
@@ -29,7 +29,7 @@ class TTabStrings extends TStrings
   void Delete(int Index)
   {
     if(TabControl.HandleAllocated())
-      if(PerformHandle(TCM_DELETEITEM, Index, 0) == 0)
+      if(toIntDef(PerformHandle(TCM_DELETEITEM, Index, 0), 0) == 0)
         TabControlError(SysUtils.Format(ComStrs.sTabFailDelete, [Index]));
     TabControl.TabsChanged();
   }
@@ -95,13 +95,13 @@ class TTabStrings extends TStrings
 
 }
 
-
 class TCustomTabControl extends TWinControl
 {
 
   TStrings? _tabs;
-  TStrings get Tabs => _tabs!;
-  void set Tabs(TStrings Value) => Tabs.Assign(Value);
+  TStrings
+    get Tabs => _tabs!;
+    set Tabs(TStrings Value) => Tabs.Assign(Value);
 
   bool _updating = false;
 
@@ -111,10 +111,11 @@ class TCustomTabControl extends TWinControl
     Width = 289;
     Height = 193;
     TabStop = true;
-
+    ControlStyle.assign([ ControlStyles.AcceptsControls, ControlStyles.DoubleClicks ]);
     _tabs = TTabStrings(this);
 
   }
+
 
 
 
@@ -141,34 +142,30 @@ class TCustomTabControl extends TWinControl
       OnChange!(this);
   }
 
-
-
-  dynamic PerformHandle(MESSAGE msg, dynamic wParam, dynamic lParam)
+  dynamic PerformHandle(MESSAGE msg, dynamic wParam, dynamic lParam) // new
   {
     return Windows.SendMessage(Handle, msg, wParam, lParam);
   }
 
-  void CreateWnd()
+  void CreateWindowHandle(TCreateParams Params) // new
   {
-    super.CreateWnd();
+    WindowHandle = HTabControl();
+  }
 
+
+  TRect get DisplayRect
+  {
+    var Result = ClientRect;
+    PerformHandle(TCM_ADJUSTRECT, 0, Result);
+    
+    return Result;
   }
 
 
 
   int
-    get TabIndex
-    {
-      if(!HandleAllocated()) // new
-        return -1;
-      return toIntDef(Windows.SendMessage(Handle, TCM_GETCURSEL, 0, 0), -1);
-    }
-
-    set TabIndex(int Value)
-    {
-      if(HandleAllocated()) // new
-        Windows.SendMessage(Handle, TCM_SETCURSEL, Value, 0);
-    }
+    get TabIndex => toIntDef(PerformHandle(TCM_GETCURSEL, 0, 0), -1);
+    set TabIndex(int Value) => PerformHandle(TCM_SETCURSEL, Value, 0);
 
 
 
@@ -177,7 +174,7 @@ class TCustomTabControl extends TWinControl
     if(_updating)
       return;
     if(HandleAllocated())
-      Windows.SendMessage(Handle, WM_SIZE, Windows.SIZE_RESTORED, SIZE(Width, Height));
+      PerformHandle(WM_SIZE, Windows.SIZE_RESTORED, SIZE(Width, Height));
     Realign();
   }
 
@@ -186,29 +183,46 @@ class TCustomTabControl extends TWinControl
   {
     switch(Message.Msg)
     {
-      case WM_NOTIFY: _cnNotify(TWMNotify(Message)); break;
+      case WM_NOTIFY:
+        _cnNotify(TWMNotify(Message));
+        break;
+
       default:
         super.Dispatch(Message);
         break;
     }
+  }
+
+
+  void _wmSize(TWMSize Message)
+  {
+    super._wmSize(Message);
 
   }
+
+
 
   void _cnNotify(TWMNotify Message)
   {
-      switch(Message.NMHdr.code)
-      {
-        case TCN_SELCHANGE:
-          Change();
-          break;
-        case TCN_SELCHANGING:
-          Message.Result = 1;
-          if(CanChange())
-            Message.Result = 0;
-          break;
-      }
+    switch(Message.NMHdr.code)
+    {
+      case TCN_SELCHANGE:
+        Change();
+        break;
+      case TCN_SELCHANGING:
+        Message.Result = 1;
+        if(CanChange())
+          Message.Result = 0;
+        break;
+    }
   }
 
+
+  void AdjustClientRect(TRect Rect)
+  {
+    Rect.assign( DisplayRect );
+    super.AdjustClientRect(Rect);
+  }
 
 
 }
@@ -243,65 +257,25 @@ class TTabSheet extends TWinControl
   String get Caption => _getText();
   void set Caption(String Value) => _setText(Value);
 
+
   TTabSheet(TComponent AOwner) : super(AOwner)
   {
     Align = TAlign.Client;
     ControlStyle << ControlStyles.AcceptsControls << ControlStyles.NoDesignVisible;
     Visible = false;
-
-  }
-
-
-
-  void CreateParams(TCreateParams Params)
-  {
-    super.CreateParams(Params);
-    Params.X = null;
-    Params.Y = null;
-    Params.Width = null;
-    Params.Height = null;
-    Params.Style |= Windows.WS_VISIBLE;
-  }
-
-
-  void CreateWindowHandle(TCreateParams Params) // new
-  {
-    var pages = _parent as TPageControl?;
-    if(pages == null)
-      return;
-
-    var ctrl = pages.WindowHandle as HPageControl;
-    var tab = ctrl.findTabSheet(this)!;
-
     
-
-/*    if(Params.Caption.isNotEmpty)
-      tab.label.text = Params.Caption;
-    tab.radio.checked = pages.ActivePage == this;*/
-
-    WindowHandle = tab;
-    _updateTabStyle();
-  }
-
-  void _updateTabStyle()
-  {
-    (WindowHandle as HTabSheet)
-        ..label.style.display = TabVisible? '' : 'none'
-        ..label.style.lineHeight = TabVisible? '' : '0'
-        .._client.style.top = TabVisible? '' : '0'
-        .._client.style.border = TabVisible? '' : '0px';
   }
 
 
 
   void DoHide()
   {
-
+    
   }
 
   void DoShow()
   {
-
+    
   }
 
   int get PageIndex
@@ -309,6 +283,19 @@ class TTabSheet extends TWinControl
     if(_pageControl == null)
       return -1;
     return _pageControl!._pages.indexOf(this);
+  }
+
+  set PageIndex(int Value)
+  {
+    if(_pageControl == null)
+      return;
+    int MaxPageIndex = _pageControl!.PageCount - 1;
+    if(Value > MaxPageIndex)
+      throw EListError.CreateResFmt(ComStrs.sPageIndexError, [Value, MaxPageIndex]);
+    int i = TabIndex;
+    _pageControl!._pages.move(PageIndex, Value);
+    if(i >= 0)
+      _pageControl!.MoveTab(i, TabIndex);
   }
 
   int get TabIndex
@@ -323,105 +310,48 @@ class TTabSheet extends TWinControl
     return Result;
   }
 
-
-  TRect GetClientRect() // new
+  void CreateParams(TCreateParams Params)
   {
-    TRect Rect=Parent!.ClientRect;
-    if(TabVisible)
-    {
-      Rect.bottom-=2;
-      Rect.right-=2;
-      Rect.bottom-=21;
+    super.CreateParams(Params);
 
-      Rect.left+=2;
-      Rect.top+=2;
-      Rect.right-=2;
-      Rect.bottom-=2;
-    }
-    return Rect;
-
-  }
-
-  void set PageIndex(int Value)
-  {
-    if(_pageControl == null)
-      return;
-    int MaxPageIndex = _pageControl!.PageCount - 1;
-    if(Value > MaxPageIndex)
-      throw EListError.CreateResFmt(ComStrs.sPageIndexError, [Value, MaxPageIndex]);
-    int i = TabIndex;
-    _pageControl!._pages.move(PageIndex, Value);
-    if(i >= 0)
-      _pageControl!.MoveTab(i, TabIndex);
   }
 
   bool _tabShowing = false;
-  bool get TabShowing => _tabShowing;
-  void set TabShowing(bool Value)
-  {
-    if(_tabShowing == Value)
-      return;
-    if(Value)
+  bool
+    get TabShowing => _tabShowing;
+    set TabShowing(bool Value)
     {
-      _tabShowing = true;
-      _pageControl!.InsertTab(this);
+      if(_tabShowing == Value)
+        return;
+      if(Value)
+      {
+        _tabShowing = true;
+        _pageControl!.InsertTab(this);
+      }
+      else
+      {
+        int Index = TabIndex;
+        _tabShowing = false;
+        _pageControl!.DeleteTab(this, Index);
+      }
     }
-    else
-    {
-      int Index = TabIndex;
-      _tabShowing = false;
-      _pageControl!.DeleteTab(this, Index);
-    }
-  }
 
   bool _tabVisible = true;
-  bool get TabVisible => _tabVisible;
-  void set TabVisible(bool Value)
-  {
-    if(_tabVisible == Value)
-      return;
-    _tabVisible = Value;
+    bool get TabVisible => _tabVisible;
+    void set TabVisible(bool Value)
+    {
+      if(_tabVisible == Value)
+        return;
+      _tabVisible = Value;
 
-
-
-    UpdateTabShowing();
-
-
-  }
+      UpdateTabShowing();
+    }
 
   void UpdateTabShowing()
   {
     TabShowing = (PageControl != null) && _tabVisible;
   }
 
-
-
-
-
-  void WndProc(TMessage Message)
-  {
-    switch(Message.Msg)
-    {
-      case WM_GETTEXT:
-        if(HandleAllocated())
-        {
-          Message.Result = (WindowHandle as HTabSheet).caption;
-          return;
-        }
-        break;
-
-      case CM_SHOWINGCHANGED:
-        // предотвращаем сокрытие табов
-        if(HandleAllocated())
-        {
-          (WindowHandle as HTabSheet).radio.checked = Showing;
-          return;
-        }
-        return;
-
-    }
-    super.WndProc(Message);
-  }
 }
 
 class TPageControl extends TCustomTabControl
@@ -444,8 +374,8 @@ class TPageControl extends TCustomTabControl
         TabIndex = Page.TabIndex;
     }
 
-  int get PageCount => _pages.length;
 
+  int get PageCount => _pages.length;
 
 
   TPageControl(TComponent AOwner) : super(AOwner)
@@ -454,43 +384,15 @@ class TPageControl extends TCustomTabControl
       (ndx) => _pages[ndx],
       ()    => _pages.iterator );
 
-
+    ControlStyle.assign([ ControlStyles.DoubleClicks, ControlStyles.Opaque ]);
   }
 
   void Destroy()
   {
     for(var item in _pages)
       item._pageControl = null;
-
     super.Destroy();
   }
-
-  void AlignControl(TControl? AControl) // new
-  { 
-    if(AControl==null)
-    {
-      for(int i=0; i<ControlCount; i++)
-      {
-        TControl ctrl = Controls[i];
-        if(ctrl is TTabSheet)
-          ctrl.AlignControl(null);
-      }
-      return;
-    }
-    super.AlignControl(AControl);
-  }
-
-  void CreateWindowHandle(TCreateParams Params) // new
-  {
-    var ctrl = HPageControl();
-    ctrl._ul.onChange.listen((Sender) => ActivePageIndex = TabIndex ); // new
-
-    WindowHandle = ctrl;
-
-  }
-
-
-
 
 
   bool CanShowTab(int TabIndex)
@@ -513,12 +415,12 @@ class TPageControl extends TCustomTabControl
   {
     if(_activePage == Page)
       return;
-    TCustomForm? form = ParentForm;
-    if((form != null) && (_activePage != null) &&
-      _activePage!.ContainsControl(form.ActiveControl))
+    var ParentForm = GetParentForm(this);
+    if((ParentForm != null) && (_activePage != null) &&
+      _activePage!.ContainsControl(ParentForm.ActiveControl))
     {
-      form.ActiveControl = _activePage;
-      if(form.ActiveControl != _activePage)
+      ParentForm.ActiveControl = _activePage;
+      if(ParentForm.ActiveControl != _activePage)
       {
         TabIndex = _activePage!.TabIndex;
         return;
@@ -528,14 +430,14 @@ class TPageControl extends TCustomTabControl
     {
       Page.BringToFront();
       Page.Visible = true;
-      if((form != null) && (_activePage != null) && (form.ActiveControl == _activePage))
-        form.ActiveControl = Page.CanFocus()? Page : this;
+      if((ParentForm != null) && (_activePage != null) && (ParentForm.ActiveControl == _activePage))
+        ParentForm.ActiveControl = Page.CanFocus()? Page : this;
     }
     if(_activePage != null)
       _activePage!.Visible = false;
     _activePage = Page;
-    if((form != null) && (_activePage != null) &&
-      (form.ActiveControl == _activePage))
+    if((ParentForm != null) && (_activePage != null) &&
+      (ParentForm.ActiveControl == _activePage))
         _activePage!.SelectFirst();
   }
 
@@ -584,6 +486,10 @@ class TPageControl extends TCustomTabControl
   }
 
 
+  TTabSheet GetPage(int Index)
+  {
+    return _pages[Index];
+  }
 
   void InsertPage(TTabSheet Page)
   {
@@ -624,8 +530,6 @@ class TPageControl extends TCustomTabControl
     }
   }
 
-
-
   void UpdateTab(TTabSheet Page)
   {
     Tabs.Strings[Page.TabIndex] = Page.Caption;
@@ -637,14 +541,12 @@ class TPageControl extends TCustomTabControl
     ActivePage = ndx >= 0? Tabs.Objects[ndx] : null;
   }
 
-
-
   int get ActivePageIndex
   {
     return ActivePage==null? -1 : ActivePage!.PageIndex;
   }
 
-  void set ActivePageIndex(int Value)
+  set ActivePageIndex(int Value)
   {
     if((Value > -1) && (Value < PageCount))
       ActivePage = Pages[Value];
@@ -652,7 +554,6 @@ class TPageControl extends TCustomTabControl
       ActivePage = null;
   }
 }
-
 
 class TStatusPanel extends TCollectionItem
 {
