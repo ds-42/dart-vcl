@@ -254,20 +254,45 @@ class HWND extends HWINDOW
 
   void dispatch(Element elem, TMessage message)
   {
+    String getText()
+    {
+      if(elem is DivElement)
+        return _wnd.text;
+      if(elem is InputElement)
+        return elem.value ?? '';
+      if(elem is TextAreaElement)
+        return elem.value ?? '';
+      return elem.text ?? '';
+    }
+
+    void setText(String text)
+    {
+      if(elem is DivElement)
+        _wnd.text = text;
+      else
+      if(elem is InputElement)
+        elem.value = text;
+      else
+      if(elem is TextAreaElement)
+        elem.value = text;
+      else
+        elem.text = text;
+    }
+
     switch(message.Msg)
     {
       case WM_CREATE:
         var cs = message.LParam as CREATESTRUCT;
-        _wnd.text = cs.lpszName;
+        setText(cs.lpszName);
         _default_element_proc(elem, message);
         break;
 
       case WM_GETTEXT:
-        message.Result = _wnd.text;
+        message.Result = getText();
         break;
 
       case WM_SETTEXT:
-        _wnd.text = message.LParam;
+        setText(message.LParam);
         break;
 
       default:
