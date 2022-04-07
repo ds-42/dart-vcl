@@ -1,7 +1,7 @@
 name: vcl
 # author: Aliaksei Liulis <lai@tut.by>
 description: Dart implementation of vcl interface C++Builder, Delphi.
-version: 1.2.0
+version: 1.2.1
 homepage: https://github.com/ds-42/dart-vcl
 
 environment:
