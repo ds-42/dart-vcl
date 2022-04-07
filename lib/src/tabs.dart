@@ -338,6 +338,12 @@ class TTabSet extends TCustomControl
 
   }
 
+  void CreateWnd()
+  {
+    super.CreateWnd();
+    WindowHandle!.style.overflow = 'hidden';
+  }
+
   /// cache the tab position data, and return number of visible tabs
   int CalcTabPositions(int Start, int Stop, TCanvas Canvas, int First)
   {
