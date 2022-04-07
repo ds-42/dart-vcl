@@ -20,23 +20,47 @@ class HGroupBox extends HControl
   }
 
 
-  final legend = LegendElement();
+  final caption = LegendElement();
   final client = DivElement();
 
   Element getClientHandle() => client;
 
   HGroupBox() : super( FieldSetElement() )
   {
-    handle.append(legend);
+    handle.append(caption);
     handle.append(client);
 
     client.style
       ..position='absolute'
-      ..left = '0'
-      ..top = '5px'
-      ..right = '0'
-      ..bottom = '0';
+      ..left = '1px'
+      ..top = '1px'
+      ..right = '1px'
+      ..bottom = '1px';
 
 
+  }
+
+  void dispatch(Element elem, TMessage message)
+  {
+    switch(message.Msg)
+    {
+      case WM_CREATE:
+        var cs = message.LParam as CREATESTRUCT;
+        caption.text = cs.lpszName;
+        message.Result = 0;
+        break;
+
+      case WM_GETTEXT:
+        message.Result = caption.text;
+        break;
+
+      case WM_SETTEXT:
+        caption.text = message.LParam;
+        break;
+
+      default:
+        super.dispatch(elem, message);
+        break;
+    }
   }
 }

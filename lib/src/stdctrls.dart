@@ -13,7 +13,7 @@ typedef int TLBFindDataEvent(TWinControl Control, String FindString);
 
 
 
-class TCustomGroupBox extends TWinControl
+class TCustomGroupBox extends TWinControl /* TCustomControl */
 {
 
 
@@ -27,25 +27,17 @@ class TCustomGroupBox extends TWinControl
 
   void CreateWindowHandle(TCreateParams Params)
   {
-    var group = HGroupBox();
-
-    group.legend.text = _getText();
-    WindowHandle = group;
+    WindowHandle = HGroupBox();
   }
 
-  void WndProc(TMessage Message)
+  void AdjustClientRect(TRect Rect)
   {
-    switch(Message.Msg)
-    {
-      
+    super.AdjustClientRect(Rect);
 
-    }
-    super.WndProc(Message);
-  }
+    /* temporary solution */
+    Rect.Right-=6;
+    Rect.Bottom-=19;
 
-  TRect GetClientRect() // new
-  {
-    return TRect(0, 0, Width-5, Height-20); // нужно исправить
   }
 
 
