@@ -10,10 +10,10 @@ class HFlexBox extends HControl
     rule.add('',
       '${ rule.block }'
       '${ rule.borderBox }'
+      '${ rule.no_select }'
       'background: #cccccc;'
       'whiteSpace: nowrap;'
-      'overflow: hidden;'
-      'userSelect: none;');
+      'overflow: hidden;');
   }
 
   HFlexBox() : super( DivElement() );
@@ -29,11 +29,11 @@ class HPanel extends HControl
     rule.add('',
       '${ rule.block }'
       '${ rule.borderBox }'
+      '${ rule.no_select }'
       'background: #cccccc;'
       'whiteSpace: nowrap;'
       'overflow: hidden;'
-      'text-overflow: ellipsis;'
-      'userSelect: none;');
+      'text-overflow: ellipsis;');
 //        style.textAlign = 'center';
     rule.addRule('.${ classID }.text',
       'text-align:center; padding: 0 5px;');
