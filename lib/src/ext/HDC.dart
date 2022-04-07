@@ -1,41 +1,5 @@
 part of vcl;
 
-abstract class HGDIOBJ
-{
-
-}
-
-class HFONT extends HGDIOBJ
-{
-  final TColor color;
-  final bool   italic;
-  final double size;
-  final String name;
-  final bool   underline;
-  final int    weight;
-
-  HFONT(this.size, this.name, this.weight, this.italic, this.underline, this.color);
-}
-
-class HPEN extends HGDIOBJ
-{
-  final TColor    color;
-  final double    width;
-  final TPenStyle Style;
-
-  HPEN(this.color, this.width, this.Style);
-
-  HPEN.from(HPEN source) : this(source.color, source.width, source.Style);
-}
-
-class HBRUSH extends HGDIOBJ
-{
-  final TColor      color;
-  final TBrushStyle style;
-
-  HBRUSH(this.color, this.style);
-}
-
 class DEVCAPS
 {
   HDC _ctx;
@@ -52,7 +16,7 @@ HDC CreateCompatibleDC(HDC? dc)
   if(dc==null)
   {
     var res = HCanvasDC();
-    res.textBaseline = 'top';
+    res.init();
     return res;
   }
 
@@ -77,10 +41,125 @@ abstract class HDC
     caps = DEVCAPS(this);
   }
 
+  num _ptx = 0;
+  num _pty = 0;
+
+  HFONT _font = HFONT(10, 'Arial', Windows.FW_NORMAL, false, false, clBlack);
+  HFONT get font => _font;
+  HFONT selectFont({double? size, String? name, int? weight, bool? italic, bool? underline, TColor? color})
+  {
+    return select(HFONT(
+      size ?? font.size,
+      name ?? font.name,
+      weight ?? font.weight,
+      italic ?? font.italic,
+      underline ?? font.underline,
+      color ?? font.color)) as HFONT;
+  }
+
+  HBRUSH _brush = HBRUSH(clWhite);
+  HBRUSH get brush => _brush;
+  HBRUSH selectBrush({TColor? color, TBrushStyle? style})
+  {
+    return select(HBRUSH(
+      color ?? brush.color,
+      style ?? brush.style)) as HBRUSH;
+  }
+
+  HPEN _pen = HPEN(clBlack);
+  HPEN get pen => _pen;
+  HPEN selectPen({TColor? color, double? width, TPenStyle? style, TLineCap? cap, TLineJoin? join})
+  {
+    return select(HPEN(
+      color ?? pen.color,
+      width ?? pen.width,
+      style ?? pen.style,
+      cap   ?? pen.cap,
+      join  ?? pen.join)) as HPEN;
+  }
+
+  HGDIOBJ select(HGDIOBJ obj)
+  {
+    if(obj is HFONT)
+    {
+      if(_font == obj)
+        return obj;
+      var ret = _font;
+      _font = obj;
+      updateFont(obj);
+      return ret;
+    }
+
+    if(obj is HPEN)
+    {
+      if(_pen == obj)
+        return obj;
+      var ret = _pen;
+      _pen = obj;
+      updatePen(obj);
+      return ret;
+    }
+
+    if(obj is HBRUSH)
+    {
+      if(_brush == obj)
+        return obj;
+      var ret = _brush;
+      _brush = obj;
+      updateBrush(obj);
+      return ret;
+    }
+
+    throw UnsupportedError('Invalid gdi object: $obj');
+  }
+
+  void updateFont(HFONT font)
+  {
+    fontStyle =
+      "${font.italic? 'italic ': ''}"
+      "${font.weight==400? '' : '${font.weight} '}"
+      "${font.size}pt "
+      "\"${font.name}\"";
+  }
+
+  void updateBrush(HBRUSH brush)
+  {
+    if(brush.style is TPatternBrushStyle)
+      fillStyle = (brush.style as TPatternBrushStyle).getPattern(brush.color);
+    else
+    if(brush.style == TBrushStyle.Clear)
+      fillStyle = '#00000000';
+    else
+      fillStyle = brush.color.html;
+  }
+
+  void updatePen(HPEN pen)
+  {
+    strokeStyle = pen.color.html;
+    lineWidth = pen.width;
+    var dash = pen.style.sizedDash(pen.width);
+    if(dash!=null)
+      lineDash = dash;
+
+    switch(pen.cap)
+    {
+      case TLineCap.Round:  lineCap = 'round';  break;
+      case TLineCap.Square: lineCap = 'square'; break;
+      case TLineCap.Flat:   lineCap = 'butt';   break;
+    }
+
+    switch(pen.join)
+    {
+      case TLineJoin.Round: lineJoin = 'round'; break;
+      case TLineJoin.Bevel: lineJoin = 'bevel'; break;
+      case TLineJoin.Miter: lineJoin = 'miter'; break;
+    }
+  }
+
   void beginPath();
 
   void circle(num x, num y, num r) =>
-    ellipse(x, y, r, r, 0, 0, 6.28, false);
+    ellipse(x, y, r, r, 0, 0, pi*2, false);
 
   void clear(num x, num y, num width, num height);
 
@@ -93,7 +172,29 @@ abstract class HDC
     clip();
   }
 
+  void drawCircle(num x, num y, num r)
+  {
+    beginPath();
+    circle(x, y, r);
+    fill();
+    stroke();
+  }
+
   void drawImage(num x, num y, HDC dc);
+
+  void drawLine(num x1, num y1, num x2, num y2) =>
+    strokeLine(x1, y1, x2, y2);
+
+  void drawPolygon(num x, num y, List<num> pts) =>
+    drawPolyline(x, y, pts, true);
+
+  void drawPolyline(num x, num y, List<num> pts, [bool lock = false])
+  {
+    beginPath();
+    polyline(x, y, pts, lock);
+    fill();
+    stroke();
+  }
 
   void drawRect(num x, num y, num w, num h)
   {
@@ -105,14 +206,27 @@ abstract class HDC
     drawRect(x1, y1, x2-x1, y2-y1);
 
   void ellipse(num x, num y, num radiusX, num radiusY, num rotation,
-      num startAngle, num endAngle, bool anticlockwise);
+               num startAngle, num endAngle, bool anticlockwise);
 
   void fill();
 
   set fillColor(TColor clr) =>
     fillStyle = clr.html;
 
+  void fillPolygon(num x, num y, List<num> pts) =>
+    fillPolyline(x, y, pts);
+
+  void fillPolyline(num x, num y, List<num> pts)
+  {
+    beginPath();
+    polyline(x, y, pts, true);
+    fill();
+  }
+
   void fillRect(num x, num y, num w, num h);
+
+  void fillRectangle(num x1, num y1, num x2, num y2) =>
+      fillRect(x1, y1, x2-x1, y2-y1);
 
   Object?
     get fillStyle;
@@ -120,13 +234,26 @@ abstract class HDC
 
   void fillText(num x, num y, String text);
 
-  void init();
+  String
+    get fontStyle;
+    set fontStyle(String value);
+
+  void init()
+  {
+    _ptx = 0;
+    _pty = 0;
+    textBaseline = 'top';
+  }
 
   void lineTo(num x, num y);
 
   List<num>
     get lineDash;
     set lineDash(List<num> value);
+
+  String
+    get lineJoin;
+    set lineJoin(String value);
 
   String
     get lineCap;
@@ -136,10 +263,6 @@ abstract class HDC
     get lineWidth;
     set lineWidth(num value);
 
-  HIMAGE?
-    get Image => null;
-    set Image(HIMAGE? img) => null;
-
   HIMAGE? getImageData(int x, int y, int width, int height) => null;
 
   void putImageData(int x, int y, HIMAGE image) => null;
@@ -148,53 +271,31 @@ abstract class HDC
 
   void moveTo(num x, num y);
 
-  void polyfill(num x, num y, List<num> pts) =>
-    _polypath(x, y, pts, false, false, true);
 
-  void polygon(num x, num y, List<num> pts) =>
-    _polypath(x, y, pts, false, true, true);
 
-  void polyline(num x, num y, List<num> pts, [bool lock=false]) =>
-    _polypath(x, y, pts, lock, true, false);
-
-  void _polypath(num x, num y, List<num> pts, bool lock, bool _stroke, bool _fill)
+  void polyline(num x, num y, List<num> pts, [bool lock = false])
   {
-    if(pts.isEmpty)
+    if(pts.length<2)
       return;
 
-    beginPath();
-
-    bool first = true;
-    num? px, py;
-
-    for(py in pts)
+    int ndx = 0;
+    num px = 0;
+    for(var py in pts)
     {
-      if(px==null)
-        px = py;
-      else
+      if(ndx.isOdd)
       {
-        if(first)
-        {
+        if(ndx == 1) // first
           moveTo(x+px, y+py);
-          first = false;
-        }
         else
           lineTo(x+px, y+py);
-        px = null;
       }
+      else
+        px = py;
+      ndx++;
     }
-
-    if(_fill)
-      lock = px!=pts[0] && py!=pts[1];
 
     if(lock)
       lineTo(x+pts[0], y+pts[1]);
-
-    if(_fill)
-      fill();
-
-    if(_stroke)
-      stroke();
   }
 
   void rect(num x, num y, num w, num h);
@@ -208,6 +309,13 @@ abstract class HDC
 
   void stroke();
 
+  void strokeCircle(num x, num y, num r)
+  {
+    beginPath();
+    circle(x, y, r);
+    stroke();
+  }
+
   set strokeColor(TColor clr) =>
     strokeStyle = clr.html;
 
@@ -219,15 +327,14 @@ abstract class HDC
     stroke();
   }
 
-  void strokeRect(num x1, num y1, num x2, num y2);
+  void strokeRect(num x, num y, num w, num h);
+
+  void strokeText(num x, num y, String text);
 
   Object?
     get strokeStyle;
     set strokeStyle(Object? value);
 
-  void selectFont(num size, String name, int weight, bool italic);
-
-  
   String
     get textBaseline => '';
     set textBaseline(String value) { }
@@ -236,13 +343,13 @@ abstract class HDC
     get textAlign => '';
     set textAlign(String value) { }
 
-  
-  void circleEx(num x, num y, num r)
+  void textOut(num x, num y, String text)
   {
-    beginPath();
-    circle(x, y, r);
-    fill();
-    stroke();
+    var mem = fillStyle;
+    fillStyle = font.color.html;
+    fillText(x, y, text);
+    fillStyle = mem;
+
   }
 
   // printer
@@ -263,6 +370,8 @@ class HCanvasDC extends HDC
   final CanvasElement            canvas;
   final CanvasRenderingContext2D context;
 
+  static const num DD = 0.5;
+
   dynamic get handle => context;
 
   HCanvasDC._(this.canvas, this.context) : super( );
@@ -272,6 +381,17 @@ class HCanvasDC extends HDC
     if(elem == null)
      elem = CanvasElement();
     return HCanvasDC._(elem, elem.context2D);
+  }
+
+  void resize(int width, int height)
+  {
+    if(canvas.width == width && canvas.height == height)
+      return;
+    canvas.width = width;
+    canvas.height = height;
+    updateBrush(_brush);
+    updatePen(_pen);
+    updateFont(_font);
   }
 
   @override
@@ -285,16 +405,14 @@ class HCanvasDC extends HDC
   @override
   void init()
   {
-    context.translate(0.5, 0.5);
-    context.textBaseline = 'top'; 
-
+    super.init();
+    context.imageSmoothingEnabled = false;
   }
 
   @override
   void ellipse(num x, num y, num radiusX, num radiusY, num rotation,
       num startAngle, num endAngle, bool anticlockwise) =>
-    context.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise);
-
+    context.ellipse(x+DD, y+DD, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise);
 
   @override
   void clear(num x, num y, num width, num height) =>
@@ -317,19 +435,27 @@ class HCanvasDC extends HDC
 
   @override
   Object? get fillStyle =>
-      context.fillStyle;
+    context.fillStyle;
 
   @override
   set fillStyle(Object? value) =>
-      context.fillStyle = value;
+    context.fillStyle = value;
 
   @override
   void fillText(num x, num y, String text) =>
-    context.fillText(text, x, y);
+      context.fillText(text, x, y);
+
+  @override
+  String get fontStyle =>
+    context.font;
+
+  @override
+  set fontStyle(String value) =>
+    context.font = value;
 
   @override
   void lineTo(num x, num y) =>
-    context.lineTo(x, y);
+    context.lineTo(x+DD, y+DD);
 
   @override
   String get lineCap =>
@@ -348,6 +474,14 @@ class HCanvasDC extends HDC
     context.setLineDash(value);
 
   @override
+  String get lineJoin =>
+    context.lineJoin;
+
+  @override
+  set lineJoin(String value) =>
+    context.lineJoin = value;
+
+  @override
   num get lineWidth =>
     context.lineWidth;
 
@@ -361,24 +495,11 @@ class HCanvasDC extends HDC
 
   @override
   void moveTo(num x, num y) =>
-    context.moveTo(x, y);
+    context.moveTo(x+DD, y+DD);
 
   @override
   void rect(num x, num y, num w, num h) =>
-    context.rect(x, y, w, h);
-
-  @override
-  HIMAGE? get Image
-  {
-    var image = context.getImageData(0, 0, context.canvas.width??0, context.canvas.height??0);
-    return HIMAGEDATA(image);
-  }
-
-  @override
-  set Image(HIMAGE? image)
-  {
-    image!.draw(context, 0, 0);
-  }
+    context.rect(x+DD, y+DD, w+DD, h+DD);
 
   @override
   HIMAGE? getImageData(int x, int y, int width, int height)
@@ -389,11 +510,8 @@ class HCanvasDC extends HDC
   }
 
   @override
-  void putImageData(int x, int y, HIMAGE image)
-  {
+  void putImageData(int x, int y, HIMAGE image) =>
     image.draw(context, x, y);
-  }
-
 
   @override
   void restore() =>
@@ -404,36 +522,51 @@ class HCanvasDC extends HDC
     context.save();
 
   @override
-  void selectFont(num size, String name, int weight, bool italic) =>
-    context.font = "${italic? 'italic ': ''}${weight==400? '' : '$weight '}${size}pt \"${name}\"";
-
-  @override
   void stroke() =>
     context.stroke();
 
   @override
   void strokeRect(num x, num y, num w, num h) =>
-    context.strokeRect(x, y, w, h);
+    context.strokeRect(x+DD, y+DD, w, h);
 
   @override
   Object? get strokeStyle =>
-      context.strokeStyle;
+    context.strokeStyle;
 
   @override
   set strokeStyle(Object? value) =>
-      context.strokeStyle = value;
+    context.strokeStyle = value;
 
-  
+  @override
+  void strokeText(num x, num y, String text) =>
+    context.strokeText(text, x+DD, y+DD);
+
+  @override
   String get textBaseline =>
     context.textBaseline;
 
+  @override
   set textBaseline(String value) =>
     context.textBaseline = value;
 
+  @override
   String get textAlign =>
     context.textAlign;
 
+  @override
   set textAlign(String value) =>
     context.textAlign = value;
+}
+
+class HDummyDC extends HCanvasDC
+{
+  static final dummyCanvas = CanvasElement();
+
+  HDummyDC() : super._(dummyCanvas, dummyCanvas.context2D);
+
+  void resize(int width, int height)
+  {
+    // dummy
+  }
 
 }

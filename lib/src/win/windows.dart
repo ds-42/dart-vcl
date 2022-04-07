@@ -1339,6 +1339,38 @@ abstract class Windows
 
   static HMENU CreatePopupMenu() => HMENU(HMENU.POPUPMENU);
 
+  /*
+   * DrawText() Format Flags
+   */
+  static const DT_TOP                      = 0x00000000;
+  static const DT_LEFT                     = 0x00000000;
+  static const DT_CENTER                   = 0x00000001;
+  static const DT_RIGHT                    = 0x00000002;
+  static const DT_VCENTER                  = 0x00000004;
+  static const DT_BOTTOM                   = 0x00000008;
+  static const DT_WORDBREAK                = 0x00000010;
+  static const DT_SINGLELINE               = 0x00000020;
+  static const DT_EXPANDTABS               = 0x00000040;
+  static const DT_TABSTOP                  = 0x00000080;
+  static const DT_NOCLIP                   = 0x00000100;
+  static const DT_EXTERNALLEADING          = 0x00000200;
+  static const DT_CALCRECT                 = 0x00000400;
+  static const DT_NOPREFIX                 = 0x00000800;
+  static const DT_INTERNAL                 = 0x00001000;
+
+  static const DT_EDITCONTROL              = 0x00002000;
+  static const DT_PATH_ELLIPSIS            = 0x00004000;
+  static const DT_END_ELLIPSIS             = 0x00008000;
+  static const DT_MODIFYSTRING             = 0x00010000;
+  static const DT_RTLREADING               = 0x00020000;
+  static const DT_WORD_ELLIPSIS            = 0x00040000;
+  static const DT_NOFULLWIDTHCHARBREAK     = 0x00080000;
+  static const DT_HIDEPREFIX               = 0x00100000;
+  static const DT_PREFIXONLY               = 0x00200000;
+
+  static int DrawText( HDC hdc, String str, int count, RECT rect, UINT flags) =>
+    wingdi_text.DrawText( hdc, str, count, rect, flags);
+
   static bool UpdateWindow(HWND hwnd)
   {
     if(iWnd.containsKey(hwnd))
@@ -1503,8 +1535,18 @@ abstract class Windows
     return elem==null? null : HWND.findWindow(elem);
   }
 
+
+  static int FillRect(HDC hDC, RECT rect, HBRUSH hbr) =>
+      wingdi_uitools.FillRect(hDC, rect, hbr);
+
+  static int FillRectEx(HDC hDC, num left, num top, num right, num bottom, HBRUSH hbr) =>
+      wingdi_uitools.FillRectEx(hDC, left, top, right, bottom, hbr);
+
   static dynamic GetWindowLong(HWND hWnd, int nIndex) =>
     hWnd._wnd.getWindowLong(nIndex);
+
+  static dynamic SetWindowLong(HWND hWnd, int nIndex, dynamic dwNewLong) =>
+    hWnd._wnd.setWindowLong(nIndex, dwNewLong) ;
 
   static WNDPROC ChangeWindowProc(HWND hwnd, WNDPROC proc) =>
       hwnd._wnd.setWndProc(proc);
@@ -1579,8 +1621,8 @@ abstract class Windows
     return __sysparams.monitor_from_window( hwnd, flags, __sysparams.get_thread_dpi() /* 0 ??? */ );
   }
 
- static BOOL GetMonitorInfo( HMONITOR hMonitor, MONITORINFO lpmi) =>
-   __sysparams.get_monitor_info(hMonitor, lpmi);
+  static BOOL GetMonitorInfo( HMONITOR hMonitor, MONITORINFO lpmi) =>
+    __sysparams.get_monitor_info(hMonitor, lpmi);
 
   /*
    * The "real" ancestor window
@@ -1599,4 +1641,46 @@ abstract class Windows
     else
     print(SysUtils.Format(data, args));
   }
+
+  /* ExtTextOut() parameters */
+  static const int ETO_GRAYED          = 0x0001;
+  static const int ETO_OPAQUE          = 0x0002;
+  static const int ETO_CLIPPED         = 0x0004;
+  static const int ETO_GLYPH_INDEX     = 0x0010;
+  static const int ETO_RTLREADING      = 0x0080;
+  static const int ETO_NUMERICSLOCAL   = 0x0400;
+  static const int ETO_NUMERICSLATIN   = 0x0800;
+  static const int ETO_IGNORELANGUAGE  = 0x1000;
+  static const int ETO_PDY             = 0x2000;
+
+  static HBRUSH CreateSolidBrush(TColor color) =>
+      wingdi_objects.CreateSolidBrush(color);
+
+  static BOOL ExtTextOut(HDC hdc, num x, num y, UINT flags, RECT? rect, String str, int count, Integer? dx) =>
+      wingdi_text.ExtTextOut( hdc, x, y, flags, rect, str, count, dx);
+
+  static BOOL GetTextExtentPoint32(HDC hdc, String str, int count, SIZE size) =>
+      wingdi_text.GetTextExtentPoint32( hdc, str, count, size);
+
+  static BOOL LineTo(HDC hdc, num x, num y) =>
+      wingdi_dc.LineTo( hdc, x, y );
+
+  static BOOL MoveToEx(HDC hdc, num x, num y, [POINT? pt]) =>
+      wingdi_dc.MoveToEx( hdc, x, y, pt);
+
+  static BOOL Polyline(HDC hdc, List<POINT> points, [int count = -1]) =>
+      wingdi_dc.Polyline(hdc, points, count);
+  static BOOL PolylineEx(HDC hdc, num x, num y, List<num> pts, [bool lock = false]) => // new
+      wingdi_dc.PolylineEx(hdc, x, y, pts, lock);
+
+
+  static BOOL Rectangle(HDC hdc, num left, num top, num right, num bottom) =>
+      wingdi_dc.Rectangle( hdc, left, top, right, bottom );
+
+  static BOOL RoundRect(HDC hdc, num left, num top, num right, num bottom, num ell_width, num ell_height) =>
+      wingdi_dc.RoundRect( hdc, left, top, right, bottom, ell_width, ell_height);
+
+  static HGDIOBJ SelectObject(HDC hdc, HGDIOBJ obj) =>
+      wingdi_objects.SelectObject( hdc, obj );
+
 }

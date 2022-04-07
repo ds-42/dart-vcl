@@ -14,7 +14,7 @@ abstract class __painting
       hwnd.canvasNeeded();
       return HCanvasDC(hwnd.canvas!);
     }
-    return null;
+    return HDummyDC();
   }
 
   
