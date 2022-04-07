@@ -1195,16 +1195,13 @@ class TCustomCheckBox extends TButtonControl
 
   void CreateWindowHandle(TCreateParams Params)
   {
-    HCheckBox cb = HCheckBox();
-    cb.caption.text = Params.Caption;
-    cb.check.checked = _state == TCheckBoxState.Checked;
-    if(Enabled==false)
-    {
-      cb.handle.setAttribute('disabled', '');
+    WindowHandle = HCheckBox();
+  }
 
-    }
-    WindowHandle = cb;
-
+  void CreateWnd()
+  {
+    super.CreateWnd();
+    Windows.SendMessage(Handle, BM_SETCHECK, _state, 0);
   }
 
   void WndProc(TMessage Message)
@@ -1305,11 +1302,13 @@ class TRadioButton extends TButtonControl
 
   void CreateWindowHandle(TCreateParams Params)
   {
-    var rb = HRadioButton();
-    rb.caption.text = Params.Caption;
-    rb.radio.checked = _checked;
-    WindowHandle = rb;
-//    rb.handle.onClick.listen((event) => Checked=true ); // временно пока не пойму как работает переключение
+    WindowHandle = HRadioButton();
+  }
+
+  void CreateWnd()
+  {
+    super.CreateWnd();
+    Windows.SendMessage(Handle, BM_SETCHECK, _checked? 1:0, 0);
   }
 
 

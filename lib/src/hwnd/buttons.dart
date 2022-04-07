@@ -86,39 +86,45 @@ class HCheckBox extends HButtonControl
 
     check.owner = this;
     caption.owner = this;
-
     
     handle.onClick.listen((e) =>  e.preventDefault() );
+  }
 
-    WNDPROC? defproc;
-    defproc = Windows.ChangeWindowProc(this, (elem, message)
-    { // mainproc
-      switch(message.Msg)
-      {
-        case BM_GETCHECK:
-          message.Result = check.checked!? TCheckBoxState.Checked : TCheckBoxState.Unchecked;
-          break;
+  void dispatch(Element elem, TMessage message)
+  {
+    switch(message.Msg)
+    {
+      case BM_GETCHECK:
+        message.Result = check.checked!? TCheckBoxState.Checked : TCheckBoxState.Unchecked;
+        break;
 
-        case BM_SETCHECK:
-          check.checked = message.WParam == TCheckBoxState.Checked;
-          break;
-      }
+      case BM_SETCHECK:
+        check.checked = message.WParam == TCheckBoxState.Checked;
+        break;
+    }
 
-      switch(message.Msg)
-      {
-        case WM_GETTEXT:
-          message.Result = caption.text;
-          break;
+    switch(message.Msg)
+    {
+      case WM_CREATE:
+        var cs = message.LParam as CREATESTRUCT;
+        if(cs.style.and(Windows.WS_DISABLED))
+          handle.setAttribute('disabled', '');
+        caption.text = cs.lpszName;
+        message.Result = 0;
+        break;
 
-        case WM_SETTEXT:
-          caption.text = message.LParam;
-          break;
+      case WM_GETTEXT:
+        message.Result = caption.text;
+        break;
 
-        default:
-          defproc!(elem, message);
-          break;
-      }
-    });
+      case WM_SETTEXT:
+        caption.text = message.LParam;
+        break;
+
+      default:
+        super.dispatch(elem, message);
+        break;
+    }
   }
 }
 
@@ -152,35 +158,42 @@ class HRadioButton extends HButtonControl
 
     radio.owner = this;
     caption.owner = this;
+  }
 
-    WNDPROC? defproc;
-    defproc = Windows.ChangeWindowProc(this, (elem, message)
-    { // mainproc
-      switch(message.Msg)
-      {
-        case BM_GETCHECK:
-          message.Result = radio.checked!? 1 : 0;
-          break;
+  void dispatch(Element elem, TMessage message)
+  {
+    switch(message.Msg)
+    {
+      case BM_GETCHECK:
+        message.Result = radio.checked!? 1 : 0;
+        break;
 
-        case BM_SETCHECK:
-          radio.checked = message.WParam == 1;
-          break;
-      }
+      case BM_SETCHECK:
+        radio.checked = message.WParam == 1;
+        break;
+    }
 
-      switch(message.Msg)
-      {
-        case WM_GETTEXT:
-          message.Result = caption.text;
-          break;
+    switch(message.Msg)
+    {
+      case WM_CREATE:
+        var cs = message.LParam as CREATESTRUCT;
+        if(cs.style.and(Windows.WS_DISABLED))
+          handle.setAttribute('disabled', '');
+        caption.text = cs.lpszName;
+        message.Result = 0;
+        break;
 
-        case WM_SETTEXT:
-          caption.text = message.LParam;
-          break;
+      case WM_GETTEXT:
+        message.Result = caption.text;
+        break;
 
-        default:
-          defproc!(elem, message);
-          break;
-      }
-    });
+      case WM_SETTEXT:
+        caption.text = message.LParam;
+        break;
+
+      default:
+        super.dispatch(elem, message);
+        break;
+    }
   }
 }
