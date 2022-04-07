@@ -254,7 +254,26 @@ class HWND extends HWINDOW
 
   void dispatch(Element elem, TMessage message)
   {
-    _default_element_proc(elem, message);
+    switch(message.Msg)
+    {
+      case WM_CREATE:
+        var cs = message.LParam as CREATESTRUCT;
+        _wnd.text = cs.lpszName;
+        _default_element_proc(elem, message);
+        break;
+
+      case WM_GETTEXT:
+        message.Result = _wnd.text;
+        break;
+
+      case WM_SETTEXT:
+        _wnd.text = message.LParam;
+        break;
+
+      default:
+        _default_element_proc(elem, message);
+        break;
+    }
   }
 
   set owner(HWND? hwnd)
@@ -345,26 +364,6 @@ void _default_element_proc(Element elem, TMessage Message)
 
     case WM_NCCALCSIZE:
       Message.Result = 0;
-      break;
-
-    case WM_GETTEXT:
-      if(elem is InputElement)
-        Message.Result = elem.value;
-      else
-      if(elem is TextAreaElement)
-        Message.Result = elem.value;
-      else
-        Message.Result = elem.text;
-      break;
-
-    case WM_SETTEXT:
-      if(elem is InputElement)
-        elem.value = Message.LParam;
-      else
-      if(elem is TextAreaElement)
-        elem.value = Message.LParam;
-      else
-        elem.text = Message.LParam;
       break;
 
     case WM_ENABLE:

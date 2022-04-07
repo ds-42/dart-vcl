@@ -76,6 +76,8 @@ class WND
     return HWND.findWindow(elem);
   }
 
+  String text = '';
+
   set visible(bool value)
   {
     if(value) dwStyle|= Windows.WS_VISIBLE;
@@ -98,6 +100,25 @@ class WND
       case Windows.GWL_STYLE:  return dwStyle;
       case Windows.GWL_EXSTYLE: return dwExStyle;
       case Windows.GWL_USERDATA: return createParam;
+
+      default:
+        throw UnimplementedError();
+    }
+  }
+
+  dynamic setWindowLong(int nIndex, dynamic dwNewLong)
+  {
+    switch(nIndex)
+    {
+      case Windows.GWL_STYLE:
+        UINT res = dwStyle;
+        dwStyle = dwNewLong as int; // temporary
+        return res;
+
+      case Windows.GWL_EXSTYLE:
+        UINT res = dwExStyle;
+        dwExStyle = dwNewLong as int; // temporary
+        return res;
 
       default:
         throw UnimplementedError();
