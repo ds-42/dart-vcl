@@ -49,11 +49,28 @@ class TMainForm extends TForm
 
 
     var status = TStatusBar(this);
+    status.Height = 22;
     status.Parent = this;
     status.Panels.Add();
-    status.Panels.Items[0].Width = 120;
+    status.Panels.Add();
+    status.Panels.Items[0].Width = 100;
+    status.Panels.Items[1].Width = 200;
 
     status.SimpleText = '© dart-vcl [${vcl_lib_version}], ${vcl_lib_date.year}';
+
+    TTabSet(status)
+      ..Width = status.Panels.Items[1].Width
+      ..MoveTo(105, 1)
+      ..SoftTop = true
+      ..Tabs.Add('tab-1')
+      ..Tabs.Add('tab-2')
+      ..Tabs.Add('tab-3')
+      ..Parent = status
+      ..OnChange = (Sender, int tab)
+      {
+        Caption = 'MainForm [select tab: ${tab+1}]';
+        return true;
+      };
 
     void UpdateStatusText()
     {
