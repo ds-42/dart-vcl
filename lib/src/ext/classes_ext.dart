@@ -333,6 +333,14 @@ void OffsetRect(RECT rect, int dx, int dy)
   rect.bottom+=dy;
 }
 
+void InflateRect(RECT rect, int x, int y)
+{
+  rect.left   -= x;
+  rect.top    -= y;
+  rect.right  += x;
+  rect.bottom += y;
+}
+
 bool IntersectRect(RECT dest, RECT src1, RECT src2)
 {
   if (IsRectEmpty(src1) || IsRectEmpty(src2) ||

@@ -31,6 +31,7 @@ part 'src/systdate.dart';
 part 'src/systobj.dart';
 part 'src/sysmetric.dart';
 part 'src/sysutils.dart';
+part 'src/tabs.dart';
 
 part 'src/db.dart';
 part 'src/dbconst.dart';
@@ -80,10 +81,14 @@ part 'src/ext/time.dart';
 part 'src/ext/types_ext.dart';
 part 'src/win/winuser.dart';
 
+part 'src/win/dc.dart';
 part 'src/win/HWND.dart';
+part 'src/win/objects.dart';
 part 'src/win/painting.dart';
 part 'src/win/sysparams.dart';
+part 'src/win/text.dart';
 part 'src/win/USER_Driver.dart';
+part 'src/win/uitools.dart';
 part 'src/win/win.dart';
 part 'src/win/window.dart';
 part 'src/win/winpos.dart';
@@ -92,5 +97,5 @@ part 'src/win/WND.dart';
 
 
 
-final String vcl_lib_version = '1.2.0';
-final DateTime vcl_lib_date = DateTime(2022, 03, 29);
+final String vcl_lib_version = '1.2.1';
+final DateTime vcl_lib_date = DateTime(2022, 04, 07);

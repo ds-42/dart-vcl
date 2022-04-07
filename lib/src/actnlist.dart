@@ -155,7 +155,25 @@ class TActionLink extends TBasicActionLink
 
   TActionLink(TObject AClient) : super(AClient);
 
- 
+  bool IsCaptionLinked()
+  {
+    return Action is TCustomAction;
+  }
+
+ bool IsEnabledLinked()
+ {
+   return Action is TCustomAction;
+ }
+
+ bool IsHintLinked()
+ {
+   return Action is TCustomAction;
+ }
+
+ bool IsVisibleLinked()
+ {
+   return Action is TCustomAction;
+ }
 
  void SetAutoCheck(bool Value) // virtual
  {

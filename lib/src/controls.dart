@@ -126,10 +126,10 @@ abstract class ModalResults
 
 class TCursor
 {
-  final int    _id;
+  final int    id;
   final String name;
 
-  const TCursor._(this._id, this.name);
+  const TCursor._(this.id, this.name);
   const TCursor(String _name) : this._(0, _name);
 
   static const Default      = TCursor._(  0, 'default');
@@ -561,6 +561,29 @@ class TControlActionLink extends TActionLink
     return Result;
   }
 
+  bool IsCaptionLinked()
+  {
+    return super.IsCaptionLinked() &&
+      (_client!._caption == (Action as TCustomAction).Caption);
+  }
+
+  bool IsEnabledLinked()
+  {
+    return super.IsEnabledLinked() &&
+      (_client!.Enabled == (Action as TCustomAction).Enabled);
+  }
+
+  bool IsHintLinked()
+  {
+    return super.IsHintLinked() &&
+      (_client!.Hint == (Action as TCustomAction).Hint);
+  }
+
+  bool IsVisibleLinked()
+  {
+    return super.IsVisibleLinked() &&
+      (_client!.Visible == (Action as TCustomAction).Visible);
+  }
 
 }
 
@@ -1292,8 +1315,6 @@ class TControl extends TComponent
 
     bool Result = false;
 
-    if(Result)
-      return true;
 
     _wheelAccumulator+=WheelDelta;
     while(_wheelAccumulator.abs() >= WHEEL_DELTA)
@@ -1980,9 +2001,12 @@ class TWinControl extends TControl
     return -1;
   }
 
-  set TabOrder(int Value) {
-
-    UpdateTabOrder(Value);
+  set TabOrder(int Value)
+  {
+    if(ControlState.contains(ControlStates.ReadingState))
+      _tabOrder = Value;
+    else
+      UpdateTabOrder(Value);
   }
 
   void UpdateTabOrder(int Value)
@@ -2011,7 +2035,9 @@ class TWinControl extends TControl
     _tabStop = Value;
     if(HandleAllocated())
     {
-
+      int Style = (Windows.GetWindowLong(_handle!, Windows.GWL_STYLE) as int) & ~Windows.WS_TABSTOP;
+      if(Value) Style = Style | Windows.WS_TABSTOP;
+      Windows.SetWindowLong(_handle!, Windows.GWL_STYLE, Style);
     }
     Perform(CM_TABSTOPCHANGED, 0, 0);
   }
@@ -2094,6 +2120,31 @@ class TWinControl extends TControl
   }
 
 
+
+  void FixupTabList()
+  {
+    try
+    {
+      int Count = _winControls.length;
+      var list = List<TWinControl?>.filled(Count, null);
+      for(int i = 0; i < Count; i++)
+      {
+        var Control = _winControls[i];
+        int j = Control._tabOrder;
+        if((j >= 0) && (j < Count))
+          list[j] = Control;
+      }
+      for(int i = 0; i < Count; i++)
+      {
+        var Control = list[i];
+        if(Control != null)
+          Control.UpdateTabOrder(i);
+      }
+    }
+    finally
+    { 
+    }
+  }
 
 
   void AdjustClientRect(TRect Rect)
@@ -2378,9 +2429,7 @@ class TWinControl extends TControl
   void InsertControl(TControl AControl)
   {
     void Insert(TControl AControl)
-    {
-      if(AControl == null)
-        return;
+    { 
       if(AControl is TWinControl)
       {
         _winControls.add(AControl);
@@ -4026,7 +4075,7 @@ class TGraphicControl extends TCustomControl
   void CreateWnd()
   {
     super.CreateWnd();
-    Canvas.Handle.init();
+
   }
 
 
@@ -4191,14 +4240,11 @@ class THintWindow extends TCustomControl
 
 class TCustomControl extends TWinControl
 {
+  late final TCanvas Canvas;
 
-  TCanvas? _canvas;
-  TCanvas get Canvas => _canvas!;
-
-
-  TCustomControl(TComponent AOwner) : super(AOwner)
+  TCustomControl(TComponent? AOwner) : super(AOwner)
   {
-    _canvas = TControlCanvas(this);
+    Canvas = TControlCanvas(this);
   }
 
   final canvasElement = CanvasElement();
@@ -4208,7 +4254,7 @@ class TCustomControl extends TWinControl
     super.CreateWindowHandle(Params);
     WindowHandle!.handle.append(canvasElement);
     canvasElement.owner = WindowHandle;
-    _canvas!.Handle = HCanvasDC(canvasElement);
+    Canvas.Handle = HCanvasDC(canvasElement);
 
   }
 
@@ -4226,8 +4272,10 @@ class TCustomControl extends TWinControl
   void _wmWindowPosChanged(TWMWindowPosMsg Message)
   {
     var rect = ClientRect;
-    canvasElement.width = rect.width;
-    canvasElement.height = rect.height;
+    var dc = Canvas.Handle as HCanvasDC;
+    dc.resize(rect.width, rect.height);
+//    canvasElement.width = rect.width;
+//    canvasElement.height = rect.height;
     Windows.InvalidateRect(Handle, null, true);
   }
 
