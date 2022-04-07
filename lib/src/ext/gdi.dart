@@ -1,27 +1,21 @@
 part of vcl;
 
-enum DRAWTEXT  {
-CENTER, 
-}
-
-void DrawText(HDC hDC,    // device context
-    String text,          // text for draw
-    RECT rect,            // size of format field
-    Set<DRAWTEXT> format) // draw params
-{
-  int x = rect.left;
-  int y = rect.top;
-  if(format.contains(DRAWTEXT.CENTER))
-  {
-    var m = hDC.measureText(text);
-    y+=(rect.height-m!.fontBoundingBoxDescent!.toInt()) ~/ 2;
-  }
- 
-  hDC.fillText(x, y, text);
-}
-
 class TPenStyle extends TEnum
 {
+  static const TPenStyle Clear            = TPenStyle('psClear', null);
+  static const TPenStyle Solid            = TPenStyle('psSolid', []);
+  static const TPenStyle Dash             = TPenStyle('psDash', [2,2]);
+  static const TPenStyle Dot              = TPenStyle('psDot', [1,1]);
+  static const TPenStyle DashDot          = TPenStyle('psDashDot', [2,1,1,1]);
+  static const TPenStyle DashDotDot       = TPenStyle('psDashDotDot', [2,1,1,1,1,1]);
+  static const TPenStyle NormalDash       = TPenStyle('psNormalDash', [6, 2]);
+  static const TPenStyle NormalDashDot    = TPenStyle('psNormalDashDot', [6,1,1,1]);
+  static const TPenStyle NormalDashDotDot = TPenStyle('psNormalDashDotDot', [6,1,1,1,1,1]);
+  static const TPenStyle LongDash         = TPenStyle('psLongDash', [21,3]);
+  static const TPenStyle LongDashDot      = TPenStyle('psLongDashDot', [21,2,1,2]);
+  static const TPenStyle LongDashDotDot   = TPenStyle('psLongDashDotDot', [21,2,1,1,1,2]);
+
+
   final List<num>? rule;
   const TPenStyle(String name, this.rule) : super(name);
 
@@ -60,50 +54,38 @@ class TPenStyle extends TEnum
   }
 }
 
-const TPenStyle psClear            = TPenStyle('psClear', null);
-const TPenStyle psSolid            = TPenStyle('psSolid', []);
-const TPenStyle psDash             = TPenStyle('psDash', [2,2]);
-const TPenStyle psDot              = TPenStyle('psDot', [1,1]);
-const TPenStyle psDashDot          = TPenStyle('psDashDot', [2,1,1,1]);
-const TPenStyle psDashDotDot       = TPenStyle('psDashDotDot', [2,1,1,1,1,1]);
-const TPenStyle psNormalDash       = TPenStyle('psNormalDash', [6, 2]);
-const TPenStyle psNormalDashDot    = TPenStyle('psNormalDashDot', [6,1,1,1]);
-const TPenStyle psNormalDashDotDot = TPenStyle('psNormalDashDotDot', [6,1,1,1,1,1]);
-const TPenStyle psLongDash         = TPenStyle('psLongDash', [21,3]);
-const TPenStyle psLongDashDot      = TPenStyle('psLongDashDot', [21,2,1,2]);
-const TPenStyle psLongDashDotDot   = TPenStyle('psLongDashDotDot', [21,2,1,1,1,2]);
-
 abstract class PenStyles
 {
   static final _items = <TLocale, Map<TPenStyle, String> >
   {
     TLocale.ENGLISH: {
-      psClear:           'clear',
-      psSolid:            'solid',
-      psDash:             'dash',
-      psDot:              'dot',
-      psDashDot:          'dash dot',
-      psDashDotDot:       'dash dot dot',
-      psNormalDash:       'normal dash',
-      psNormalDashDot:    'normal dash dot',
-      psNormalDashDotDot: 'normal dash dot dot',
-      psLongDash:         'long dash',
-      psLongDashDot:      'long dash dot',
-      psLongDashDotDot:   'long dash dot dot',
+      TPenStyle.Clear:            'clear',
+      TPenStyle.Solid:            'solid',
+      TPenStyle.Dash:             'dash',
+      TPenStyle.Dot:              'dot',
+      TPenStyle.DashDot:          'dash dot',
+      TPenStyle.DashDotDot:       'dash dot dot',
+      TPenStyle.NormalDash:       'normal dash',
+      TPenStyle.NormalDashDot:    'normal dash dot',
+      TPenStyle.NormalDashDotDot: 'normal dash dot dot',
+      TPenStyle.LongDash:         'long dash',
+      TPenStyle.LongDashDot:      'long dash dot',
+      TPenStyle.LongDashDotDot:   'long dash dot dot',
     },
+
     TLocale.RUSSIAN: {
-      psClear:            'прозрачный',
-      psSolid:            'сплошной',
-      psDash:             'штриховой',
-      psDot:              'пунктирный',
-      psDashDot:          'штрихпунктирный',
-      psDashDotDot:       'штрих точка точка',
-      psNormalDash:       'средний штрих',
-      psNormalDashDot:    'средний штрихпунктир',
-      psNormalDashDotDot: 'средний штрих точка точка',
-      psLongDash:         'длинный штрих',
-      psLongDashDot:      'длинный штрихпунктир',
-      psLongDashDotDot:   'длинный штрих точка точка',
+      TPenStyle.Clear:            'прозрачный',
+      TPenStyle.Solid:            'сплошной',
+      TPenStyle.Dash:             'штриховой',
+      TPenStyle.Dot:              'пунктирный',
+      TPenStyle.DashDot:          'штрихпунктирный',
+      TPenStyle.DashDotDot:       'штрих точка точка',
+      TPenStyle.NormalDash:       'средний штрих',
+      TPenStyle.NormalDashDot:    'средний штрихпунктир',
+      TPenStyle.NormalDashDotDot: 'средний штрих точка точка',
+      TPenStyle.LongDash:         'длинный штрих',
+      TPenStyle.LongDashDot:      'длинный штрихпунктир',
+      TPenStyle.LongDashDotDot:   'длинный штрих точка точка',
     },
   };
 
@@ -120,6 +102,111 @@ abstract class PenStyles
     TLocaleSet.IdentByValue<TPenStyle>(PenStyles._items, value, locale);
 }
 
+
+class TBrushStyle extends TEnum
+{
+  const TBrushStyle(String name) : super(name);
+
+  static const TBrushStyle Solid      = TBrushStyle('Solid');
+  static const TBrushStyle Clear      = TBrushStyle('Clear');
+  static const TBrushStyle Horizontal = TMaskBrushStyle('Horizontal', [0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00]);
+  static const TBrushStyle Vertical   = TMaskBrushStyle('Vertical',   [0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20]);
+  static const TBrushStyle FDiagonal  = TMaskBrushStyle('FDiagonal',  [0x20, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10]);
+  static const TBrushStyle BDiagonal  = TMaskBrushStyle('BDiagonal',  [0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x80, 0x40]);
+  static const TBrushStyle Cross      = TMaskBrushStyle('Cross',      [0x20, 0x20, 0xff, 0x20, 0x20, 0x20, 0x20, 0x20]);
+  static const TBrushStyle DiagCross  = TMaskBrushStyle('DiagCross',  [0x81, 0x42, 0x24, 0x18, 0x18, 0x24, 0x42, 0x81]);
+}
+
+abstract class TPatternBrushStyle extends TBrushStyle
+{
+  const TPatternBrushStyle(String name) : super(name);
+
+  CanvasPattern getPattern(TColor? color);
+}
+
+class TMaskBrushStyle extends TPatternBrushStyle
+{
+  final List<int> mask;
+  const TMaskBrushStyle(String name, this.mask) : super(name);
+
+  CanvasPattern getPattern(TColor? color)
+  {
+    if(color==null)
+      color=clBlack;
+
+    var cnv = OffscreenCanvas(8, mask.length);
+    var ctx = cnv.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    var img = ctx.createImageData(8, mask.length);
+
+    var rgba = color.rgba ?? 0;
+
+    int alpha = rgba       & 0xff;
+    int red   = (rgba>>24) & 0xff;
+    int green = (rgba>>16) & 0xff;
+    int blue  = (rgba>> 8) & 0xff;
+    for(int ndx=0, j=0; j<img.height; j++)
+    {
+      int bits = mask[j];
+      for(int i=0; i<img.width; i++, ndx+=4)
+      {
+        if(bits&(1<<i) == 0)
+          img.data[ndx+3] = 0;
+        else
+        {
+          img.data[ndx+0] = red;
+          img.data[ndx+1] = green;
+          img.data[ndx+2] = blue;
+          img.data[ndx+3] = alpha;
+        }
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return ctx.createPattern(cnv, 'repeat')!;
+  }
+}
+
+
+abstract class BrushStyles
+{
+  static final _items = <TLocale, Map<TBrushStyle, String> >
+  {
+    TLocale.ENGLISH: {
+      TBrushStyle.Clear:       'clear',
+      TBrushStyle.Solid:       'solid',
+      TBrushStyle.Horizontal:  'horizontal',
+      TBrushStyle.Vertical:    'vertical',
+      TBrushStyle.FDiagonal:   'forward diagonal',
+      TBrushStyle.BDiagonal:   'backward diagonal',
+      TBrushStyle.Cross:       'crossing lines',
+      TBrushStyle.DiagCross:   'crossing diagonal',
+    },
+
+    TLocale.RUSSIAN: {
+      TBrushStyle.Clear:       'прозрачная',
+      TBrushStyle.Solid:       'сплошная',
+      TBrushStyle.Horizontal:  'горизонтальная',
+      TBrushStyle.Vertical:    'вертикальная',
+      TBrushStyle.FDiagonal:   'прямая диагональ',
+      TBrushStyle.BDiagonal:   'обратная диагональ',
+      TBrushStyle.Cross:       'пересечение линий',
+      TBrushStyle.DiagCross:   'диагональное пересечение',
+    },
+  };
+
+  static Map<TBrushStyle, String> GetStyles([TLocale? locale]) =>
+      TLocaleSet.GetItems(_items, locale ?? Locale.active, TLocale.ENGLISH);
+
+  static void UpdateLocale(TLocale locale, Map<TBrushStyle, String> recs) =>
+      TLocaleSet.Update(_items, locale, recs);
+
+  static String StyleToStr(TBrushStyle style, [TLocale? locale]) =>
+      TLocaleSet.ValueByIdent(BrushStyles._items, style, locale) ?? style.name;
+
+  static TBrushStyle? StringToStyle(String value, [TLocale? locale]) =>
+      TLocaleSet.IdentByValue<TBrushStyle>(BrushStyles._items, value, locale);
+}
+
+
 typedef void ENUM_FONT_FAMILY_PROC(String name);
 void EnumFontFamilies(ENUM_FONT_FAMILY_PROC enumProc)
 {
@@ -128,7 +215,6 @@ void EnumFontFamilies(ENUM_FONT_FAMILY_PROC enumProc)
       enumProc(font);
 
 }
-
 
 final FONT_NAMES = [
   'American Typewriter', // iOS
