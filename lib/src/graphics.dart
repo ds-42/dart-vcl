@@ -127,7 +127,7 @@ class TPenData extends TResData
 {
   TColor Color = clBlack;
   double Width = 1;
-  TPenStyle Style = psSolid;
+  TPenStyle Style = TPenStyle.Solid;
 
   TPenData(TGraphicsObject Owner) : super(Owner);
 
@@ -140,7 +140,7 @@ class TPenData extends TResData
 
     if(Color != obj.color) { upd = true; Color = obj.color; }
     if(Width != obj.width) { upd = true; Width = obj.width; }
-    if(Style != obj.Style) { upd = true; Style = obj.Style; }
+    if(Style != obj.style) { upd = true; Style = obj.style; }
 
     if(upd)
       Invalidate();
@@ -159,8 +159,9 @@ class TPenData extends TResData
 
 }
 
-enum TBrushStyle { Solid, Clear, Horizontal, Vertical,
-  FDiagonal, BDiagonal, Cross, DiagCross }
+enum TLineCap { Round, Square, Flat }
+
+enum TLineJoin { Round, Bevel, Miter }
 
 class TBrushData extends TResData
 {
@@ -436,8 +437,6 @@ class TBrush extends TGraphicsObject<TBrushData>
       if(_resource.Style == Value)
         return;
       _resource.Style = Value;
-      if(_resource.Style == TBrushStyle.Clear)
-        _resource.Color = clWhite;
       _resource.Invalidate();
     }
 
@@ -469,10 +468,13 @@ class TCanvas extends TPersistent
     get Brush => _brush;
     set Brush(TBrush Value) => _brush.Assign(Value);
 
+  int _textFlags = 0;
+  int
+    get TextFlags => _textFlags;
+    set TextFlags(int Value) => _textFlags = Value;
 
   int _lockCount = 0;
   int get LockCount => _lockCount;
-
 
   TCanvas() : super()
   { 
@@ -522,13 +524,11 @@ class TCanvas extends TPersistent
     }
   }
 
-
-
-  void FillRectangle(int X1, int Y1, int X2, int Y2)
+  void FillRectangle(num X1, num Y1, num X2, num Y2) // new
   {
     Changing();
     RequiredState( { TCanvasStates.HandleValid, TCanvasStates.BrushValid } );
-    _handle!.fillRect(X1-0.5, Y1-0.5, X2-X1, Y2-Y1);
+    Windows.FillRectEx(_handle!, X1, Y1, X2, Y2, Brush.Handle as HBRUSH);
     Changed();
   }
 
@@ -536,7 +536,7 @@ class TCanvas extends TPersistent
   {
     Changing();
     RequiredState( { TCanvasStates.HandleValid, TCanvasStates.BrushValid } );
-    _handle!.fillRect(Rect.left-0.5, Rect.top-0.5, Rect.width, Rect.height);
+    Windows.FillRect(_handle!, Rect, Brush.Handle as HBRUSH);
     Changed();
   }
 
@@ -547,32 +547,17 @@ class TCanvas extends TPersistent
     return _handle != null;
   }
 
-  void Line(num X1, num Y1, num X2, num Y2)
-  {
-    Changing();
-    RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid } );
-    _handle!
-      ..beginPath()
-      ..moveTo(X1, Y1)
-      ..lineTo(X2, Y2)
-      ..stroke();
-    Changed();
-  }
 
   void LineTo(num X, num Y)
   {
     Changing();
-    RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid } );
-    _handle!
-//      ..beginPath() /* reset moveto point */
-      ..lineTo(X, Y)
-      ..stroke();
+    RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid/*, TCanvasStates.BrushValid*/ } );
+    Windows.LineTo(_handle!, X, Y);
     Changed();
   }
 
   void Lock()
-  {
-    
+  { 
     _lockCount++;
     
   }
@@ -580,13 +565,24 @@ class TCanvas extends TPersistent
   void MoveTo(int X, int Y)
   {
     RequiredState( { TCanvasStates.HandleValid } );
-    _handle!.moveTo(X, Y);
+    Windows.MoveToEx(_handle!, X, Y, null);
   }
 
+  void PolylineEx(num X, num Y, List<num> pts, [bool lock=false] ) // new
+  {
+    if(pts.isEmpty)
+      return;
 
+    Changing();
 
+    if(lock)
+      RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid, TCanvasStates.BrushValid } );
+    else
+      RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid } );
 
-
+    Windows.PolylineEx(_handle!, X, Y, pts, lock);
+    Changed();
+  }
 
   void Polyline(List<TPoint> pts)
   {
@@ -594,95 +590,60 @@ class TCanvas extends TPersistent
       return;
 
     Changing();
-    RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid/*, TCanvasStates.BrushValid*/ } );
-    _handle!.beginPath();
-    for(var pt in pts)
-    {
-      if(pt==pts.first)
-        _handle!.moveTo(pt.x, pt.y);
-      else
-        _handle!.lineTo(pt.x, pt.y);
-    }
-    _handle!.stroke();
+    RequiredState( { TCanvasStates.HandleValid, TCanvasStates.PenValid} );
+    Windows.Polyline(_handle!, pts, pts.length);
     Changed();
   }
-
-
-
-
-
 
   void Rectangle(int X1, int Y1, int X2, int Y2)
   {
     Changing();
     RequiredState( { TCanvasStates.HandleValid, TCanvasStates.BrushValid, TCanvasStates.PenValid } );
-    _handle!
-      ..beginPath()
-      ..rect(X1, Y1, X2-X1, Y2-Y1)
-      ..fill()
-      ..stroke();
+    Windows.Rectangle(_handle!, X1, Y1, X2, Y2);
     Changed();
   }
-
-
-
 
   void RoundRect(num X1, num Y1, num X2, num Y2, num X3, num Y3)
   {
     Changing();
-    
-    
+    RequiredState( { TCanvasStates.HandleValid, TCanvasStates.BrushValid, TCanvasStates.PenValid } );
+    Windows.RoundRect(_handle!, X1, Y1, X2, Y2, X3, Y3);
     Changed();
   }
-
-
-
-
 
   void TextOut(int X, int Y, String Text)
   {
     Changing();
     RequiredState( { TCanvasStates.HandleValid, TCanvasStates.FontValid} );
 
-    _handle!.fillText(X, Y, Text);
+    Windows.ExtTextOut(_handle!, X, Y, _textFlags, null, Text, Text.length, null);
+    MoveTo(X + TextWidth(Text), Y);
     Changed();
   }
 
-
-
-  TSize TextExtent(String text)
-  {
-    return TSize(TextWidth(text), TextHeight(text));
-  }
-
-  int TextWidth(String text) => TextWidthR8(text).round();
-
-  num TextWidthR8(String text)
+  TSize TextExtent(String Text)
   {
     RequiredState( { TCanvasStates.HandleValid, TCanvasStates.FontValid } );
-    var m = _handle!.measureText(text);
-    if(m == null)
-      return 0;
-    return m.width ?? 0;
+    var Result = TSize();
+    Windows.GetTextExtentPoint32(_handle!, Text, Text.length, Result);
+    return Result;
   }
 
-  int TextHeight(String text) => TextHeightR8(text).round();
-
-  double TextHeightR8(String text)
+  int TextWidth(String Text)
   {
-    return FontMetric.calc_height(Font.Name, Font.Size, Font.Weight, Font.Italic);
+    return TextExtent(Text).cx;
   }
 
-
+  int TextHeight(String Text)
+  {
+    return TextExtent(Text).cy;
+  }
 
   void Unlock()
-  {
-
+  { 
     _lockCount--;
 
   }
-
-
 
   HDC GetHandle()
   {
@@ -692,8 +653,6 @@ class TCanvas extends TPersistent
       throw UnsupportedError('Handle create error');
     return _handle!;
   }
-
-
 
   void CreateHandle()
   {
@@ -705,15 +664,14 @@ class TCanvas extends TPersistent
     if(_handle == Value)
       return;
 
-    if(_handle !=null)
-    {
-
+    if(_handle != null)
+    { 
       _handle = null;
-      State.remove(TCanvasStates.HandleValid);
+      State >> TCanvasStates.HandleValid;
     }
     if(Value != null)
     {
-      State.add(TCanvasStates.HandleValid);
+      State << TCanvasStates.HandleValid;
       _handle = Value;
 
     }
@@ -721,7 +679,7 @@ class TCanvas extends TPersistent
 
   void RequiredState(TCanvasState ReqState)
   {
-    TCanvasState NeededState = ReqState.difference(State);
+    TCanvasState NeededState = ReqState - State;
     if(NeededState.isNotEmpty)
     {
       if(NeededState.contains(TCanvasStates.HandleValid))
@@ -731,57 +689,42 @@ class TCanvas extends TPersistent
           throw EInvalidOperation.CreateRes(Consts.SNoCanvasHandle);
       }
       if(NeededState.contains(TCanvasStates.FontValid))
-        CreateFont();
+        _createFont();
       if(NeededState.contains(TCanvasStates.PenValid))
-        CreatePen();
+        _createPen();
       if(NeededState.contains(TCanvasStates.BrushValid))
-        CreateBrush();
+        _createBrush();
       State.addAll(NeededState);
     }
   }
 
   void Changing()
-  {
-
+  { 
   }
 
   void Changed()
+  { 
+  }
+
+  void _createFont()
   {
+    Windows.SelectObject(_handle!, Font.Handle);
 
   }
 
-  void CreateFont()
-  {
-    if(Brush.Color!=Font.Color)
-      Brush.Changed();
-
-    _handle!.selectFont(Font.Size, Font.Name, Font.Weight, Font.Italic);
-    _handle!.fillColor = Font.Color;
-
-
+  void _createPen()
+  { 
+    Windows.SelectObject(_handle!, Pen.Handle);
 
   }
 
-  void CreatePen()
-
-  {
-    _handle!.strokeColor = Pen.Color;
-    _handle!.lineWidth = Pen.Width;
-
-  }
-
-  void CreateBrush()
-  {
-    if(Font.Color!=Brush.Color)
-      Font.Changed();
-
-
-
+  void _createBrush()
+  { 
+    Windows.SelectObject(_handle!, Brush.Handle);
 
   }
 
 }
-
 
 abstract class TGraphic extends TInterfacedPersistent
 {
@@ -790,14 +733,12 @@ abstract class TGraphic extends TInterfacedPersistent
     get OnChange => _onChange;
     set OnChange(TNotifyEvent? Value) => _onChange = Value;
 
-
   void Changed(TObject Sender)
   {
     _modified = true;
     if(OnChange!=null)
       OnChange!(this);
   }
-
 
   void Draw(TCanvas ACanvas, TRect Rect);
 
@@ -821,16 +762,13 @@ abstract class TGraphic extends TInterfacedPersistent
         _modified = false;
     }
 
-
   int get Width => GetWidth();
   int GetWidth();
 
   set Width(int Value) => SetWidth(Value);
   void SetWidth(int Value);
 
-
 }
-
 
 // TBitmapCanvas
 // Create a canvas that gets its DC from the memory DC cache
@@ -838,10 +776,7 @@ class TBitmapCanvas extends TCanvas
 {
   final TBitmap Bitmap;
 
-
   TBitmapCanvas(this.Bitmap) : super();
-
-
 
   void FreeContext()
   {
@@ -854,7 +789,6 @@ class TBitmapCanvas extends TCanvas
     try
     {
       Bitmap.HandleNeeded();
-
 
         HDC H = CreateCompatibleDC(null);
 
@@ -870,15 +804,8 @@ class TBitmapCanvas extends TCanvas
 
   void UpdateSize()
   {
-
     if(_handle is HCanvasDC)
-    {
-      HCanvasDC dc = _handle as HCanvasDC;
-      dc.canvas.width = Bitmap.Width;
-      dc.canvas.height = Bitmap.Height;
-      dc.init();
-
-    }
+      (_handle as HCanvasDC).resize(Bitmap.Width, Bitmap.Height);
   }
 
 }
@@ -888,8 +815,7 @@ abstract class TSharedImage
   int _refCount = 0;
   int get RefCount => _refCount;
 
-
-    void FreeHandle();
+  void FreeHandle();
 
   void Reference()
   {
@@ -924,8 +850,6 @@ class TBitmapImage extends TSharedImage
   }
 }
 
- 
-
 HBITMAP CopyBitmap(HBITMAP? Handle, HPALETTE? OldPalette, HPALETTE? NewPalette,
     TDIBSection DIB, TCanvas? Canvas)
 {
@@ -933,21 +857,15 @@ HBITMAP CopyBitmap(HBITMAP? Handle, HPALETTE? OldPalette, HPALETTE? NewPalette,
 
 }
 
-
-
 class TBitmap extends TGraphic
 {
   TBitmapImage _image = TBitmapImage();
 
-
   TBitmap() : super()
-  {
-
+  { 
     _image.Reference();
 
   }
-
-
 
   void CopyImage(HBITMAP? AHandle, HPALETTE? APalette, TDIBSection DIB)
   {
@@ -965,31 +883,24 @@ class TBitmap extends TGraphic
     }
   }
 
-
   // Called by the FCanvas whenever an operation is going to be performed on the
   // bitmap that would modify it.  Since modifications should only affect this
   // TBitmap, the handle needs to be 'cloned' if it is being refered to by more
   // than one TBitmap
   void Changing(TObject Sender)
-  {
-    
+  { 
   }
 
   void Changed(TObject Sender)
-  {
-    
+  { 
     super.Changed(Sender);
   }
-
-
 
   void Draw(TCanvas ACanvas, TRect Rect)
   {
     ACanvas.Handle.drawImage(Rect.left, Rect.top, Canvas.Handle);
 
   }
-
-
 
   bool GetEmpty()
   {
@@ -1028,21 +939,15 @@ class TBitmap extends TGraphic
     return _image._handle;
   }
 
-
-
   int GetHeight()
   {
     return _image._DIB.dsBm.bmHeight.abs();
   }
 
-
-
   int GetWidth()
   {
     return _image._DIB.dsBm.bmWidth;
   }
-
-
 
   void FreeContext()
   {
@@ -1051,14 +956,10 @@ class TBitmap extends TGraphic
   }
 
   void HandleNeeded()
-  {
-
-
+  { 
     if(_image._handle == null)
       _image._handle = _image._DIBHandle;
   }
-
-
 
   void NewImage(HBITMAP NewHandle, HPALETTE? NewPalette, TDIBSection NewDIB, bool OS2Format, [TStream? RLEStream] )
   {
@@ -1074,8 +975,7 @@ class TBitmap extends TGraphic
       Image._saveStream = RLEStream as TMemoryStream?;
     }
     catch(e)
-    {
-
+    { 
       throw e;
     }
 
@@ -1086,35 +986,28 @@ class TBitmap extends TGraphic
       _image.Reference();
     }
     finally
-    {
-
+    { 
     }
     
   }
-
-
 
   void SetHandle(dynamic Value) 
   {
 
   }
 
-
-
   void SetHeight(int Value)
   {
-      if(_image._DIB.dsBm.bmHeight == Value)
-        return;
-      HandleNeeded();
-      var DIB = TDIBSection.from(_image._DIB);
-      DIB.dsBm.bmHeight = Value;
-      (Canvas as TBitmapCanvas).UpdateSize(); // new
+    if(_image._DIB.dsBm.bmHeight == Value)
+      return;
+    HandleNeeded();
+    var DIB = TDIBSection.from(_image._DIB);
+    DIB.dsBm.bmHeight = Value;
+    (Canvas as TBitmapCanvas).UpdateSize(); // new
 
-      CopyImage(_image._handle, _image._palette, DIB);
-      Changed(this);
+    CopyImage(_image._handle, _image._palette, DIB);
+    Changed(this);
   }
-
-
 
   void SetWidth(int Value)
   {
@@ -1129,6 +1022,4 @@ class TBitmap extends TGraphic
     Changed(this);
   }
 
-
 }
- 
