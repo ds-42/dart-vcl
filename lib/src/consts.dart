@@ -4,6 +4,8 @@ part of vcl;
 abstract class Consts
 {
 
+  static const SInvalidTabIndex = 'Tab index out of bounds';
+
   static const SNoCanvasHandle = 'Canvas does not allow drawing';
   
   static const SWindowDCError = 'Error creating window device context';

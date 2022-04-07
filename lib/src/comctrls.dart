@@ -57,7 +57,12 @@ class TTabStrings extends TStrings
 
   void Put(int Index, String S)
   {
+    var TCItem = TTCItem();
+    TCItem.mask = TCIF_TEXT;
+    TCItem.pszText = S;
 
+    if(toIntDef(PerformHandle(TCM_SETITEM, Index, TCItem), 0) == 0)
+      TabControlError(SysUtils.Format(ComStrs.sTabFailSet, [S, Index]));
     TabControl.TabsChanged();
   }
 
@@ -98,9 +103,9 @@ class TTabStrings extends TStrings
 class TCustomTabControl extends TWinControl
 {
 
-  TStrings? _tabs;
+  late final TStrings _tabs;
   TStrings
-    get Tabs => _tabs!;
+    get Tabs => _tabs;
     set Tabs(TStrings Value) => Tabs.Assign(Value);
 
   bool _updating = false;
@@ -351,6 +356,13 @@ class TTabSheet extends TWinControl
   {
     TabShowing = (PageControl != null) && _tabVisible;
   }
+
+  void _cmTextChanged(TMessage Message)
+  {
+    if(_tabShowing)
+      _pageControl!.UpdateTab(this);
+  }
+
 
 }
 
