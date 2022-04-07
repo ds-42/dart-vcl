@@ -30,6 +30,7 @@ class HStatusPanel extends HControl
       'margin-top: 1px;'
       'margin-right: 3px;'
       'padding: 1px 2px;'
+      'line-height: 150%;'
       'overflow: hidden');
   }
 
