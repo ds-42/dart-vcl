@@ -1,3 +1,12 @@
+## [1.2.1]
+- Update vcl core
+- Update win core
+- Update wingdi core
+- Update TTabControl
+- Update TCanvas, TFont, TPen, TBrush
+- Append TTabSet
+- Append TForm.Canvas
+
 ## [1.2.0]
 
 - Update win core
