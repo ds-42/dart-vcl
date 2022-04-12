@@ -97,5 +97,5 @@ part 'src/win/WND.dart';
 
 
 
-final String vcl_lib_version = '1.2.1';
-final DateTime vcl_lib_date = DateTime(2022, 04, 07);
+final String vcl_lib_version = '1.2.2';
+final DateTime vcl_lib_date = DateTime(2022, 04, 12);
