@@ -1,3 +1,7 @@
+## [1.2.2]
+- Update vcl core
+- Update win core
+
 ## [1.2.1]
 - Update vcl core
 - Update win core
