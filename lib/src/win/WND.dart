@@ -2,7 +2,7 @@ part of vcl;
 
 class WND
 {
-  HWND hwnd;
+  final HWND hwnd;
 
   late WNDPROC mainProc;
 
@@ -197,6 +197,11 @@ class WND
             break;
         }
       }
+    }
+
+    if(!swp_flags.and(Windows.SWP_NOACTIVATE))
+    { 
+      Windows.SetActiveWindow(hwnd);
     }
 
     int px = window_rect.left;

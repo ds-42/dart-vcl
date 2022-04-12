@@ -172,6 +172,7 @@ class TWheelInfo
 }
 
 const MESSAGE WM_CREATE              = MESSAGE(0x0001, 'WM_CREATE');
+const MESSAGE WM_DESTROY             = MESSAGE(0x0002, 'WM_DESTROY');
 const MESSAGE WM_MOVE                = MESSAGE(0x0003, 'WM_MOVE'); // wParam: null, lParam: POINT
 const MESSAGE WM_SIZE                = MESSAGE(0x0005, 'WM_SIZE'); // wParam: int, lParam: SIZE
 const MESSAGE WM_ACTIVATE            = MESSAGE(0x0006, 'WM_ACTIVATE'); //wParamHi: active, wParamLo: minimized, lParam: prevElem
@@ -192,8 +193,10 @@ const MESSAGE WM_WINDOWPOSCHANGING   = MESSAGE(0x0046, 'WM_WINDOWPOSCHANGING'); 
 const MESSAGE WM_WINDOWPOSCHANGED    = MESSAGE(0x0047, 'WM_WINDOWPOSCHANGED'); // wParam: null, lParam TElementPos
 const MESSAGE WM_NOTIFY              = MESSAGE(0x004E, 'WM_NOTIFY');
 const MESSAGE WM_NCCREATE            = MESSAGE(0x0081, 'WM_NCCREATE');
+const MESSAGE WM_NCDESTROY           = MESSAGE(0x0082, 'WM_NCDESTROY');
 const MESSAGE WM_NCCALCSIZE          = MESSAGE(0x0083, 'WM_NCCALCSIZE');
 const MESSAGE WM_NCHITTEST           = MESSAGE(0x0084, 'WM_NCHITTEST');
+const MESSAGE WM_NCACTIVATE          = MESSAGE(0x0086, 'WM_NCACTIVATE');
 const MESSAGE WM_GETDLGCODE          = MESSAGE(0x0087, 'WM_GETDLGCODE');
 
 const MESSAGE WM_KEYFIRST            = WM_KEYDOWN;

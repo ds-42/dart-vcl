@@ -360,6 +360,11 @@ class HWND extends HWINDOW
   {
     handle.updateBounds(left, top, width, height);
   }
+
+  void updateActive(bool state)
+  {
+
+  }
 }
 
 void _default_element_proc(Element elem, TMessage Message)

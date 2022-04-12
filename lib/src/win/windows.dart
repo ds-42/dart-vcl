@@ -14,7 +14,6 @@ class _mouseHit
   static _mouseHit? fromEvent(MouseEvent event)
   {
     Element elem = Windows.ElemFromEvent(event);
-
     var pt = POINT(event.client.x.round(), event.client.y.round());
     int type = toIntDef(Windows.SendElementMessage(elem, WM_NCHITTEST, null, pt), Windows.HTNOWHERE);
     if(type!=Windows.HTNOWHERE)
@@ -306,8 +305,10 @@ abstract class Windows
 
         var dx = (event.client.x - downPos!.x).truncate();
         var dy = (event.client.y - downPos!.y).truncate();
+
         if(dx+dy==0)
           return;
+        
         downPos = event.client;
 
         UINT flags = Windows.SWP_NOACTIVATE | Windows.SWP_NOZORDER;
@@ -1146,7 +1147,7 @@ abstract class Windows
     dynamic ProcessMessage(MSG msg)
     {
 
-      if(_application == null)
+      if(_application == null || msg.message==CM_GETINSTANCE)
         return hwnd._wnd.dispatch(msg);
       else
       {
@@ -1206,22 +1207,17 @@ abstract class Windows
 
   static bool IsWindow(HWND hWnd)
   {
-    return true;
+    return HWND._elements.containsKey(hWnd.handle);
   }
 
   static bool IsChild(HWND hWndParent, HWND hWnd) =>
       hWnd.handle.parent==hWndParent.handle;
 
-  static bool DestroyWindow(HWND hWnd)
-  {
-    hWnd.release();
-    return true;
-  }
+  static BOOL DestroyWindow(HWND hWnd) =>
+    __win.DestroyWindow(hWnd);
 
-  static bool ShowWindow(HWND hWnd, int nCmdShow)
-  {
-    return _winpos.show_window(hWnd, nCmdShow);
-  }
+  static bool ShowWindow(HWND hWnd, int nCmdShow) =>
+    _winpos.show_window(hWnd, nCmdShow);
 
   static BOOL SetWindowPos(HWND hWnd, HWINDOW? hWndInsertAfter, int x, int y, int cX, int cY, int flags) =>
     _winpos.SetWindowPos(hWnd, hWndInsertAfter, x, y, cX, cY, flags);
@@ -1385,15 +1381,23 @@ abstract class Windows
 
   static HWND? SetActiveWindow(HWND? hwnd)
   {
-    var elem = _activeWindow;
+    if(_activeWindow == hwnd)
+      return hwnd;
+    var prior = _activeWindow;
     if(_activeWindow != null)
+    {
+      _activeWindow!.updateActive(false);
       SendMessage(_activeWindow!, WM_ACTIVATE, MAKELONG(WA_INACTIVE, 0), hwnd);
+    }
 
     _activeWindow = hwnd;
 
     if(_activeWindow != null)
-      SendMessage(_activeWindow!, WM_ACTIVATE, MAKELONG(WA_ACTIVE, 0), elem);
-    return elem;
+    {
+      _activeWindow!.updateActive(true);
+      SendMessage(_activeWindow!, WM_ACTIVATE, MAKELONG(WA_ACTIVE, 0), prior);
+    }
+    return prior;
 
   }
 
@@ -1555,11 +1559,12 @@ abstract class Windows
 
   static HWND? GetParent(HWND hWnd) => hWnd._wnd.parent;
 
-  static bool EnumThreadWindows(dynamic dwThreadId, WNDENUMPROC lpfn, dynamic lParam)
+  static bool EnumThreadWindows(UINT dwThreadId, WNDENUMPROC lpfn, dynamic lParam)
   {
     for(var hWnd in HWND._elements.values)
       if(hWnd is HCustomForm && !lpfn(hWnd, lParam))
         return false;
+//      if(!hWnd._wnd.dwStyle.and(WS_CHILD) && !lpfn(hWnd, lParam))
     return true;
   }
 

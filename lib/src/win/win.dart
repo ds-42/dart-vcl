@@ -187,6 +187,19 @@ abstract class __win
     return other_process();
   }
 
+  // Destroy storage associated to a window
+  static UINT WIN_DestroyWindow( HWND hwnd )
+  {
+
+    /*
+     * Send the WM_NCDESTROY to the window being destroyed.
+     */
+    Windows.SendMessage( hwnd, WM_NCDESTROY, 0, 0 );
+
+    USER_Driver.DestroyWindow( hwnd );
+
+    return 0;
+  }
 
   // Fix the coordinates - Helper for WIN_CreateWindowEx.
   // returns default show mode in sw.
@@ -278,7 +291,9 @@ abstract class __win
     HWND? owner;
 
     HWND? failed()
-    { 
+    {
+      WIN_DestroyWindow( hwnd );
+
       return null;
     }
 
@@ -422,6 +437,56 @@ abstract class __win
 
     }
 
+  }
+
+  static void WIN_SendDestroyMsg( HWND hwnd )
+  { 
+     /*
+      * Send the WM_DESTROY to the window.
+      */
+     Windows.SendMessage( hwnd, WM_DESTROY, 0, 0);
+
+  }
+
+  static BOOL DestroyWindow( HWND hwnd )
+  {
+
+   int dwStyle = Windows.GetWindowLong( hwnd, Windows.GWL_STYLE );
+   bool is_child = (dwStyle & Windows.WS_CHILD) != 0;
+
+
+    if (!Windows.IsWindow(hwnd)) return TRUE;
+
+      /* Hide the window */
+    if (dwStyle.and(Windows.WS_VISIBLE))
+    {
+      /* Only child windows receive WM_SHOWWINDOW in DestroyWindow() */
+      if (is_child)
+        Windows.ShowWindow( hwnd, Windows.SW_HIDE );
+      else
+        Windows.SetWindowPos( hwnd, null, 0, 0, 0, 0, Windows.SWP_NOMOVE | Windows.SWP_NOSIZE |
+          Windows.SWP_NOZORDER | Windows.SWP_NOACTIVATE | Windows.SWP_HIDEWINDOW );
+     }
+
+     if (!Windows.IsWindow(hwnd)) return TRUE;
+
+     /* Recursively destroy owned windows */
+
+    if (!is_child)
+    {
+
+    }
+
+      /* Send destroy messages */
+
+    WIN_SendDestroyMsg( hwnd );
+    if (!Windows.IsWindow( hwnd ))
+      return TRUE;
+
+    /* Destroy the window storage */
+
+    WIN_DestroyWindow( hwnd );
+    return TRUE;
   }
 
   static UINT GetDpiForWindow( HWND hwnd )
