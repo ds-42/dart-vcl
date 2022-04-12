@@ -40,7 +40,30 @@ class HSpeedButton extends HControl
     
   }
 
-  HSpeedButton() : super( ButtonElement() );
+  HSpeedButton() : super( ButtonElement() )
+  {
+    handle.tabIndex = -1;
+
+  }
+
+  void dispatch(Element elem, TMessage message)
+  {
+    switch(message.Msg)
+    {
+      case WM_CREATE:
+        var cs = message.LParam as CREATESTRUCT;
+        if(cs.style.and(Windows.WS_DISABLED))
+          (handle as ButtonElement).disabled = true;
+//        caption.text = cs.lpszName;
+        message.Result = 0;
+        break;
+
+      default:
+        super.dispatch(elem, message);
+        break;
+    }
+  }
+
 }
 
 class HButtonControl extends HControl
