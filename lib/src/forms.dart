@@ -21,30 +21,105 @@ const DefHintShortPause = 0;    // default reshow pause to 0, was DefHintPause d
 const DefHintHidePause = DefHintPause * 5;
 
 
-
-HWND? FindTopMostWindow(HWND ActiveWindow)
+class TTaskWindow
 {
-  HWND TaskActiveWindow = ActiveWindow;
-  HWND? TaskFirstWindow;
-  HWND? TaskFirstTopMost;
+  final TTaskWindow? Next;
+  final HWND Window;
 
-  bool DoFindWindow(HWND hWnd, dynamic Param)
+  TTaskWindow(this.Next, this.Window);
+}
+
+abstract class _vcl_forms
+{
+  static HWND? TaskActiveWindow;
+//  static HWND? TaskFirstWindow;
+//  static HWND? TaskFirstTopMost;
+  static TTaskWindow? TaskWindowList;
+}
+
+
+TTaskWindow? DisableTaskWindows(HWND? ActiveWindow)
+{
+  bool DoDisableWindow(HWND Window, dynamic Data)
   {
-    if((hWnd != TaskActiveWindow) && (hWnd != Application._handle) &&
-        Windows.IsWindowVisible(hWnd) && Windows.IsWindowEnabled(hWnd))
+    if((Window != _vcl_forms.TaskActiveWindow) && Windows.IsWindowVisible(Window) &&
+      Windows.IsWindowEnabled(Window))
     {
-      if(TaskFirstWindow == null)
-        TaskFirstWindow = hWnd;
-
+      var P = TTaskWindow(_vcl_forms.TaskWindowList, Window);
+      _vcl_forms.TaskWindowList = P;
+      Windows.EnableWindow(Window, false);
     }
     return true;
   }
 
-  Windows.EnumThreadWindows(/*GetCurrentThreadID*/null, DoFindWindow, null);
+  HWND? SaveActiveWindow = _vcl_forms.TaskActiveWindow;
+  var SaveWindowList = _vcl_forms.TaskWindowList;
+  _vcl_forms.TaskActiveWindow = ActiveWindow;
+  _vcl_forms.TaskWindowList = null;
+  try
+  {
+    try
+    {
+      Windows.EnumThreadWindows(0/*GetCurrentThreadID()*/, DoDisableWindow, 0);
+      return _vcl_forms.TaskWindowList;
+    }
+    catch(e)
+    {
+      EnableTaskWindows(_vcl_forms.TaskWindowList);
+      throw e;
+    }
+  }
+  finally
+  {
+    _vcl_forms.TaskWindowList = SaveWindowList;
+    _vcl_forms.TaskActiveWindow = SaveActiveWindow;
+  }
+  return null;
+}
+
+void EnableTaskWindows(TTaskWindow? WindowList)
+{
+  while(WindowList != null)
+  {
+    var P = WindowList;
+    if(Windows.IsWindow(P.Window))
+      Windows.EnableWindow(P.Window, true);
+    WindowList = P.Next;
+//    Dispose(P);
+  }
+}
+
+
+HWND? FindTopMostWindow(HWND ActiveWindow)
+{
+  HWND  TaskActiveWindow = ActiveWindow;
+  HWND? TaskFirstWindow;
+  HWND? TaskFirstTopMost;
+
+  bool DoFindWindow(HWND Window, dynamic Param)
+  {
+    if((Window != TaskActiveWindow) && (Window != Application._handle) &&
+      Windows.IsWindowVisible(Window) && Windows.IsWindowEnabled(Window))
+    {
+      int style = Windows.GetWindowLong(Window, Windows.GWL_EXSTYLE);
+      if(!style.and(Windows.WS_EX_TOPMOST))
+      {
+        if(TaskFirstWindow == null)
+          TaskFirstWindow = Window;
+      }
+      else
+      {
+        if(TaskFirstTopMost == null)
+          TaskFirstTopMost = Window;
+      }
+    }
+    return true;
+  }
+
+  Windows.EnumThreadWindows(0 /*Windows.GetCurrentThreadID()*/, DoFindWindow, 0);
   if(TaskFirstWindow != null)
     return TaskFirstWindow;
-  else
-    return TaskFirstTopMost;
+  return TaskFirstTopMost;
 }
 
 bool SendFocusMessage(HWND hWnd, MESSAGE Msg)
@@ -59,18 +134,12 @@ bool SendFocusMessage(HWND hWnd, MESSAGE Msg)
 
 // Form utility functions
 
-TCustomForm? GetParentForm(TControl? Control)
+TCustomForm? GetParentForm(TControl Control)
 {
-  if(Control == null || Control is TCustomForm)
-     return Control as TCustomForm;
-
-  if(Control.Parent != null)
-  {
-    while(Control!.Parent != null)
-      Control = Control.Parent;
-    if(Control is TCustomForm)
-      return Control;
-  }
+  while(Control.Parent != null)
+    Control = Control.Parent!;
+  if(Control is TCustomForm)
+    return Control;
   return null;
 }
 
@@ -123,7 +192,6 @@ class TScrollingWinControl extends TWinControl
   void CreateWnd()
   {
     super.CreateWnd();
-    
     
   }
 
@@ -630,6 +698,16 @@ class TCustomForm extends TScrollingWinControl
     return false;
   }
 
+  void SetParent(TWinControl? AParent)
+  {
+    if((Parent != AParent) && (AParent != this))
+    {
+      if(Parent == null) DestroyHandle();
+      super.SetParent(AParent);
+      if(Parent == null) UpdateControlState();
+    }
+  }
+
 
 
   void WndProc(TMessage Message)
@@ -938,13 +1016,10 @@ class TCustomForm extends TScrollingWinControl
       FocusControl = _activeControl!;
     else
       FocusControl = this;
-    if(FocusControl.HandleAllocated())
-    {
-      FocusControl.Perform(CM_SETFOCUS);
-      if(FocusControl.Focused())
-        FocusControl.Perform(CM_UIACTIVATE);
 
-    }
+    Windows.SetFocus(FocusControl.Handle);
+    if(Windows.GetFocus() == FocusControl.Handle)
+      FocusControl.Perform(CM_UIACTIVATE, 0, 0);
   }
 
   void SetActive(bool Value)
@@ -1144,7 +1219,6 @@ class TCustomForm extends TScrollingWinControl
   }
 
 
-
   Future<TModalResult> ShowModal() async
   {
 
@@ -1160,14 +1234,13 @@ class TCustomForm extends TScrollingWinControl
     TCursor SaveCursor = Screen.Cursor;
     Screen.Cursor = TCursor.Default;
     int SaveCount = Screen._cursorCount;
-
+    var WindowList = DisableTaskWindows(null);
 
     try
     {
       Show();
 
       var form = Handle as HCustomForm;
-      form.showOverlay();
 
       try
       {
@@ -1196,7 +1269,7 @@ class TCustomForm extends TScrollingWinControl
         Screen.Cursor = SaveCursor;
       else
         Screen.Cursor = TCursor.Default;
-
+      EnableTaskWindows(WindowList);
       if(Screen._saveFocusedList.isNotEmpty)
       {
         Screen._focusedForm = Screen._saveFocusedList.first;
@@ -1448,17 +1521,6 @@ class TCustomForm extends TScrollingWinControl
 
   void _wmActivate(TMessage Message)// TWMActivate
   {
-    if(HandleAllocated())
-    {
-      var form = WindowHandle as HForm;
-      if(LOWORD(Message.WParam)==0)
-        form.title.classes.add('inactive');
-      else
-        form.title.classes.remove('inactive');
-    }
-
-
-
     if((FormStyle != TFormStyle.MDIForm) || ComponentState.contains(ComponentStates.Designing))
       SetActive(LOWORD(Message.WParam) != Windows.WA_INACTIVE);
   }

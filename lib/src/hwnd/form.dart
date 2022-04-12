@@ -12,20 +12,16 @@ class HForm extends HCustomControl
       'border: 1px solid gray;'
       'box-shadow: 5px 5px 10px rgba(0,0,0,.25);'
       'background-color: ${ clBtnFace.html };'
-      'box-sizing: border-box;'
-      'margin: 5px;');
+//      'margin: 3px;'
+      'box-sizing: border-box;');
 
-    rule.addRule('.form_overlay',
-      'display: block;'
+    rule.add('.bounds',
       'position: absolute;'
-      'top: 0%;'
-      'left: 0%;'
-      'width: 100%;'
-      'height: 100%;'
-      'background-color: black;'
-      '-moz-opacity: 0;'
-      'opacity:.0;'
-      'filter: alpha(opacity=0);');
+      'left: -3px;'
+      'top: -3px;'
+      'right: -3px;'
+      'bottom: -3px;'
+    );
 
     rule.add('.client',
       'position: absolute;'
@@ -79,7 +75,7 @@ class HForm extends HCustomControl
   final caption = HeadingElement.h2();
   final client = DivElement();
   final close = AnchorElement();
-  final overlay = DivElement();
+  final bounds = DivElement();
 
   CanvasElement? canvas;
 
@@ -108,12 +104,14 @@ class HForm extends HCustomControl
   }
 
   HForm() : super()
-  {
-    overlay.className= 'form_overlay';
+  { 
+    bounds.className  = 'bounds';
     caption.className= 'caption';
     client.className = 'client';
     title.className  = 'title';
     close.className  = 'btn-close';
+
+    handle.append(bounds);
 
     handle.append(title);
     title.append(caption);
@@ -134,7 +132,7 @@ class HForm extends HCustomControl
 
 
 
-    overlay.owner = this;
+    bounds.owner = this;
     title.owner = this;
     caption.owner = this;
     close.owner = this;
@@ -142,8 +140,7 @@ class HForm extends HCustomControl
   }
 
   void release()
-  {
-    overlay.remove();
+  { 
     super.release();
   }
 
@@ -216,13 +213,30 @@ class HForm extends HCustomControl
 
       case WM_NCHITTEST:
         POINT pos = message.LParam;
-        Rectangle c = handle.getBoundingClientRect();
-        pos = POINT(pos.x - c.left.round(), pos.y-c.top.round());
-        message.Result = _wmHitTest(pos);
+        var b = clientHandle.borderRect;
+        message.Result = _wmHitTest(POINT(pos.x - b.left, pos.y-b.top));
         break;
 
       case WM_MOUSEMOVE:
+//        print(_wmHitTest(message.LParam));
+        String? type; // = 'default';
+        switch(_wmHitTest(message.LParam))
+        {
+          case Windows.HTBOTTOMRIGHT: type = 'se'; break;
+          case Windows.HTBOTTOM:      type = 's';  break;
+          case Windows.HTBOTTOMLEFT:  type = 'sw'; break;
+          case Windows.HTLEFT:        type = 'w';  break;
+          case Windows.HTTOP:         type = 'n';  break;
+          case Windows.HTTOPLEFT:     type = 'nw'; break;
+          case Windows.HTTOPRIGHT:    type = 'ne'; break;
+          case Windows.HTRIGHT:       type = 'e';  break;
 
+          default:
+            bounds.style.cursor=null;
+            break;
+        }
+        if(type!=null)
+          bounds.style.cursor='$type-resize';
         break;
 
       case WM_WINDOWPOSCHANGING:
@@ -247,59 +261,39 @@ class HForm extends HCustomControl
   void show()
   {
 
-    handle.style.zIndex ='${ zOrder+1 }';
+/*    handle.style.zIndex ='${ zOrder+1 }';*/
 
 
     super.show();
   }
 
-  void showOverlay()
-  {
-    if(overlay.parent == null)
-    {
-      overlay.style.zIndex ='${_zOrder++}';
-      handle.style.zIndex ='${_zOrder++}';
-      document.body!.append(overlay);
-    }
-  }
-
-
 
   void hide()
-  {
-    if(overlay.parent != null)
-    {
-      overlay.remove();
-      _zOrder-=2;
-    }
-
+  { 
     super.hide();
 
     if(handle.parent == null)
       return;
-
   //  zOrder--;
     handle.remove();
   }
 
-
-
   int _wmHitTest(POINT pos)
   {
+    var m = bounds.borderRect;
+    var c = clientHandle.borderRect;
 
-
-    Rectangle m = handle.marginEdge;
-    Rectangle b = handle.borderEdge;
-
-    TRect r = TRect.size((m.left-b.left).toInt(), (m.top-b.top).toInt(), m.width.toInt(), m.height.toInt());
-    if(PtInRect(r, pos) == false)
+    OffsetRect(m, -c.left, -c.top);
+    if(PtInRect(m, pos) == false)
       return Windows.HTNOWHERE;
 
-    int size = 4;
-    bool top = pos.y < size;
-    bool left = pos.x < size;
-    bool right = pos.x > b.width-size;
-    bool bottom = pos.y > b.height-size;
+    var b = handle.borderRect;
+    OffsetRect(b, -c.left, -c.top);
+
+    bool top = pos.y < b.top+2;
+    bool left = pos.x < 0;
+    bool right = pos.x > c.width;
+    bool bottom = pos.y > c.height;
 
     if(top)
     {
@@ -307,6 +301,7 @@ class HForm extends HCustomControl
         return Windows.HTTOPLEFT;
       if(right)
         return Windows.HTTOPRIGHT;
+
       return Windows.HTTOP;
     }
 
@@ -319,13 +314,13 @@ class HForm extends HCustomControl
       return Windows.HTBOTTOM;
     }
 
-    if(Title && pos.y < SysMetric.CaptionCy)
-      return Windows.HTCAPTION;
-
     if(left)
       return Windows.HTLEFT;
     if(right)
       return Windows.HTRIGHT;
+
+    if(Title && pos.y < b.top+SysMetric.CaptionCy)
+      return Windows.HTCAPTION;
 
     return Windows.HTCLIENT;
   }
@@ -340,5 +335,13 @@ class HForm extends HCustomControl
     else
       title.remove();
 
+  }
+
+  void updateActive(bool state)
+  {
+    if(state)
+      title.classes.remove('inactive');
+    else
+      title.classes.add('inactive');
   }
 }

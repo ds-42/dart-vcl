@@ -621,7 +621,6 @@ class TControl extends TComponent
       UpdateAnchorRules();
     }
 
-
   }
 
   TWndMethod _windowProc = (message){}; // dummy
@@ -679,7 +678,6 @@ class TControl extends TComponent
   {
     TRect rect=GetClientRect();
     SetBounds(Left, Top, Width - rect.right + cx, Height - rect.bottom + cy);
-
   }
 
   bool
@@ -2154,8 +2152,7 @@ class TWinControl extends TControl
 
   void AlignControls(TControl? AControl, TRect Rect)
   {
-    List<TControl> AlignList = <TControl>[];
-
+    var AlignList = <TControl>[];
 
     bool InsertBefore(TControl C1, TControl C2, TAlign AAlign)
     {
@@ -2567,7 +2564,7 @@ class TWinControl extends TControl
     CreateWindowHandle(Params);
 
     if(WindowHandle == null)
-      throw UnsupportedError("RaiseLastOSError");
+      throw UnsupportedError('RaiseLastOSError');
 
     var hwnd = WindowHandle!;
 
@@ -2634,17 +2631,13 @@ class TWinControl extends TControl
     _controlState << ControlStates.DestroyingHandle;
     try
     {
-      _handle!.handle.remove();
-
+      if(Windows.DestroyWindow(_handle!) == FALSE)
+        throw UnsupportedError('RaiseLastOSError');
     }
     finally
     {
       _controlState >> ControlStates.DestroyingHandle;
     }
-
-    Windows.DestroyWindow(_handle!);
-    _defWndProc = null;
-    _handle = null;
   }
 
   HWINDOW? PrecedingWindow(TWinControl Control)
@@ -2985,6 +2978,8 @@ class TWinControl extends TControl
       case CN_COMMAND:            _cnCommand(TWMCommand(Message)); break;
 
       case WM_CHAR:               _wmChar(TWMKey(Message)); break;
+      case WM_DESTROY:            _wmDestroy(Message); break;
+      case WM_NCDESTROY:          _wmNCDestroy(Message); break;
       case WM_NCHITTEST:          _wmNCHitTest(Message); break;
       case WM_HSCROLL:            _wmHScroll(Message); break;
       case WM_KEYDOWN:            _wmKeyDown(TWMKey(Message)); break;
@@ -3346,7 +3341,7 @@ class TWinControl extends TControl
     try
     {
       GetTabOrderList(list);
-      if(list.length > 0)
+      if(list.isNotEmpty)
       {
         int StartIndex = CurControl==null? -1 : list.indexOf(CurControl);
         if(StartIndex == -1)
@@ -3902,6 +3897,25 @@ class TWinControl extends TControl
       Message.handle.Result = 0;
     else
       super.Dispatch(Message.handle);
+  }
+
+  void _wmDestroy(TMessage Message)
+  {
+    super.Dispatch(Message);
+
+  }
+
+  void _wmNCDestroy(TMessage Message)
+  {
+    super.Dispatch(Message);
+
+    if(_defWndProc != null)
+    { // new
+      Windows.ChangeWindowProc(_handle!, _defWndProc!);
+      _defWndProc = null;
+    }
+    _handle = null;
+    _showing = false;
   }
 
   void _wmNCHitTest(TMessage Message)
