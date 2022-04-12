@@ -229,7 +229,6 @@ class TCustomTabControl extends TWinControl
     super.AdjustClientRect(Rect);
   }
 
-
 }
 
 class TTabControl extends TCustomTabControl
@@ -272,6 +271,13 @@ class TTabSheet extends TWinControl
   }
 
 
+
+  void AlignControls(TControl? AControl, TRect Rect) // new
+  {
+    // append for disable aligning for invisible pages
+    if(Visible || Showing)
+      super.AlignControls(AControl, Rect);
+  }
 
   void DoHide()
   {
@@ -361,6 +367,35 @@ class TTabSheet extends TWinControl
   {
     if(_tabShowing)
       _pageControl!.UpdateTab(this);
+  }
+
+  void _cmShowingChanged(TMessage Message)
+  {
+    super._cmShowingChanged(Message);
+    if(Showing)
+    {
+      try
+      {
+        Realign(); // see: TTabSheet.AlignControls
+        DoShow();
+      }
+      catch(e)
+      {
+        Application.HandleException(this);
+      }
+    }
+    else
+    if(!Showing)
+    {
+      try
+      {
+        DoHide();
+      }
+      catch(e)
+      {
+        Application.HandleException(this);
+      }
+    }
   }
 
 
@@ -685,7 +720,6 @@ class TCustomStatusBar extends TWinControl
     _simplePanel = sp;
     sp.className = HStatusPanel.STATUSPANEL.name;
     sp.style.flex = 'auto';
-
     sp.style.marginRight = '0';
     if(SimpleText != '')
       sp.text = SimpleText;

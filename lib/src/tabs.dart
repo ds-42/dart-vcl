@@ -334,8 +334,6 @@ class TTabSet extends TCustomControl
       ..OnClick = (Sender) =>
           FirstIndex = Scroller.Position;
 
-
-
   }
 
   void CreateWnd()
