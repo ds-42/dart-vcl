@@ -9,7 +9,8 @@ class HStatusBar extends HControl
   {
     rule.add('',
       '${ rule.flex }'
-      '${ rule.borderBox }');
+      '${ rule.borderBox }'
+      'overflow: hidden');
   }
 
   HStatusBar() : super( DivElement() );
@@ -31,7 +32,8 @@ class HStatusPanel extends HControl
       'margin-right: 3px;'
       'padding: 1px 2px;'
       'line-height: 150%;'
-      'overflow: hidden');
+      'overflow: hidden;'
+      'flex: none;');
   }
 
   HStatusPanel() : super( DivElement() );
