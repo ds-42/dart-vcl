@@ -193,11 +193,10 @@ abstract class Windows
 
     dynamic doFocus(Event _event)
     {
-  
       if(!(_event is FocusEvent))
         return;
       FocusEvent event = _event;
-
+//      print("focus: ${_event.relatedTarget} -> ${_event.target}");
       if(event.relatedTarget!=null)
           return;
 
@@ -205,21 +204,20 @@ abstract class Windows
 
       if(elem != null)
       {
-        SendElementMessage(elem, CM_SETFOCUS, null, null);
+        elem.focus();
         SendElementMessage(elem, WM_SETFOCUS, null, null);
       }
     }
 
     dynamic doBlur(Event _event)
     {
-
       if(!(_event is FocusEvent))
         return;
       FocusEvent event = _event;
+      // print("blur: ${_event.target} -> ${_event.relatedTarget}");
 
       if(event.relatedTarget==null)
-      {
-
+      { 
         TControl? ctrl = SendElementMessage(_downElement, CM_GETINSTANCE, 0, 0);
         if(ctrl != null && (!(ctrl is TWinControl) || ctrl.TabStop == false))
         {
@@ -241,8 +239,8 @@ abstract class Windows
         var tControl = FindElementControl(event.target as Element);
         var rControl = FindElementControl(event.relatedTarget as Element?);
         if(tControl!=null && (tControl == rControl || event.relatedTarget==null))
-        { // элементы одного контрола
-          Windows.SetFocus(tControl.Handle);
+        { 
+          tControl.Handle.clientHandle.focus();
           return;
         }
       }
@@ -257,10 +255,7 @@ abstract class Windows
           SendElementMessage(elem, WM_KILLFOCUS, fElem, null);
 
           if(fElem!=null)
-          {
-            SendElementMessage(fElem, CM_SETFOCUS, elem, null);
             SendElementMessage(fElem, WM_SETFOCUS, elem, null);
-          }
         }
       }
     }
@@ -367,16 +362,7 @@ abstract class Windows
       MESSAGE msg = [WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN][event.button];
       SendElementMessage(mh.elem, msg, MouseEventToShiftState(event), POINT(mh.x, mh.y));
 
-      TControl? ctrl = SendElementMessage(mh.elem, CM_GETINSTANCE, 0, 0);
-      if(ctrl!=null)
-      {
-        var form = GetParentForm(ctrl);
-        if(form!=null && GetActiveWindow()!=form.Handle)
-        {
-          Windows.SetWindowPos(form.Handle, HWND_TOP, 0, 0, 0, 0,
-              Windows.SWP_NOMOVE + Windows.SWP_NOSIZE);
-        }
-      }
+
 
       if(document.activeElement!=null)
       {
@@ -741,15 +727,8 @@ abstract class Windows
   }
 
   static bool IsFocused(HWND hwnd)
-  {
-    Element? f = document.activeElement;
-    while(f!=null)
-    {
-      if(f==hwnd.handle)
-        return true;
-      f=f.parent;
-    }
-    return false;
+  { 
+    return GetFocus() == hwnd;
   }
 
   static SetCursor(TCursor cursor)
@@ -1260,29 +1239,38 @@ abstract class Windows
   static const int SWP_DEFERERASE      = 0x2000;
   static const int SWP_ASYNCWINDOWPOS  = 0x4000;
 
-  static HWND? SetFocus(HWND hWnd)
+  static HWND? SetFocus(HWND hwnd)
   {
-    Element? elem = document.activeElement;
+    var f = GetFocus();
+    if(f!=hwnd)
+    {
+      hwnd.clientHandle.focus();
+      print('${f==null? null : f.clientHandle} -> ${hwnd.clientHandle}');
+    }
+    return f;
+  return hwnd;
 
+/*    Element? elem = document.activeElement;
+/**    if(elem!=activeElem) **/
     hWnd.clientHandle.focus();
 
     if(elem==null)
       return null;
 
-    return HWND.findWindow(elem);
+    return HWND.findWindow(elem);*/
   }
 
   static HWND? GetActiveWindow()
   {
-
     return _activeWindow;
   }
 
   static HWND? GetFocus()
   {
-    if(document.activeElement==null)
+    var elem = document.activeElement;
+    if(elem == null)
       return null;
-    return HWND.findWindow(document.activeElement!);
+    return HWND.findWindow(elem);
   }
 
   static HWND? GetCapture()

@@ -64,7 +64,6 @@ const MESSAGE CM_GETVALUE            = MESSAGE(0xb104, 'CM_GETVALUE'); // lResul
 const MESSAGE CM_CLEARVALUE          = MESSAGE(0xb105, 'CM_CLEARVALUE');
 const MESSAGE CM_ISEMPTY             = MESSAGE(0xb106, 'CM_ISEMPTY');
 const MESSAGE CM_CANFOCUS            = MESSAGE(0xb107, 'CM_CANFOCUS');
-const MESSAGE CM_SETFOCUS            = MESSAGE(0xb108, 'CM_SETFOCUS');
 const MESSAGE CM_GETCAPTION          = MESSAGE(0xb109, 'CM_GETCAPTION');
 
 // VCL control notification IDs
@@ -2968,7 +2967,6 @@ class TWinControl extends TControl
       case CM_INVALIDATE:         _cmInvalidate(Message); break;
       case CM_PARENTCTL3DCHANGED: _cmParentCtl3DChanged(Message); break;
       case CM_RECREATEWND:        _cmRecreateWnd(Message); break;
-      case CM_SETFOCUS:           _cmSetFocus(Message); break;
       case CM_SHOWINGCHANGED:     _cmShowingChanged(Message); break;
       case CM_SHOWHINTCHANGED:    _cmShowHintChanged(Message); break;
 
@@ -3773,12 +3771,6 @@ class TWinControl extends TControl
      UpdateControlState();
      if(WasFocused && (_handle != null))
        Windows.SetFocus(_handle!);
-  }
-
-  void _cmSetFocus(TMessage Message)
-  {
-    if(HandleAllocated())
-      Windows.SetFocus(Handle);
   }
 
   void _cmShowingChanged(TMessage Message)

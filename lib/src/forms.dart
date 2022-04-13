@@ -720,7 +720,6 @@ class TCustomForm extends TScrollingWinControl
           return; 
         break;
 
-
       case WM_ACTIVATE:
       case WM_SETFOCUS:
       case WM_KILLFOCUS:
@@ -1245,9 +1244,6 @@ class TCustomForm extends TScrollingWinControl
       try
       {
         Windows.SendMessage(Handle, CM_ACTIVATE, 0, 0);
-
-        if(_activeControl!=null)
-          _activeControl!.Perform(CM_SETFOCUS); // new
 
         ModalResult = TModalResult.None;
 

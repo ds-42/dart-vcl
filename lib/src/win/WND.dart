@@ -184,10 +184,12 @@ class WND
         switch(insert_after)
         {
           case HWND_BOTTOM:
-            parent.nodes.insert(0, hwnd.handle);
+            if(parent.nodes.first != hwnd.handle)
+              parent.nodes.insert(0, hwnd.handle);
             break;
           case HWND_TOP:
-            parent.nodes.add(hwnd.handle);
+            if(parent.nodes.last != hwnd.handle)
+              parent.nodes.add(hwnd.handle);
             break;
           case HWND_NOTOPMOST:
             hwnd.style.zIndex = null;

@@ -2342,14 +2342,6 @@ class TCustomGrid extends TCustomControl
         ModifyScrollBar(Message.Msg==WM_VSCROLL? Windows.SB_VERT : Windows.SB_HORZ, pos.ScrollCode, pos.Position, true);
         break;
 
-      case CM_SETFOCUS:
-        if(HandleAllocated() && Windows.GetFocus()!=_grid!.table)
-        {
-          Windows.SetFocus(_grid!);
-          Invalidate();
-        }
-        break;
-
       default:
         super.Dispatch(Message);
         break;
