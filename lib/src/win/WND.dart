@@ -199,11 +199,6 @@ class WND
       }
     }
 
-    if(!swp_flags.and(Windows.SWP_NOACTIVATE))
-    { 
-      Windows.SetActiveWindow(hwnd);
-    }
-
     int px = window_rect.left;
     int py = window_rect.top;
     int cx = window_rect.width;
@@ -264,6 +259,11 @@ class WND
       else
       if(swp_flags.and(Windows.SWP_HIDEWINDOW))
         hwnd.hide();
+    }
+
+    if(!swp_flags.and(Windows.SWP_NOACTIVATE) && dwStyle.and(Windows.WS_VISIBLE) && !dwStyle.and(Windows.WS_CHILD))
+    { 
+      Windows.SetActiveWindow(hwnd);
     }
 
     return TRUE;

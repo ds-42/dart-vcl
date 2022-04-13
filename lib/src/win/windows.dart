@@ -308,7 +308,7 @@ abstract class Windows
 
         if(dx+dy==0)
           return;
-        
+
         downPos = event.client;
 
         UINT flags = Windows.SWP_NOACTIVATE | Windows.SWP_NOZORDER;
@@ -367,9 +367,19 @@ abstract class Windows
       MESSAGE msg = [WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN][event.button];
       SendElementMessage(mh.elem, msg, MouseEventToShiftState(event), POINT(mh.x, mh.y));
 
+      TControl? ctrl = SendElementMessage(mh.elem, CM_GETINSTANCE, 0, 0);
+      if(ctrl!=null)
+      {
+        var form = GetParentForm(ctrl);
+        if(form!=null && GetActiveWindow()!=form.Handle)
+        {
+          Windows.SetWindowPos(form.Handle, HWND_TOP, 0, 0, 0, 0,
+              Windows.SWP_NOMOVE + Windows.SWP_NOSIZE);
+        }
+      }
+
       if(document.activeElement!=null)
       {
-
         var ctrl = FindElementControl(mh.elem);
         if(ctrl!=null)
         {
@@ -1383,6 +1393,12 @@ abstract class Windows
   {
     if(_activeWindow == hwnd)
       return hwnd;
+    if(hwnd!=null)
+    {
+      int style = GetWindowLong(hwnd, GWL_STYLE);
+      if(style.and(WS_CHILD) || !style.and(Windows.WS_VISIBLE))
+        return _activeWindow;
+    }
     var prior = _activeWindow;
     if(_activeWindow != null)
     {
@@ -1394,6 +1410,7 @@ abstract class Windows
 
     if(_activeWindow != null)
     {
+//      _activeWindow!.handle.focus();
       _activeWindow!.updateActive(true);
       SendMessage(_activeWindow!, WM_ACTIVATE, MAKELONG(WA_ACTIVE, 0), prior);
     }
@@ -1561,7 +1578,7 @@ abstract class Windows
 
   static bool EnumThreadWindows(UINT dwThreadId, WNDENUMPROC lpfn, dynamic lParam)
   {
-    for(var hWnd in HWND._elements.values)
+    for(var hWnd in HWND._elements.values.toList().reversed)
       if(hWnd is HCustomForm && !lpfn(hWnd, lParam))
         return false;
 //      if(!hWnd._wnd.dwStyle.and(WS_CHILD) && !lpfn(hWnd, lParam))
