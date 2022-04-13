@@ -1245,7 +1245,7 @@ abstract class Windows
     if(f!=hwnd)
     {
       hwnd.clientHandle.focus();
-      print('${f==null? null : f.clientHandle} -> ${hwnd.clientHandle}');
+//      print('${f==null? null : f.clientHandle} -> ${hwnd.clientHandle}');
     }
     return f;
   return hwnd;
