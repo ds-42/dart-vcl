@@ -18,6 +18,12 @@ class _mouseHit
     int type = toIntDef(Windows.SendElementMessage(elem, WM_NCHITTEST, null, pt), Windows.HTNOWHERE);
     if(type!=Windows.HTNOWHERE)
     {
+      var wnd = HWND.findWindow(elem);
+      if(wnd != null && wnd._wnd.dwStyle.and(Windows.WS_POPUP))
+      {
+        if(type != Windows.HTCAPTION)
+          type = Windows.HTCLIENT;
+      }
       Rectangle rect = elem.getBoundingClientRect();
       return _mouseHit._(elem, pt.x-rect.left.truncate(), pt.y-rect.top.truncate(), type, event.target as Element);
     }
@@ -144,6 +150,7 @@ abstract class Windows
   static dynamic _doCopy;
   static dynamic _doCut;
   static dynamic _doDblClick;
+  static dynamic _doDragStart;
   static dynamic _doFocus;
   static dynamic _doKeyDown;
   static dynamic _doKeyPress;
@@ -190,6 +197,12 @@ abstract class Windows
     int? hitType;
     Point? downPos;
 
+
+    dynamic doDragStart(Event _event)
+    {
+      if(_event.target is InputElement)
+        _event.preventDefault(); // cancel drag text
+    }
 
     dynamic doFocus(Event _event)
     {
@@ -548,6 +561,7 @@ abstract class Windows
     window.addEventListener('copy',       doCopy,       true); _doCopy = doCopy;
     window.addEventListener('cut',        doCut,        true); _doCut = doCut;
     window.addEventListener('dblclick',   doDblClick,   true); _doDblClick = doDblClick;
+    window.addEventListener('dragstart',  doDragStart,  true); _doDragStart = doDragStart;
     window.addEventListener('focus',      doFocus,      true); _doFocus = doFocus;
     window.addEventListener('keydown',    doKeyDown,    true); _doKeyDown = doKeyDown;
     window.addEventListener('keypress',   doKeyPress,   true); _doKeyPress = doKeyPress;
@@ -574,6 +588,7 @@ abstract class Windows
     _doBlur.cancel();
     _doCopy.cancel();
     _doDblClick.cancel();
+    _doDragStart.cancel();
     _doFocus.cancel();
     _doKeyDown.cancel();
     _doKeyPress.cancel();
@@ -1106,7 +1121,7 @@ abstract class Windows
   static const int WS_EX_TOPMOST           = 0x00000008;
 
   static const int WS_EX_MDICHILD          = 0x00000040;
-
+  static const int WS_EX_TOOLWINDOW        = 0x00000080;
   static const int WS_EX_WINDOWEDGE        = 0x00000100;
 
 

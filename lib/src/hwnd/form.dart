@@ -290,37 +290,42 @@ class HForm extends HCustomControl
     var b = handle.borderRect;
     OffsetRect(b, -c.left, -c.top);
 
-    bool top = pos.y < b.top+2;
-    bool left = pos.x < 0;
-    bool right = pos.x > c.width;
-    bool bottom = pos.y > c.height;
-
-    if(top)
+    if(!_wnd.dwStyle.and(Windows.WS_POPUP))
     {
-      if(left)
-        return Windows.HTTOPLEFT;
-      if(right)
-        return Windows.HTTOPRIGHT;
+      bool top = pos.y < b.top+2;
+      bool left = pos.x < 0;
+      bool right = pos.x > c.width;
+      bool bottom = pos.y > c.height;
 
-      return Windows.HTTOP;
+      if(top)
+      {
+        if(left)
+          return Windows.HTTOPLEFT;
+        if(right)
+          return Windows.HTTOPRIGHT;
+        return Windows.HTTOP;
+      }
+
+      if(bottom)
+      {
+        if(left)
+          return Windows.HTBOTTOMLEFT;
+        if(right)
+          return Windows.HTBOTTOMRIGHT;
+        return Windows.HTBOTTOM;
+      }
+
+      if(left)
+        return Windows.HTLEFT;
+      if(right)
+        return Windows.HTRIGHT;
     }
 
-    if(bottom)
+    if(_wnd.dwStyle.and(Windows.WS_CAPTION))
     {
-      if(left)
-        return Windows.HTBOTTOMLEFT;
-      if(right)
-        return Windows.HTBOTTOMRIGHT;
-      return Windows.HTBOTTOM;
+      if(Title && pos.y < b.top+SysMetric.CaptionCy)
+        return Windows.HTCAPTION;
     }
-
-    if(left)
-      return Windows.HTLEFT;
-    if(right)
-      return Windows.HTRIGHT;
-
-    if(Title && pos.y < b.top+SysMetric.CaptionCy)
-      return Windows.HTCAPTION;
 
     return Windows.HTCLIENT;
   }

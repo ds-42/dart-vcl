@@ -729,8 +729,7 @@ class TCustomForm extends TScrollingWinControl
           {
             HWND? FocusHandle;
             if(FormStyle == TFormStyle.MDIForm)
-            {
-
+            { 
             }
             else
               if((_activeControl != null) && (_activeControl != this))
@@ -833,29 +832,63 @@ class TCustomForm extends TScrollingWinControl
 
     super.CreateParams(Params);
 
-      if(Parent == null && ParentWindow == null)
-      {
-        Params.WndParent = Application.Handle;
-        Params.Style &= ~(Windows.WS_CHILD | Windows.WS_GROUP | Windows.WS_TABSTOP);
-      }
+    if(Parent == null && ParentWindow == null)
+    {
+      Params.WndParent = Application.Handle;
+      Params.Style &= ~(Windows.WS_CHILD | Windows.WS_GROUP | Windows.WS_TABSTOP);
+    }
 
-      if ((ComponentState.contains(ComponentStates.Designing)) && (Parent == null))
-        Params.Style |= Windows.WS_CAPTION | Windows.WS_THICKFRAME | Windows.WS_MINIMIZEBOX |
-                        Windows.WS_MAXIMIZEBOX | Windows.WS_SYSMENU;
+    if ((ComponentState.contains(ComponentStates.Designing)) && (Parent == null))
+      Params.Style |= Windows.WS_CAPTION | Windows.WS_THICKFRAME | Windows.WS_MINIMIZEBOX |
+                      Windows.WS_MAXIMIZEBOX | Windows.WS_SYSMENU;
+    else
+    {
+
+      TFormBorderStyle CreateStyle = _borderStyle;
+      if((FormStyle == TFormStyle.MDIChild) && [TFormBorderStyle.None, TFormBorderStyle.Dialog].contains(CreateStyle))
+        CreateStyle = TFormBorderStyle.Sizeable;
+
+      switch(CreateStyle)
+      {
+        case TFormBorderStyle.None:
+          if ((Parent == null) && (ParentWindow == null))
+              Params.Style |= Windows.WS_POPUP;
+          
+          break;
+
+        case TFormBorderStyle.Single:
+        case TFormBorderStyle.ToolWindow:
+        case TFormBorderStyle.Sizeable:
+        case TFormBorderStyle.SizeToolWin:
+          if(CreateStyle==TFormBorderStyle.Single || CreateStyle==TFormBorderStyle.ToolWindow)
+            Params.Style |= Windows.WS_CAPTION | Windows.WS_BORDER;
+          Params.Style |= Windows.WS_CAPTION | Windows.WS_THICKFRAME;
+
+          break;
+
+        case TFormBorderStyle.Dialog:
+          Params.Style |= Windows.WS_POPUP | Windows.WS_CAPTION;
+          Params.ExStyle |= Windows.WS_EX_DLGMODALFRAME | Windows.WS_EX_WINDOWEDGE;
+          
+          break;
+      }
+      if([TFormBorderStyle.ToolWindow, TFormBorderStyle.SizeToolWin].contains(CreateStyle))
+      {
+        Params.ExStyle = Windows.WS_EX_TOOLWINDOW;
+        
+      }
+      if([TFormBorderStyle.Single, TFormBorderStyle.Sizeable, TFormBorderStyle.None].contains(CreateStyle))
+      { 
+/*        if(_windowState == TWindowState.Minimized)
+          Params.Style |= Windows.WS_MINIMIZE;
+        else
+        if(_windowState == TWindowState.Maximized)
+          Params.Style |= Windows.WS_MAXIMIZE;*/
+      }
       else
-      {
+        _windowState = TWindowState.Normal;
 
-        TFormBorderStyle CreateStyle = _borderStyle;
-        if((FormStyle == TFormStyle.MDIChild) && [TFormBorderStyle.None, TFormBorderStyle.Dialog].contains(CreateStyle))
-          CreateStyle = TFormBorderStyle.Sizeable;
-        switch(CreateStyle)
-        {
-
-        }
-
-      }
-
-
+    }
   }
 
   void CreateWnd()
@@ -1349,7 +1382,6 @@ class TCustomForm extends TScrollingWinControl
 
       case WM_ACTIVATE:           _wmActivate(Message); break;
       case WM_SHOWWINDOW:         _wmShowWindow(TWMShowWindow(Message)); break;
-      case WM_NCHITTEST:          Message.Result = _wmHitTest(Message);  break;
       case WM_GETMINMAXINFO:      _wmGetMinMaxInfo(TWMGetMinMaxInfo(Message)); break;
 
       default:
@@ -1520,28 +1552,6 @@ class TCustomForm extends TScrollingWinControl
     if((FormStyle != TFormStyle.MDIForm) || ComponentState.contains(ComponentStates.Designing))
       SetActive(LOWORD(Message.WParam) != Windows.WA_INACTIVE);
   }
-
-  int _wmHitTest(TMessage Message)
-  { // new
-    super.Dispatch(Message);
-    int Result = Message.Result;
-    switch(BorderStyle)
-    {
-      case TFormBorderStyle.Dialog:
-        switch(Result)
-        {
-          case Windows.HTCAPTION:
-            return Result;
-          default:
-            return Windows.HTCLIENT;
-        } break;
-
-      default:
-        return Result;
-    }
-  }
-
-
 
 }
 
