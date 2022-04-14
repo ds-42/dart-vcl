@@ -261,6 +261,16 @@ class TTabSheet extends TWinControl
   String get Caption => _getText();
   void set Caption(String Value) => _setText(Value);
 
+  TNotifyEvent? _onHide;
+  TNotifyEvent?
+    get OnHide => _onHide;
+    set OnHide(TNotifyEvent? Value) => _onHide = Value;
+
+  TNotifyEvent? _onShow;
+  TNotifyEvent?
+  get OnShow => _onShow;
+  set OnShow(TNotifyEvent? Value) => _onShow = Value;
+
 
   TTabSheet(TComponent AOwner) : super(AOwner)
   {
@@ -281,12 +291,12 @@ class TTabSheet extends TWinControl
 
   void DoHide()
   {
-    
+    if(_onHide!=null) _onHide!(this);
   }
 
   void DoShow()
   {
-    
+    if(_onShow!=null) _onShow!(this);
   }
 
   int get PageIndex
@@ -315,9 +325,9 @@ class TTabSheet extends TWinControl
     if(!_tabShowing)
       Result--;
     else
-      for(int i = 0; i<PageIndex; i++)
-        if(_pageControl!._pages[i]._tabShowing)
-          Result++;
+    for(int i = 0; i<PageIndex; i++)
+      if(_pageControl!._pages[i]._tabShowing)
+        Result++;
     return Result;
   }
 
