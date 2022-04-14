@@ -337,7 +337,10 @@ abstract class Windows
             if(style.and(Windows.WS_MAXIMIZE))
               flags |= Windows.SWP_NOSIZE|Windows.SWP_NOMOVE;
             else
+            {
               OffsetRect(rect, dx, dy);
+              flags |= Windows.SWP_NOSIZE;
+            }
             break;
 
           default:
