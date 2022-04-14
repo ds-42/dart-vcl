@@ -252,14 +252,14 @@ class HTabControl extends HCustomControl
 
       case TCM_ADJUSTRECT:
         var rect = Message.LParam as RECT;
-        if(client.offsetParent != null)
+        client.invisibilityProc(()
         {
           var r = client.offsetRect;
           rect.left = 0;
           rect.top = 0;
           rect.width = r.width;
           rect.height = r.height;
-        }
+        });
         return;
 
       case WM_LBUTTONDOWN:
