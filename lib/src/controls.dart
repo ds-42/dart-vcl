@@ -2559,7 +2559,6 @@ class TWinControl extends TControl
         else
           throw EInvalidOperation.CreateFmt(Consts.SParentRequired, [Name]);
 
-
     CreateWindowHandle(Params);
 
     if(WindowHandle == null)
@@ -2704,14 +2703,19 @@ class TWinControl extends TControl
     bool ShowControl = (_visible || ComponentState.contains(ComponentStates.Designing) &&
       !ControlStyle.contains(ControlStyles.NoDesignVisible) &&
       !ControlState.contains(ControlStates.ReadingState));
+
     if(ShowControl)
     {
       if(_handle == null)
         CreateHandle();
 
-      for(var item in _winControls)
-        item.UpdateShowing();
+      _handle!.handle.invisibilityProc(()
+      {
+        for(var item in _winControls)
+          item.UpdateShowing();
+      });
     }
+
     if(_handle != null)
     {
       if(_showing != ShowControl)
@@ -3250,77 +3254,41 @@ class TWinControl extends TControl
 
   void UpdateBounds()
   {
-
-    var Rect = TRect(_left, _top, _left+_width, _top+_height);
-    
-
-    if(Windows.IsIconic(_handle!))
+    _handle!.handle.invisibilityProc(()
     {
-      throw UnimplementedError();
+  
+      var Rect = TRect(_left, _top, _left+_width, _top+_height);
+      
 
-    }
-    else
-      Windows.GetWindowRect(_handle!, Rect);
-
-    if(Windows.GetWindowLong(_handle!, Windows.GWL_STYLE) & Windows.WS_CHILD != 0)
-    {
-      HWND? ParentHandle = Windows.GetWindowLong(_handle!, Windows.GWL_HWNDPARENT);
-      if(ParentHandle != null)
+      if(Windows.IsIconic(_handle!))
       {
-        var TopLeft     = Rect.TopLeft;
-        var BottomRight = Rect.BottomRight;
-        Windows.ScreenToClient(ParentHandle, TopLeft);
-        Windows.ScreenToClient(ParentHandle, BottomRight);
-        Rect.left    = TopLeft.x;
-        Rect.top     = TopLeft.y;
-        Rect.right   = BottomRight.x;
-        Rect.bottom  = BottomRight.y;
+        throw UnimplementedError();
+  
       }
-    }
-    _left = Rect.Left;
-    _top = Rect.Top;
-    _width = Rect.Width;
-    _height = Rect.Height;
-    UpdateAnchorRules();
+      else
+        Windows.GetWindowRect(_handle!, Rect);
 
-/*    if(_handle==null)
-      return;
-/**    if(_handle!.handle.offsetParent==null)
-    {
-      print(_handle!.handle.getOffsetRect(rect));
-    }**/
-    TRect rect = TRect();
-/**    print(_handle!.handle.offsetRect);
-    print(_handle!.handle.borderRect);
-    print(_handle!.handle.contentRect);**/
-    if(Windows.IsIconic(_handle))
-    {
-/**      WindowPlacement.Length := SizeOf(WindowPlacement);
-      GetWindowPlacement(FHandle, @WindowPlacement);
-      Rect := WindowPlacement.rcNormalPosition;**/
-    }
-    else
-    if(!_handle!.handle.getOffsetRect(rect))
-      return;
-
-/**      Windows.GetWindowRect(_handle, Rect);
-
-/**    if GetWindowLong(FHandle, GWL_STYLE) and WS_CHILD <> 0 then
-    begin**/
-      var ParentHandle = Windows.GetParent(_handle);
-///      ParentHandle := GetWindowLong(FHandle, GWL_HWNDPARENT);
-      if(ParentHandle != null)
+      if(Windows.GetWindowLong(_handle!, Windows.GWL_STYLE) & Windows.WS_CHILD != 0)
       {
-        Windows.ScreenToClient(ParentHandle, Rect.TopLeft);
-        Windows.ScreenToClient(ParentHandle, Rect.BottomRight);
+        HWND? ParentHandle = Windows.GetWindowLong(_handle!, Windows.GWL_HWNDPARENT);
+        if(ParentHandle != null)
+        {
+          var TopLeft     = Rect.TopLeft;
+          var BottomRight = Rect.BottomRight;
+          Windows.ScreenToClient(ParentHandle, TopLeft);
+          Windows.ScreenToClient(ParentHandle, BottomRight);
+          Rect.left    = TopLeft.x;
+          Rect.top     = TopLeft.y;
+          Rect.right   = BottomRight.x;
+          Rect.bottom  = BottomRight.y;
+        }
       }
-/**    end;*/
-**/
-    _left = rect.left;
-    _top = rect.top;
-    _width = rect.width;
-    _height = rect.height;
-    UpdateAnchorRules();**/
+      _left = Rect.Left;
+      _top = Rect.Top;
+      _width = Rect.Width;
+      _height = Rect.Height;
+      UpdateAnchorRules();
+    });
   }
 
   void GetTabOrderList(List<TWinControl> list)
@@ -3916,7 +3884,6 @@ class TWinControl extends TControl
       Message.Result = Windows.HTCLIENT;
     else
       super.Dispatch(Message);
-
   }
 
   _wmSetCursor(TMessage Message)

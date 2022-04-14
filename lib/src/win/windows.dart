@@ -1542,13 +1542,10 @@ abstract class Windows
     var elem = hWnd.handle;
     return toBoolDef(elem.invisibilityProc(()
     {
-      if(elem.offsetParent!=null)
-      {
-        var rect = hWnd.clientHandle.borderRect;
+      var rect = hWnd.clientHandle.borderRect;
 
-        pt.x -= rect.left;
-        pt.y -= rect.top;
-      }
+      pt.x -= rect.left;
+      pt.y -= rect.top;
     }), false);
 
   }

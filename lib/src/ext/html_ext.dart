@@ -142,6 +142,9 @@ extension HtmlElementExtension on Element
 
   RECT get paddingRect => make_rect(paddingEdge);
 
+  // During processing, some objects may be invisible.
+  // This slows  down the  calculation of  its bounds.
+  // InvisibilityProc is used to  improve performance.
   dynamic invisibilityProc(Function proc)
   {
     dynamic processing(Element elem)
@@ -168,10 +171,9 @@ extension CssStyleDeclarationExtension on CssStyleDeclaration
 {
   bool get isDisplay => display != 'none';
 
-  /*  If some element node in the node tree has the display = 'none' property,
-   *  we cannot get the element's metric. defVisibility/undefVisibility temporarily changes
-   *  the visibility property of an element
-   */
+  //  If some element node in the node tree has the display = 'none' property,
+  //  we  cannot  get  the  element's  metric.   defVisibility/undefVisibility
+  //  temporarily changes the visibility property of an element
   bool undefVisibility()
   {
     bool res = isDisplay;
