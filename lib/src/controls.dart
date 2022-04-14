@@ -673,9 +673,11 @@ class TControl extends TComponent
   set ClientHeight(int Value) => SetClientSize(ClientWidth, Value);
   set ClientWidth(int Value) => SetClientSize(Value, ClientHeight);
 
-  void SetClientSize(int cx, int cy)
+  void SetClientSize(int? cx, int? cy)
   {
     TRect rect=GetClientRect();
+    if(cx == null) cx = rect.width;
+    if(cy == null) cy = rect.height;
     SetBounds(Left, Top, Width - rect.right + cx, Height - rect.bottom + cy);
   }
 
