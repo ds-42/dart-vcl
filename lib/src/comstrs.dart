@@ -9,6 +9,8 @@ abstract class ComStrs
   static const sTabFailSet = 'Failed to set tab "%s" at index %d';
   static const sTabFailSetObject = 'Failed to set object at index %d';
 
+  static const sRichEditInsertError = 'RichEdit line insertion error';
+
 
   static const sPageIndexError = '%d is an invalid PageIndex value.  PageIndex must be '
     'between 0 and %d';

@@ -1,6 +1,12 @@
 part of vcl;
 
+class TCharRange
+{
+  int cpMin;
+  int cpMax;
 
+  TCharRange([this.cpMin = 0, this.cpMax = 0]);
+}
 
 void TabControlError(String s)
 {
@@ -35,10 +41,8 @@ class TTabStrings extends TStrings
   }
 
   String Get(int Index)
-
-  {
-
-    return "";
+  { 
+    return '';
   }
 
   int GetCount()
@@ -76,12 +80,10 @@ class TTabStrings extends TStrings
   }
 
   void Insert(int Index, String S)
-  {
-/*    RTL: array[Boolean] of LongInt = (0, TCIF_RTLREADING);*/
+  { 
     var TCItem =  TTCItem();
     TCItem.mask = TCIF_TEXT /*| RTL[FTabControl.UseRightToLeftReading] | TCIF_IMAGE*/;
-    TCItem.pszText = S;
-/*    TCItem.iImage := FTabControl.GetImageIndex(Index);*/
+    TCItem.pszText = S; 
     if(toIntDef(PerformHandle(TCM_INSERTITEM, Index, TCItem), -1) < 0)
       TabControlError(SysUtils.Format(ComStrs.sTabFailSet, [S, Index]));
     TabControl.TabsChanged();
@@ -117,12 +119,8 @@ class TCustomTabControl extends TWinControl
     Height = 193;
     TabStop = true;
     ControlStyle.assign([ ControlStyles.AcceptsControls, ControlStyles.DoubleClicks ]);
-    _tabs = TTabStrings(this);
-
+    _tabs = TTabStrings(this); 
   }
-
-
-
 
   bool CanChange()
   {
@@ -147,16 +145,10 @@ class TCustomTabControl extends TWinControl
       OnChange!(this);
   }
 
-  dynamic PerformHandle(MESSAGE msg, dynamic wParam, dynamic lParam) // new
-  {
-    return Windows.SendMessage(Handle, msg, wParam, lParam);
-  }
-
   void CreateWindowHandle(TCreateParams Params) // new
   {
     WindowHandle = HTabControl();
   }
-
 
   TRect get DisplayRect
   {
@@ -166,13 +158,9 @@ class TCustomTabControl extends TWinControl
     return Result;
   }
 
-
-
   int
     get TabIndex => toIntDef(PerformHandle(TCM_GETCURSEL, 0, 0), -1);
     set TabIndex(int Value) => PerformHandle(TCM_SETCURSEL, Value, 0);
-
-
 
   void TabsChanged()
   {
@@ -182,7 +170,6 @@ class TCustomTabControl extends TWinControl
       PerformHandle(WM_SIZE, Windows.SIZE_RESTORED, SIZE(Width, Height));
     Realign();
   }
-
 
   void Dispatch(TMessage Message)
   {
@@ -198,14 +185,10 @@ class TCustomTabControl extends TWinControl
     }
   }
 
-
   void _wmSize(TWMSize Message)
   {
-    super._wmSize(Message);
-
+    super._wmSize(Message); 
   }
-
-
 
   void _cnNotify(TWMNotify Message)
   {
@@ -221,7 +204,6 @@ class TCustomTabControl extends TWinControl
         break;
     }
   }
-
 
   void AdjustClientRect(TRect Rect)
   {
@@ -257,9 +239,9 @@ class TTabSheet extends TWinControl
         APageControl.InsertPage(this);
     }
 
-
-  String get Caption => _getText();
-  void set Caption(String Value) => _setText(Value);
+  String
+    get Caption => _getText();
+    set Caption(String Value) => _setText(Value);
 
   TNotifyEvent? _onHide;
   TNotifyEvent?
@@ -271,16 +253,12 @@ class TTabSheet extends TWinControl
   get OnShow => _onShow;
   set OnShow(TNotifyEvent? Value) => _onShow = Value;
 
-
   TTabSheet(TComponent AOwner) : super(AOwner)
   {
     Align = TAlign.Client;
     ControlStyle << ControlStyles.AcceptsControls << ControlStyles.NoDesignVisible;
-    Visible = false;
-    
+    Visible = false; 
   }
-
-
 
   void AlignControls(TControl? AControl, TRect Rect) // new
   {
@@ -333,8 +311,7 @@ class TTabSheet extends TWinControl
 
   void CreateParams(TCreateParams Params)
   {
-    super.CreateParams(Params);
-
+    super.CreateParams(Params); 
   }
 
   bool _tabShowing = false;
@@ -358,8 +335,9 @@ class TTabSheet extends TWinControl
     }
 
   bool _tabVisible = true;
-    bool get TabVisible => _tabVisible;
-    void set TabVisible(bool Value)
+  bool
+    get TabVisible => _tabVisible;
+    set TabVisible(bool Value)
     {
       if(_tabVisible == Value)
         return;
@@ -408,7 +386,6 @@ class TTabSheet extends TWinControl
     }
   }
 
-
 }
 
 class TPageControl extends TCustomTabControl
@@ -431,9 +408,7 @@ class TPageControl extends TCustomTabControl
         TabIndex = Page.TabIndex;
     }
 
-
   int get PageCount => _pages.length;
-
 
   TPageControl(TComponent AOwner) : super(AOwner)
   {
@@ -450,7 +425,6 @@ class TPageControl extends TCustomTabControl
       item._pageControl = null;
     super.Destroy();
   }
-
 
   bool CanShowTab(int TabIndex)
   {
@@ -511,8 +485,6 @@ class TPageControl extends TCustomTabControl
     UpdateActivePage();
   }
 
-
-
   TTabSheet? FindNextPage(TTabSheet? CurPage, bool GoForward, bool CheckTabVisible)
   {
     if(_pages.isEmpty)
@@ -541,7 +513,6 @@ class TPageControl extends TCustomTabControl
     } while(i != StartIndex);
     return null;
   }
-
 
   TTabSheet GetPage(int Index)
   {
@@ -616,14 +587,11 @@ class TStatusPanel extends TCollectionItem
 {
   final Handle = HStatusPanel();
 
-
   TStatusPanel() : super()
   {
     Handle.style.width = '${Width}px';
 
   }
-
-
 
   String _text = '';
   String get Text => _text;
@@ -637,22 +605,21 @@ class TStatusPanel extends TCollectionItem
   }
 
   int _width = 50;
-  int get Width => _width;
-  void set Width(int Value)
-  {
-    if(_width == Value)
-      return;
-    _width = Value;
-    Handle.style.width = '${Width}px';
-    Changed(true);
-  }
-
+  int
+    get Width => _width;
+    set Width(int Value)
+    {
+      if(_width == Value)
+        return;
+      _width = Value;
+      Handle.style.width = '${Width}px';
+      Changed(true);
+    }
 }
 
 class TStatusPanels  extends TCollection
 {
   final TCustomStatusBar StatusBar;
-
 
   late final TItems<TStatusPanel> _panels;
   TItems<TStatusPanel> get Items => _panels;
@@ -666,14 +633,11 @@ class TStatusPanels  extends TCollection
 
   TStatusPanel Add() => super.Add() as TStatusPanel;
 
-
 }
 
 class TCustomStatusBar extends TWinControl
 {
-
   late final TStatusPanels Panels; 
-
 
   DivElement? _simplePanel;
 
@@ -685,23 +649,19 @@ class TCustomStatusBar extends TWinControl
 
     Height = 19;
     Align = TAlign.Bottom;
-    Panels = CreatePanels();
-
+    Panels = CreatePanels(); 
   }
 
   void Destroy()
-  {
-
+  { 
     Panels.Destroy();
     super.Destroy();
   }
 
-
   void UpdateSimpleText()
   {
     if(HandleAllocated())
-      _simplePanel!.text = SimpleText;
-
+      _simplePanel!.text = SimpleText; 
   }
 
   String _simpleText = "";
@@ -713,8 +673,6 @@ class TCustomStatusBar extends TWinControl
     _simpleText = Value;
     UpdateSimpleText();
   }
-
-
 
   void CreateWindowHandle(TCreateParams Params)
   {
@@ -739,81 +697,263 @@ class TCustomStatusBar extends TWinControl
     WindowHandle!.handle.append(sp);
   }
 
-
-
   TStatusPanels CreatePanels()
   {
     return TStatusPanels(this);
   }
 
+}
 
+class TRichEditStrings extends TStrings
+{
+  final TCustomRichEdit RichEdit;
+
+  bool _plainText = false;
+  bool
+    get PlainText => _plainText;
+    set PlainText(bool Value) => _plainText=Value;
+
+  TRichEditStrings(this.RichEdit);
+
+  void AddStrings(TStrings Strings)
+  {
+    var SelChange = RichEdit.OnSelectionChange;
+    RichEdit.OnSelectionChange = null;
+    try
+    {
+      super.AddStrings(Strings);
+    }
+    finally
+    {
+      RichEdit.OnSelectionChange = SelChange;
+    }
+  }
+
+  int GetCount()
+  {
+    int Result = RichEdit.PerformHandle(EM_GETLINECOUNT, 0, 0);
+    int val = RichEdit.PerformHandle(EM_LINEINDEX, Result - 1, 0);
+    if(RichEdit.PerformHandle(EM_LINELENGTH, val, 0) == 0)
+      Result--;
+    return Result;
+  }
+
+  String Get(int Index)
+  {
+    var text = TPointer('');
+    int L = RichEdit.PerformHandle(EM_GETLINE, Index, text);
+    if(text.Value.length>2 && (text.Value[L - 2] == 0x13) && (text.Value[L - 1] == 0x10))
+      return text.Value.substring(0, L-2);
+    return text.Value;
+  }
+
+  void Insert(int Index, String S)
+  {
+    String Fmt = '';
+    if(Index >= 0)
+    {
+      int cpMin = RichEdit.PerformHandle(EM_LINEINDEX, Index, 0);
+      if(cpMin >= 0)
+        Fmt = '$S\r\n';
+      else
+      {
+        cpMin = RichEdit.PerformHandle(EM_LINEINDEX, Index - 1, 0);
+        if(cpMin < 0)
+          return;
+        int L = RichEdit.PerformHandle(EM_LINELENGTH, cpMin, 0);
+        if(L == 0)
+          return;
+        cpMin+=L;
+        Fmt = '\r\n$S';
+      }
+      int cpMax = cpMin;
+      RichEdit.PerformHandle(EM_EXSETSEL, 0, TCharRange(cpMin,cpMin));
+      String Str = Fmt;
+      RichEdit.PerformHandle(EM_REPLACESEL, 0, Str);
+      if(RichEdit.SelStart != (cpMax + Str.length))
+        throw EOutOfResources(ComStrs.sRichEditInsertError);
+    }
+  }
+
+  void Delete(int Index)
+  {
+    if(Index < 0)
+      return;
+    int cpMin = RichEdit.PerformHandle(EM_LINEINDEX, Index, 0);
+    if(cpMin != -1)
+    {
+      int cpMax = RichEdit.PerformHandle(EM_LINEINDEX, Index + 1, 0);
+      if(cpMax == -1)
+        cpMax = cpMin + (RichEdit.PerformHandle(EM_LINELENGTH, cpMin, 0) as int);
+      RichEdit.PerformHandle(EM_EXSETSEL, 0, TCharRange(cpMin, cpMax));
+      RichEdit.PerformHandle(EM_REPLACESEL, 0, '');
+    }
+  }
+
+  void Clear()
+  {
+    RichEdit.Clear();
+  }
+
+  void EnableChange(bool Value)
+  {
+    int EventMask = RichEdit.PerformHandle(EM_GETEVENTMASK, 0, 0);
+    if(Value)
+      EventMask |= HRichEdit.ENM_CHANGE;
+    else
+      EventMask &= ~HRichEdit.ENM_CHANGE;
+    RichEdit.PerformHandle(EM_SETEVENTMASK, 0, EventMask);
+  }
+
+  void SetTextStr(String Value)
+  {
+    EnableChange(false);
+    try
+    {
+      super.SetTextStr(Value);
+    }
+    finally
+    {
+      EnableChange(true);
+    }
+  }
 
 }
 
+class TCustomRichEdit extends TCustomMemo
+{ 
+  late final TStrings _richEditStrings;
+  TStrings
+    get Lines => _richEditStrings;
+    set Lines(TStrings Value) =>
+      _richEditStrings.Assign(Value);
 
+  TNotifyEvent? _onSelChange;
+  TNotifyEvent?
+    get OnSelectionChange => _onSelChange;
+    set OnSelectionChange(TNotifyEvent? Value) => _onSelChange = Value;
+
+    bool
+      get PlainText => (_richEditStrings as TRichEditStrings).PlainText;
+      set PlainText(bool Value) => (_richEditStrings as TRichEditStrings).PlainText = Value;
+
+  TCustomRichEdit(TComponent? AOwner) : super(AOwner)
+  { 
+    _richEditStrings = TRichEditStrings(this);
+    TabStop = true;
+    Width = 185;
+    Height = 89;
+    AutoSize = false; 
+  }
+
+  void Clear()
+  {
+    super.Clear(); 
+  }
+
+  void CreateWindowHandle(TCreateParams Params)
+  {
+    WindowHandle = HRichEdit();
+  }
+
+  TPoint GetCaretPos()
+  {
+    var range = TCharRange();
+    PerformHandle(EM_EXGETSEL, 0, range);
+    int X = range.cpMax;
+    int Y = PerformHandle(EM_EXLINEFROMCHAR, 0, X) as int;
+    X -= PerformHandle(EM_LINEINDEX, -1, 0) as int;
+    return TPoint(X, Y);
+  }
+
+  void SetCaretPos(TPoint Value)
+  {
+    int cpMin = PerformHandle(EM_LINEINDEX, Value.y, 0) + Value.x;
+    PerformHandle(EM_EXSETSEL, 0, TCharRange(cpMin, cpMin));
+  }
+
+  int GetSelLength()
+  {
+    var range = TCharRange();
+    PerformHandle(EM_EXGETSEL, 0, range);
+    return range.cpMax - range.cpMin;
+  }
+
+  int GetSelStart()
+  {
+    var range = TCharRange();
+    PerformHandle(EM_EXGETSEL, 0, range);
+    return range.cpMin;
+  }
+
+  void SetSelLength(int Value)
+  {
+    var range = TCharRange();
+    PerformHandle(EM_EXGETSEL, 0, range);
+    range.cpMax = range.cpMin + Value;
+    PerformHandle(EM_EXSETSEL, 0, range);
+    // PerformHandle(EM_SCROLLCARET, 0, 0);
+  }
+
+  void SetSelStart(int Value)
+  {
+    PerformHandle(EM_EXSETSEL, 0, TCharRange(Value, Value));
+  }
+
+  void SelectionChange()
+  {
+    if(OnSelectionChange != null)
+      OnSelectionChange!(this);
+  }
+
+}
+
+class TRichEdit extends TCustomRichEdit
+{ 
+  TRichEdit(TComponent? AOwner) : super(AOwner);
+}
 
 class TCommonCalendar extends TWinControl
 {
 
-
   TCommonCalendar(TComponent AOwner) : super(AOwner)
-  {
-
+  { 
     _dateTime = SysUtils.Now();
     
   }
 
-
-
   TDateTime? _dateTime;
-  TDateTime get DateTime  => _dateTime!;
-  void set DateTime(TDateTime Value)
-
-  {
-
-      _dateTime = Value;
-
-  }
-
+  TDateTime
+    get DateTime  => _dateTime!;
+    set DateTime(TDateTime Value)
+    { 
+        _dateTime = Value; 
+    }
 
 }
 
-
 class TDateTimePicker extends TCommonCalendar
-{
-
-
-
+{ 
   TDateTimePicker(TComponent AOwner) : super(AOwner)
-  {
-    
+  { 
     TabStop = true;
     Width = 186;
     Height = 24; // new
 
   }
 
-
-
-
-
   void CreateWindowHandle(TCreateParams Params) // new
   {
     WindowHandle = HDateTimePick();
   }
 
-
-
 }
 
-
 class TStatusBar extends TCustomStatusBar
-{
-
-
+{ 
   TStatusBar(TComponent AOwner) : super(AOwner)
   {
-
   }
 
 }
+
