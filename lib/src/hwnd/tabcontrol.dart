@@ -182,6 +182,10 @@ class HTabControl extends HCustomControl
 //    print(Message);
     switch(Message.Msg)
     {
+      case TCM_GETITEMCOUNT:
+        Message.Result = tabs.length;
+        break;
+
       case TCM_GETCURSEL:
         int ndx = 0;
         for(var tab in tabs.values)
