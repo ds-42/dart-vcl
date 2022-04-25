@@ -37,6 +37,9 @@ part 'src/db.dart';
 part 'src/dbconst.dart';
 part 'src/dbgrids.dart';
 
+part 'src/elem/element.dart';
+part 'src/elem/glyph.dart';
+part 'src/elem/nodestl.dart';
 
 part 'src/hwnd/hctrls.dart';
 part 'src/hwnd/base.dart';
@@ -45,22 +48,24 @@ part 'src/hwnd/combobox.dart';
 part 'src/hwnd/controls.dart';
 part 'src/hwnd/edit.dart';
 part 'src/hwnd/form.dart';
-part 'src/hwnd/glyph.dart';
 part 'src/hwnd/grid.dart';
 part 'src/hwnd/groupbox.dart';
 part 'src/hwnd/lblgroup.dart';
 part 'src/hwnd/memo.dart';
 part 'src/hwnd/menu.dart';
 part 'src/hwnd/popuplist.dart';
+part 'src/hwnd/richedit.dart';
 part 'src/hwnd/scroll.dart';
 part 'src/hwnd/static.dart';
 part 'src/hwnd/statusbar.dart';
 part 'src/hwnd/tabcontrol.dart';
 
 
+part 'src/ext/assets.dart';
 part 'src/ext/CHAR.dart';
 part 'src/ext/classes_ext.dart';
 part 'src/ext/colors.dart';
+part 'src/ext/comctrls.dart';
 part 'src/ext/convert.dart';
 part 'src/ext/ctrls.dart';
 part 'src/ext/date.dart';
