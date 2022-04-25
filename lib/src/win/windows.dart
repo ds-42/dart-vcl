@@ -16,18 +16,17 @@ class _mouseHit
     Element elem = Windows.ElemFromEvent(event);
     var pt = POINT(event.client.x.round(), event.client.y.round());
     int type = toIntDef(Windows.SendElementMessage(elem, WM_NCHITTEST, null, pt), Windows.HTNOWHERE);
-    if(type!=Windows.HTNOWHERE)
+    if(type == Windows.HTNOWHERE)
+      return null;
+
+    var wnd = HWND.findWindow(elem);
+    if(wnd != null && wnd._wnd.dwStyle.and(Windows.WS_POPUP))
     {
-      var wnd = HWND.findWindow(elem);
-      if(wnd != null && wnd._wnd.dwStyle.and(Windows.WS_POPUP))
-      {
-        if(type != Windows.HTCAPTION)
-          type = Windows.HTCLIENT;
-      }
-      Rectangle rect = elem.getBoundingClientRect();
-      return _mouseHit._(elem, pt.x-rect.left.truncate(), pt.y-rect.top.truncate(), type, event.target as Element);
+      if(type != Windows.HTCAPTION)
+        type = Windows.HTCLIENT;
     }
-    return null;
+    Rectangle rect = elem.getBoundingClientRect();
+    return _mouseHit._(elem, pt.x-rect.left.truncate(), pt.y-rect.top.truncate(), type, event.target as Element);
   }
 
   String toString()
@@ -162,6 +161,7 @@ abstract class Windows
   static dynamic _doMouseUp;
   static dynamic _doMouseWhell;
   static dynamic _doPaste;
+  static dynamic _doSelectionChange;
   static dynamic _doTouchStart;
   static dynamic _doTouchEnd;
   static dynamic _doTouchMove;
@@ -362,9 +362,9 @@ abstract class Windows
 
       if(mh==null)
       {
+        var elem = _event.target;
         doMouseEvent(_event, [WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN]);
-        if(_event.target is DivElement || _event.target is LabelElement)
-          _event.preventDefault(); 
+
         return;
       }
 
@@ -467,6 +467,28 @@ abstract class Windows
       int state = toIntDef(SendElementMessage(elem, WM_PASTE, event.clipboardData, event),0);
       if(state!=0)
         _event.preventDefault();
+    }
+
+    dynamic doSelectionChange(Event _event)
+    {
+      var sel = window.getSelection()!;
+      if(sel.focusNode == null)
+        return;
+
+      Node node = sel.focusNode!;
+      while(node.parent!=null)
+      {
+        node = node.parent!;
+        if(node is Element)
+        {
+          var hwnd = HWND.findWindow(node);
+          if(hwnd!=null)
+          {
+
+            break;
+          }
+        }
+      }
     }
 
     int _touchx = 0;
@@ -575,6 +597,7 @@ abstract class Windows
     window.addEventListener('mouseout',   doMouseOut,   true); _doMouseOut = doMouseOut;
     window.addEventListener('mouseup',    doMouseUp,    true); _doMouseUp = doMouseUp;
     window.addEventListener('mousewheel', doMouseWhell, true); _doMouseWhell = doMouseWhell;
+    window.addEventListener('selectionchange', doSelectionChange, true); _doSelectionChange = doSelectionChange;
     window.addEventListener('paste',      doPaste,      true); _doPaste = doPaste;
     window.addEventListener('touchstart', doTouchStart, true); _doTouchStart = doTouchStart;
     window.addEventListener('touchmove',  doTouchMove,  true); _doTouchMove = doTouchMove;
@@ -602,6 +625,7 @@ abstract class Windows
     _doMouseOut.cancel();
     _doMouseUp.cancel();
     _doMouseWhell.cancel();
+    _doSelectionChange.cancel();
     _doPaste.cancel();
     _doTouchStart.cancel();
     _doTouchMove.cancel();
@@ -1197,9 +1221,10 @@ abstract class Windows
     if(cid.name.isEmpty)
       return false;
     // class registry
-    if(TWndStyle._styles.add(cid.name))
+    if(TNodeStyle._styles.add('.${cid.name}'))
     {
-      var rule = TWndStyle.create(cid);
+      var rule = TWndStyle(cid);
+
       cid.defineRule(rule);
       return true;
     }

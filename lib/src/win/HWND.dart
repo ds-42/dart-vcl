@@ -10,85 +10,12 @@ enum WindowProp {
   ChildOwner, // Object as owner of child elements
 }
 
-typedef TWndStyle WND_RULE_BUILDER(CLASS_ID classId);
-
-class TWndStyle
+class TWndStyle extends TNodeStyle
 {
-  static final _styleHandle = StyleElement();
-  static CssStyleSheet? _styleSheet;
-  static final _styles = <String>{ };
+  String get prefix => '.';
 
-  late final CssStyleSheet sheet;
-  final CLASS_ID classId;
+  TWndStyle(CLASS_ID cid) : super(cid);
 
-  TWndStyle(this.classId)
-  {
-    if(_styleSheet==null)
-    {
-      document.head!.append(_styleHandle);
-      _styleSheet = _styleHandle.sheet as CssStyleSheet;
-    }
-
-    sheet = _styleSheet!;
-  }
-
-  static WND_RULE_BUILDER _create = (cid) => TWndStyle(cid);
-  static void use_builder(WND_RULE_BUILDER fnc) => _create = fnc;
-
-  static TWndStyle create(CLASS_ID cid) => _create(cid);
-
-
-  void add(String ext, String data)
-  {
-    if(ext.isEmpty)
-      sheet.addRule('.$classId', data);
-    else
-      sheet.addRule('.$classId $ext', data);
-  }
-
-  void addRule(String name, String data)
-  {
-    sheet.addRule(name, data);
-  }
-
-  String get block =>
-    'display:block;'
-    'position:absolute;';
-
-  String get flex =>
-    'display:flex;'
-    'position:absolute;';
-
-  String get borderBox =>
-    '-moz-box-sizing:border-box;'
-    '-webkit-box-sizing:border-box;'
-    'box-sizing:border-box;';
-
-  String get font =>
-    'font-family:${ Windows.sysFontFamily };'
-    'font-size:${ Windows.sysFontSize }pt;';
-
-  String get inline =>
-    'white-space:nowrap;'
-    'overflow:hidden;'
-    'text-overflow:ellipsis;';
-
-  String get no_select =>
-    'user-select:none;'
-    '-webkit-user-select:none;'
-    '-moz-user-select:none;'
-    '-ms-user-select:none;';
-
-  String get softBorder =>
-    'border: 1px solid #A0A0A0;';
-
-  void addFocusStyle([subClass='focus-within'])
-  {
-    sheet.addRule('.$classId:$subClass',
-      'outline: #4D90FE solid 1px;'
-      'outline-offset: 0;');
-
-  }
 
 }
 
@@ -101,7 +28,7 @@ class CLASS_ID
 
   String toString() => name;
 
-  void defineRule(TWndStyle rule)
+  void defineRule(TNodeStyle rule)
   {
     rule.add('',
       '${ rule.block }'
@@ -208,9 +135,9 @@ class HWND extends HWINDOW
     var cid = classID;
     if(cid.name.isNotEmpty)
     { // class registry
-      if(TWndStyle._styles.add(cid.name))
+      if(TNodeStyle._styles.add(cid.name))
       {
-        var rule = TWndStyle.create(cid);
+        var rule = TWndStyle(cid);
         defineClassRule(rule);
       }
       handle.className = cid.name;
@@ -401,6 +328,11 @@ void _default_element_proc(Element elem, TMessage Message)
       elem.style.pointerEvents = state? '' : 'none';
       if(elem is ButtonElement)
         elem.disabled = !state;
+      break;
+
+    case WM_CLEAR:
+      if(elem is InputElement)
+        elem.value = '';
       break;
 
     case WM_NCHITTEST:

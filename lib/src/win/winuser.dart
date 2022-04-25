@@ -226,14 +226,23 @@ const MESSAGE WM_MBUTTONDBLCLK       = MESSAGE(0x0209, 'WM_MBUTTONDBLCLK'); // w
 const MESSAGE WM_MOUSEWHEEL          = MESSAGE(0x020A, 'WM_MOUSEWHEEL'); // wParam: TWhellInfo, lParam: POINT
 const MESSAGE WM_MOUSELAST           = WM_MOUSEWHEEL;
 
+const int WHEEL_DELTA                = 100; // 120;
+
 const MESSAGE WM_PARENTNOTIFY        = MESSAGE(0x0210, 'WM_PARENTNOTIFY'); // wParam: MESSAGE, lParam: HWND
 
 const MESSAGE WM_COPY                = MESSAGE(0x0301, 'WM_COPY');  // wParam: DataTransfer, lParam ClipboardEvent
 const MESSAGE WM_CUT                 = MESSAGE(0x0301, 'WM_CUT');   // wParam: DataTransfer, lParam ClipboardEvent
 const MESSAGE WM_PASTE               = MESSAGE(0x0302, 'WM_PASTE'); // wParam: DataTransfer, lParam ClipboardEvent
+const MESSAGE WM_CLEAR               = MESSAGE(0x0303, 'WM_CLEAR');
 
 const MESSAGE WM_EVENT               = MESSAGE(0x03FF, 'WM_EVENT'); // wParam: target, lParam: Event
-const int WHEEL_DELTA                    = 100; // 120;
+
+/*
+ * NOTE: All Message Numbers below 0x0400 are RESERVED.
+ *
+ * Private Window Messages Start Here:
+ */
+const MESSAGE WM_USER                = MESSAGE(0x0400, 'WM_USER');
 
 
 class EDIT_MESSAGE extends MESSAGE
@@ -241,8 +250,8 @@ class EDIT_MESSAGE extends MESSAGE
   const EDIT_MESSAGE(int code, String name) : super(code, name);
 }
 
-const MESSAGE EM_FIRSTMESSAGE        = EDIT_MESSAGE(0x00B0, 'EM_FIRSTMESSAGE');
-
+const MESSAGE EM_FIRSTMESSAGE        = EM_GETSEL;
+const MESSAGE EM_GETSEL              = EDIT_MESSAGE(0x00B0, 'EM_GETSEL');
 const MESSAGE EM_SETSEL              = EDIT_MESSAGE(0x00B1, 'EM_SETSEL');
 
 const MESSAGE EM_GETLINECOUNT        = EDIT_MESSAGE(0x00BA, 'EM_GETLINECOUNT');

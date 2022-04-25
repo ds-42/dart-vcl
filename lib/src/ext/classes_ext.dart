@@ -110,6 +110,8 @@ class SIZE
 
   SIZE( [ this.cx = 0, this.cy = 0] );
 
+  SIZE.from(SIZE other) : this(other.cx, other.cy);
+
   String toString() => 'SIZE($cx, $cy)';
 }
 

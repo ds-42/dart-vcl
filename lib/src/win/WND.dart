@@ -251,8 +251,9 @@ class WND
 
     if(swp_flags.and(Windows.SWP_SHOWWINDOW|Windows.SWP_HIDEWINDOW))
     {
-      var pos = WINDOWPOS(hwnd, null, 0, 0, 0, 0,
-          Windows.SWP_NOMOVE | Windows.SWP_NOSIZE | Windows.SWP_NOZORDER | Windows.SWP_SHOWWINDOW);
+      int flags = Windows.SWP_NOMOVE | Windows.SWP_NOSIZE | Windows.SWP_NOZORDER | Windows.SWP_NOACTIVATE;
+      flags|=swp_flags.and(Windows.SWP_SHOWWINDOW)? Windows.SWP_SHOWWINDOW : Windows.SWP_HIDEWINDOW;
+      var pos = WINDOWPOS(hwnd, null, 0, 0, 0, 0, flags);
 
       Windows.SendMessage(hwnd, WM_WINDOWPOSCHANGING, null, pos);
 

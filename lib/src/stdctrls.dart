@@ -262,9 +262,9 @@ class TCustomEdit extends TWinControl
 
   int GetSelStart()
   {
-
-    return IfHandleAllocated((InputElement input) =>
-      input.selectionStart ?? 0, 0);
+    var Result = Integer();
+    PerformHandle(EM_GETSEL, Result, 0);
+    return Result.Value;
   }
 
   void SetSelStart(int Value)
@@ -298,7 +298,7 @@ class TCustomEdit extends TWinControl
 
   void Clear()
   {
-    (Handle.clientHandle as InputElement).value = '';
+    PerformHandle(WM_CLEAR, 0, 0);
   }
 
 
@@ -507,10 +507,11 @@ abstract class TCustomMemo extends TCustomEdit
     set Lines(TStrings Value) => _lines.Assign(Value);
 
 
-  TCustomMemo(TComponent AOwner) : super(AOwner)
+  TCustomMemo(TComponent? AOwner) : super(AOwner)
   {
     Width = 185;
     Height = 89;
+    AutoSize = false;
 
     _lines = _memoStrings(this);
   }
@@ -705,11 +706,6 @@ abstract class TCustomCombo extends TCustomListControl
   {
 
     super.Destroy();
-  }
-
-  dynamic PerformHandle(MESSAGE msg, dynamic wParam, dynamic lParam)
-  {
-    return Windows.SendMessage(Handle, msg, wParam, lParam);
   }
 
   void Clear()

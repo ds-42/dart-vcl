@@ -1680,8 +1680,8 @@ class TControl extends TComponent
 
   void _wmLButtonDblClick(TWMMouse Message)
   {
-    if(!Enabled)
-       return;
+//    if(!Enabled)
+//       return;
     SendCancelMode(this);
     super.Dispatch(Message.handle);
     if(ControlStyle.contains(ControlStyles.CaptureMouse))
@@ -2789,6 +2789,11 @@ class TWinControl extends TControl
   }
 
 
+
+  dynamic PerformHandle(MESSAGE msg, dynamic wParam, dynamic lParam) // new
+  {
+    return Windows.SendMessage(Handle, msg, wParam, lParam);
+  }
 
   void WndProc(TMessage Message)
   {
