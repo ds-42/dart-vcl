@@ -1,106 +1,88 @@
 part of vcl;
 
-
 enum TButtonState { Up, Disabled, Down, Exclusive }
 
-
-class TSpeedButton  extends TWinControl
+class TSpeedButton extends TWinControl 
 {
-  TButtonState _state = TButtonState.Up;
 
-  final HGlyph _glyph = HGlyph();
-
-  String get ImageUrl => _glyph.ImageUrl;
-  void set ImageUrl(String Value) => _glyph.ImageUrl = Value;
+  HGlyphElement _glyph = HGlyphElement(); 
 
   bool _dragging = false;
 
   bool _mouseInControl = false;
   bool get MouseInControl => _mouseInControl;
+  
+  TButtonState _state = TButtonState.Up;
 
-
-
-  TSpeedButton(TComponent AOwner) : super(AOwner)
+  void _changeState(TButtonState st) 
   {
-    ControlStyle>>ControlStyles.ClickEvents; // new /** клики выполняются самим обьектом */
-    Flex.Grow = 0;
-
-    SetSize(22, 22);
-
+    if(_state==st)
+      return;
+    _state = st;
+    _updateState();
   }
 
-
-
-  String get Caption => _getText();
-  void set Caption(String Value) => _setText(Value);
-
-  bool CanFocus()
+  void _updateState()
   {
-    return false;
+    if(HandleAllocated())
+    {
+      String name='';
+      switch(_state)
+      {
+      
+        case TButtonState.Up: name = HSpeedButton.STATE_UP; break;
+        case TButtonState.Disabled: name = 'disabled'; break;
+        case TButtonState.Down: name = HSpeedButton.STATE_DOWN; break;
+        case TButtonState.Exclusive: name = HSpeedButton.STATE_EXCLUSIVE; break;
+      }
+      (Handle as HSpeedButton).changeState(name);
+    }
   }
 
-  void CreateWindowHandle(TCreateParams Params)
-  {
-    WindowHandle = HSpeedButton();
-    _glyph.setParent(WindowHandle);
-    _glyph.owner = WindowHandle;
-
-
-    if(Params.Caption.isNotEmpty)
-      WindowHandle!.handle.text = Params.Caption;
-
+  TSpeedButton(TComponent? AOwner) : super(AOwner)
+  { 
+    Flex.Grow = 0; 
+    // _glyph.onChange = (ptr){ Invalidate(); };
+    SetBounds(0, 0, 22, 22);
+    TNotifyEvent eb;
+    ControlStyle.assign( [ControlStyles.CaptureMouse, ControlStyles.DoubleClicks] ); 
   }
 
-  void CreateWnd()
+  String
+    get Caption => _getText(); 
+    set Caption(String Value) => _setText(Value); 
+
+  bool CanFocus() => false; 
+
+  void CreateWindowHandle(TCreateParams Params) 
   {
-    super.CreateWnd();
-    _glyph.handle.owner = Handle;
-    _updateStateName();
+    var btn = HSpeedButton();
+    btn.glyph.assign(_glyph);
+    _glyph = btn.glyph;
+    WindowHandle = btn;
   }
 
   void DestroyWindowHandle()
   {
-    _glyph.handle.remove();
+    var btn = WindowHandle as HSpeedButton;
+    _glyph = HGlyphElement();
+    _glyph.assign(btn.glyph);
     super.DestroyWindowHandle();
-  }
-
-
-
-
-  void UpdateGlyph(int index, [int? width=null, int? height=null]) // new
-  {
-    _glyph.Update(index, width, height);
-    UpdateGlyphPosition();
-  }
-
-  void UpdateGlyphPosition() // new
-  {
-    bool down = _state==TButtonState.Down || _state==TButtonState.Exclusive;
-    _glyph.style.left = "${ ((Width-_glyph.Width-2) ~/ 2)+(down? 1 : 0) }px";
-    _glyph.style.top  = "${ ((Height-_glyph.Height-2) ~/2)+(down? 1 : 0) }px";
-  }
-
-  void SetBounds(int? ALeft, int? ATop, int? AWidth, int? AHeight) // new
-  {
-    super.SetBounds(ALeft, ATop, AWidth, AHeight);
-    UpdateGlyphPosition();
   }
 
   void Dispatch(TMessage Message)
   {
     switch(Message.Msg)
     {
-      case CM_ENABLEDCHANGED:
-        UpdateGlyph(Enabled? 0 : 1);
-        if(HandleAllocated())
-          (Handle.handle as ButtonElement).disabled = !Enabled;
-        
-        break;
-
       case CM_BUTTONPRESSED:
         _cmButtonPressed(Message);
         break;
 
+      case WM_LBUTTONDBLCLK:
+        super.Dispatch(Message);
+        if(_down)
+          DblClick();
+        break;
 
       default:
         super.Dispatch(Message);
@@ -108,52 +90,24 @@ class TSpeedButton  extends TWinControl
     }
   }
 
-
   void UpdateTracking()
   {
 
   }
 
-
-
-  void _updateState(TButtonState st)
-  {
-    if(_state==st)
-      return;
-    _state = st;
-    _updateStateName();
-  }
-
-  void _updateStateName()
-  {
-    if(HandleAllocated())
-    {
-      String name='';
-      switch(_state)
-      {
-
-        case TButtonState.Up: name = 'up'; break;
-        case TButtonState.Disabled: name = 'disabled'; break;
-        case TButtonState.Down: name = 'down'; break;
-        case TButtonState.Exclusive: name = 'exclusive'; break;
-      }
-      if(name.isEmpty)
-        Handle.handle.removeAttribute('state');
-      else
-        Handle.handle.setAttribute('state', name); //classes.add('test');
-    }
-    UpdateGlyphPosition();
-  }
-
   void MouseDown(TMouseButton Button, TShiftState Shift, int X, int Y)
   {
     super.MouseDown(Button, Shift, X, Y);
+
+    if(Shift.contains(ShiftStates.Double)) 
+      return;
+
     if((Button == TMouseButton.Left) && Enabled)
     {
       if(!_down)
       {
-        _updateState(TButtonState.Down);
-        Invalidate();
+        _changeState(TButtonState.Down);
+        // Invalidate();
       }
       _dragging = true;
     }
@@ -169,8 +123,8 @@ class TSpeedButton  extends TWinControl
         NewState = Down? TButtonState.Exclusive : TButtonState.Down;
       if(NewState != _state)
       {
-        _updateState(NewState);
-        Invalidate();
+        _changeState(NewState);
+        // Invalidate();
       }
     }
     else
@@ -188,25 +142,25 @@ class TSpeedButton  extends TWinControl
       if(GroupIndex == 0)
       {
         // Redraw face in-case mouse is captured
-        _updateState(TButtonState.Up);
+        _changeState(TButtonState.Up);
         _mouseInControl = false;
-        if(DoClick && !(_state==TButtonState.Exclusive || _state==TButtonState.Down))
-          Invalidate();
+        // if(DoClick && !(_state==TButtonState.Exclusive || _state==TButtonState.Down))
+        //  Invalidate();
       }
       else
       if(DoClick)
       {
         Down = !Down;
         if(Down)
-          Invalidate(); // Repaint
+          Repaint();
       }
       else
       {
         if(Down)
-          _updateState(TButtonState.Exclusive);
-        Invalidate(); // Repaint;
+          _changeState(TButtonState.Exclusive);
+        Repaint();
       }
-      if(DoClick)  // new
+      if(DoClick)
         Click();
       UpdateTracking();
     }
@@ -217,7 +171,35 @@ class TSpeedButton  extends TWinControl
     super.Click();
   }
 
+  HGlyphElement get Glyph => _glyph;
 
+  set Glyph(HGlyphElement value)
+  {
+    _glyph.assign(value);
+    //Invalidate();
+  }
+
+  int
+    get NumGlyphs => Glyph.numGlyphs.cx; // NumGlyphs
+    set NumGlyphs(int Value)
+    {
+      if(Value==0) 
+      { // auto detect
+        Glyph.numGlyphs = SIZE(0, 1);
+        return;
+      }
+
+      if(Value < 1)
+        Value = 1;
+      else
+      if(Value > 4)
+        Value = 4;
+
+      if(Value == Glyph.numGlyphs.cx)
+        return;
+      Glyph.numGlyphs = SIZE(Value, 1);
+//      Invalidate();
+    }
 
   void UpdateExclusive()
   {
@@ -246,13 +228,13 @@ class TSpeedButton  extends TWinControl
       _down = Value;
       if(Value)
       {
-        if(_state == TButtonState.Up)
-          Invalidate();
-        _updateState(TButtonState.Exclusive);
+        // if(_state == TButtonState.Up)
+        //   Invalidate();
+        _changeState(TButtonState.Exclusive);
       }
       else
       {
-        _updateState(TButtonState.Up);
+        _changeState(TButtonState.Up);
         Repaint();
       }
       if(Value)
@@ -267,7 +249,7 @@ class TSpeedButton  extends TWinControl
       if(Value == Flat)
         return;
       _flat = Value;
-      Invalidate();
+      // Invalidate();
     }
 
   int _groupIndex = 0;
@@ -281,7 +263,6 @@ class TSpeedButton  extends TWinControl
       UpdateExclusive();
     }
 
-
   bool _allowAllUp = false;
   bool
     get AllowAllUp => _allowAllUp;
@@ -293,8 +274,6 @@ class TSpeedButton  extends TWinControl
       UpdateExclusive();
     }
 
-
-
   void _cmButtonPressed(TMessage Message)
   {
     if(Message.WParam == _groupIndex)
@@ -305,14 +284,14 @@ class TSpeedButton  extends TWinControl
         if(Sender.Down && _down)
         {
           _down = false;
-          _updateState(TButtonState.Up);
-
-          Invalidate();
+          // FState := bsUp;
+          _changeState(TButtonState.Up);
+          
+          // Invalidate();
         }
         _allowAllUp = Sender.AllowAllUp;
       }
     }
   }
-
 
 }

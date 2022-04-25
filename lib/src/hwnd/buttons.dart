@@ -20,30 +20,37 @@ class HSpeedButton extends HControl
   static final SPEEDBUTTON = CLASS_ID('SPEEDBUTTON');
   CLASS_ID get classID => SPEEDBUTTON;
 
+  static const STATE_DOWN = 'down';
+  static const STATE_EXCLUSIVE = 'exclusive';
+  static const STATE_UP = 'up';
+
   void defineClassRule(TWndStyle rule)
   {
     final name = classID.name;
-
     rule.add('',
       'position: absolute;'
       'box-sizing: border-box;'
       'border: 1px solid #e0e0e0;'
       'background-color: inherit;'
+      'padding: 0;'
       'outline:none;'
       'overflow: hidden;');
     rule.addRule('.$name:hover',
       'border: 1px outset;');
-    rule.addRule(".$name[state='down']",
-      'border: 1px inset;');
-    rule.addRule(".$name[state='exclusive']",
-      'border: 1px inset;');
-    
+    rule.addRule(".$name[state='$STATE_DOWN'], .$name[state='$STATE_EXCLUSIVE']",
+      'border: 1px inset;'
+    );
+    rule.addRule(".$name[state='$STATE_DOWN'] glyph, .$name[state='$STATE_EXCLUSIVE'] glyph",
+      'margin: 1px -1px -1px 1px ;');
   }
+
+  final glyph = HGlyphElement();
 
   HSpeedButton() : super( ButtonElement() )
   {
     handle.tabIndex = -1;
-
+    glyph.parent = handle;
+    glyph.handle.owner = this;
   }
 
   void dispatch(Element elem, TMessage message)
@@ -57,13 +64,27 @@ class HSpeedButton extends HControl
 //        caption.text = cs.lpszName;
         message.Result = 0;
         break;
+      // TODO: add caption
 
+      case WM_LBUTTONDOWN:
+        changeState(HSpeedButton.STATE_DOWN);
+        break;
+      case WM_LBUTTONUP:
+        changeState(HSpeedButton.STATE_UP);
+        break;
       default:
         super.dispatch(elem, message);
         break;
     }
   }
 
+  void changeState(String name)
+  {
+    if(name.isEmpty)
+      handle.removeAttribute('state');
+    else
+      handle.setAttribute('state', name); ;
+  }
 }
 
 class HButtonControl extends HControl
