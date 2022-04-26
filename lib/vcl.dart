@@ -2,6 +2,7 @@
 library vcl;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:html';
 import 'dart:math';
 
@@ -100,7 +101,12 @@ part 'src/win/winpos.dart';
 part 'src/win/windows.dart';
 part 'src/win/WND.dart';
 
+part 'src/locale/sys.dart';
+
+part 'src/locale/en_EN.dart';
+part 'src/locale/ru_RU.dart';
 
 
-final String vcl_lib_version = '1.2.2';
-final DateTime vcl_lib_date = DateTime(2022, 04, 13);
+
+final String vcl_lib_version = '1.2.3';
+final DateTime vcl_lib_date = DateTime(2022, 04, 26);
