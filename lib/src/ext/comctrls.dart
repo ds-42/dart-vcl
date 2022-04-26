@@ -2,17 +2,17 @@ part of vcl;
 
 class TRichEditTools extends TWinControl
 {
-  static String ROOT = 'richedit/tools';
+  static String ROOT = 'richEdit/tools';
   static TAsset assetFormat = Assets[ROOT]['format'];
 
-  static TEnum ID_BOLD = TEnum('bold');
-  static TEnum ID_ITALIC = TEnum('italic');
-  static TEnum ID_UNDERLINE = TEnum('underline');
+  static const ID_BOLD = TUserAction('bold');
+  static const ID_ITALIC = TUserAction('italic');
+  static const ID_UNDERLINE = TUserAction('underline');
 
-  static TEnum ID_JUSTIFY_LEFT = TEnum('justifyleft');
-  static TEnum ID_JUSTIFY_CENTER = TEnum('justifycenter');
-  static TEnum ID_JUSTIFY_RIGHT = TEnum('justifyright');
-  static TEnum ID_JUSTIFY_FULL = TEnum('justifyFull');
+  static const ID_JUSTIFY_LEFT = TUserAction('justifyLeft');
+  static const ID_JUSTIFY_CENTER = TUserAction('justifyCenter');
+  static const ID_JUSTIFY_RIGHT = TUserAction('justifyRight');
+  static const ID_JUSTIFY_FULL = TUserAction('justifyFull');
 
   late final TFlexBox FormatBand;
 
@@ -24,19 +24,23 @@ class TRichEditTools extends TWinControl
       ..Parent = this;
   }
 
-  TSpeedButton __createButton(TEnum id, String hint)
+  TSpeedButton __createButton(TUserAction id)
   {
+    String key = getShortKey(id);
+    if(key.isNotEmpty)
+      key = ' ($key)';
+
     return TSpeedButton(this)
       ..Width = 24
       ..Height = 24
-      ..Hint = hint
+      ..Hint = '${ SysLocale.richEditTools('$id') }$key'
       ..ShowHint = true
       ..Tag = id
       ..Glyph.src = assetFormat[id.name].data
       ..OnClick = (Sender) => DoAction((Sender as TSpeedButton).Tag);
   }
 
-  void DoAction(TEnum id)
+  void DoAction(TUserAction id)
   {
     if(RichEdit!=null && RichEdit!.HandleAllocated())
     {
@@ -64,15 +68,26 @@ class TRichEditTools extends TWinControl
 
     FormatBand = __createBand()
       ..Add([
-        __createButton(ID_BOLD,      'Выделенный'),
-        __createButton(ID_ITALIC,    'Наклонный'),
-        __createButton(ID_UNDERLINE, 'Подчеркнутый'),
+        __createButton(ID_BOLD),
+        __createButton(ID_ITALIC),
+        __createButton(ID_UNDERLINE),
 
-        __createButton(ID_JUSTIFY_LEFT, 'По левому краю'),
-        __createButton(ID_JUSTIFY_CENTER, 'По центру'),
-        __createButton(ID_JUSTIFY_RIGHT, 'По правому краю'),
-        __createButton(ID_JUSTIFY_FULL,  'По ширине'),
+        __createButton(ID_JUSTIFY_LEFT),
+        __createButton(ID_JUSTIFY_CENTER),
+        __createButton(ID_JUSTIFY_RIGHT),
+        __createButton(ID_JUSTIFY_FULL),
       ]);
+  }
+
+  String getShortKey(TUserAction id)
+  {
+    switch(id)
+    {
+      case ID_BOLD: return 'Ctrl+B';
+      case ID_ITALIC: return 'Ctrl+I';
+      case ID_UNDERLINE: return 'Ctrl+U';
+      default: return '';
+    }
   }
 
   TRichEdit? _richEdit;

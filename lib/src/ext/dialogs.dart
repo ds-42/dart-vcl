@@ -7,7 +7,7 @@ Future<int> MessageBox(dynamic data, String caption, int mode) async
   {
     return TButton(prnt)
       ..ModalResult = mr
-      ..Caption = ModalResults.ResultToStr(mr, Locale.active)
+      ..Caption = '${ SysLocaleDialogs.result(mr) }'
       ..Parent = prnt
       ..Handle.style.height = null
       ..Handle.style.width = null;
@@ -134,12 +134,12 @@ Future<void> ShowMessage(dynamic data) async
 
 Future<void> ShowWarningMessage(dynamic data) async
 {
-  await MessageBox(data, '${ SysLocale.Warning }', Windows.MB_OK);
+  await MessageBox(data, '${ SysLocaleDialogs.warning }', Windows.MB_OK);
 }
 
 Future<void> ShowErrorMessage(dynamic data) async
 {
-  await MessageBox(data, '${ SysLocale.Error }', Windows.MB_OK);
+  await MessageBox(data, '${ SysLocaleDialogs.error }', Windows.MB_OK);
 }
 
 Future<int> ShowQuestionMessage(dynamic data, [int mode = Windows.MB_YESNO]) async
@@ -174,13 +174,13 @@ Future<String> InputBox(String ACaption, String APrompt, String ADefault) async
 
   int btnLeft = (width-160)~/2;
   var btnOk = TButton(form)
-    ..Caption = ModalResults.ResultToStr(TModalResult.Ok, Locale.active)
+    ..Caption = '${ SysLocaleDialogs.result(TModalResult.Ok) }'
     ..SetBounds(btnLeft, top, 80, null)
     ..ModalResult = TModalResult.Ok
     ..Parent = form;
 
   TButton(form)
-    ..Caption = ModalResults.ResultToStr(TModalResult.Cancel, Locale.active)
+    ..Caption = '${ SysLocaleDialogs.result(TModalResult.Cancel) }'
     ..SetBounds(btnLeft+90, top, 80, null)
     ..ModalResult = TModalResult.Cancel
     ..Parent = form;

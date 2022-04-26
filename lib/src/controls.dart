@@ -79,48 +79,23 @@ const MESSAGE CN_HSCROLL             = MESSAGE(0xbd14, 'CN_HSCROLL');
 const MESSAGE CN_VSCROLL             = MESSAGE(0xbd15, 'CN_VSCROLL');
 
 // TModalResult values
-enum TModalResult { None, Ok, Cancel, Abort, Retry, Ignore, Yes, No, All, NoToAll, YesToAll }
-
-abstract class ModalResults
+//enum TModalResult { None, Ok, Cancel, Abort, Retry, Ignore, Yes, No, All, NoToAll, YesToAll }
+class TModalResult extends TEnum
 {
-  static final _items = <TLocale, Map<TModalResult, String> >
-  {
-    TLocale.ENGLISH: {
-      TModalResult.Ok:       'OK',
-      TModalResult.Cancel:   'Cancel',
-      TModalResult.Abort:    'Abort',
-      TModalResult.Retry:    'Retry',
-      TModalResult.Ignore:   'Ignore',
-      TModalResult.Yes:      'Yes',
-      TModalResult.No:       'No',
-      TModalResult.All:      'All',
-      TModalResult.NoToAll:  'No to all',
-      TModalResult.YesToAll: 'Yes to all',
-    },
-    TLocale.RUSSIAN: {
-      TModalResult.Ok:       'OK',
-      TModalResult.Cancel:   'Отмена',
-      TModalResult.Abort:    'Прервать',
-      TModalResult.Retry:    'Повторить',
-      TModalResult.Ignore:   'Пропустить',
-      TModalResult.Yes:      'Да',
-      TModalResult.No:       'Нет',
-      TModalResult.All:      'Все',
-      TModalResult.NoToAll:  'Нет для всех',
-      TModalResult.YesToAll: 'Да для всех',
-    },
-  };
+  const TModalResult(String name) : super(name);
 
-  static Map<TModalResult, String> GetNames([TLocale? locale]) =>
-      TLocaleSet.GetItems(_items, locale ?? Locale.active, TLocale.ENGLISH);
-
-  static void UpdateLocale(TLocale locale, Map<TModalResult, String> recs) =>
-      TLocaleSet.Update(_items, locale, recs);
-
-  static String ResultToStr(TModalResult mr, [TLocale? locale]) =>
-    TLocaleSet.ValueByIdent(ModalResults._items, mr, locale) ?? mr.toString();
+  static const None = TModalResult('none');
+  static const Ok = TModalResult('ok');
+  static const Cancel = TModalResult('cancel');
+  static const Abort = TModalResult('abort');
+  static const Retry = TModalResult('retry');
+  static const Ignore = TModalResult('ignore');
+  static const Yes = TModalResult('yes');
+  static const No = TModalResult('no');
+  static const All = TModalResult('all');
+  static const NoToAll = TModalResult('noToAll');
+  static const YesToAll = TModalResult('yesToAll');
 }
-
 
 
 class TCursor
