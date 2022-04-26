@@ -21,6 +21,11 @@ class TEnum
   String toString() => name;
 }
 
+class TUserAction extends TEnum
+{
+  const TUserAction(String name) : super(name);
+}
+
 class TKeyCode
 {
   int? Code;
