@@ -154,41 +154,78 @@ abstract class TLocaleSet
   }
 }
 
-
-class TLocaleText
+class TLocaleItem
 {
-  final String text;
+  final String key;
+  final String? _def;
+  final TLocaleTree parent;
 
-  const TLocaleText(this.text);
+  TLocaleItem._(this.parent, this.key, this._def);
 
-  String toString() => SysLocale.text(this);
+  String toString() => '$val';
 
-  String format(var args) => sprintf(text, args);
+  String get val =>
+    parent.data[key] ?? (_def ?? key);
+
+  String args(List args) =>
+    sprintf(val, args);
 }
 
-abstract class SysLocale
+class TLocaleTree
 {
-  static final _items = <TLocale, Map<TLocaleText, String> >
+  final String key;
+  TLocaleTree? parent;
+
+  TLocaleTree(this.key, [this.parent]);
+
+  TLocaleItem call(String key, [String? def]) =>
+      TLocaleItem._(this, key, def);
+
+  Map? _data;
+  Map get data => _data ?? (_data = _init());
+
+  Map _init()
   {
-    TLocale.RUSSIAN: {
-      Error:   'Ошибка',
-      Warning: 'Внимание',
-    },
-  };
-
-  static Map<TLocaleText, String> GetData([TLocale? locale]) =>
-      TLocaleSet.GetItems(_items, locale ?? Locale.active, TLocale.ENGLISH);
-
-  static void UpdateLocale(TLocale locale, Map<int, String> recs) =>
-      TLocaleSet.Update(_items, locale, recs);
-
-  static String text(TLocaleText key, [TLocale? locale]) =>
-      TLocaleSet.ValueByIdent(SysLocale._items, key, locale ?? Locale.active) ?? key.text;
-
-  static const Error = TLocaleText('Error');
-  static const Warning = TLocaleText('Warning');
+    if(parent != null)
+    {
+      var res = parent!._init();
+      return res[key] ?? Map();
+    }
+    return Map();
+  }
 }
 
+class TLocaleRoot extends TLocaleTree
+{
+  TLocaleRoot([Map? data]) : super('')
+  {
+    _data = data;
+  }
 
+  Future<bool> load(String path)
+  {
+    var res = Completer<bool>();
+    var http =  HttpRequest();
+    http.open('GET', path);
+    http.send();
+    http.onLoadEnd.first.then((state)
+    {
+      _data = jsonDecode(http.responseText ?? '');
+      res.complete(true);
+    });
+    return res.future;
+  }
+
+  void select(Map data)
+  {
+    _data = data;
+  }
+
+  Map _init()
+  {
+    return _data ?? Map();
+  }
+
+}
 
 
