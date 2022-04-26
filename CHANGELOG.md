@@ -1,3 +1,11 @@
+## [1.2.3]
+- Updated vcl core
+- Updated win core
+- Updated locale core
+- Added TRichEdit, TRichEditTools
+- Added Assets
+- Updated TSpeedButton
+
 ## [1.2.2]
 - Update vcl core
 - Update win core
