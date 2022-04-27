@@ -14,6 +14,13 @@ class TRichEditTools extends TWinControl
   static const ID_JUSTIFY_RIGHT = TUserAction('justifyRight');
   static const ID_JUSTIFY_FULL = TUserAction('justifyFull');
 
+  static const ID_CUT = TUserAction('cut');
+  static const ID_COPY = TUserAction('copy');
+  static const ID_PASTE = TUserAction('paste');
+
+  static const ID_UNDO = TUserAction('undo');
+  static const ID_REDO = TUserAction('redo');
+
   late final TFlexBox FormatBand;
 
   TFlexBox __createBand()
@@ -22,6 +29,18 @@ class TRichEditTools extends TWinControl
       ..Align = TAlign.Top
       ..FlexItems.SetMargin(0, 1, 0, 1)
       ..Parent = this;
+  }
+
+  TBevel __createSeparate()
+  {
+    return TBevel(this)
+      ..Shape = TBevelShape.LeftLine
+      ..Flex.Grow = 0
+      ..Flex.SetMargin(1, 2, 1, 2)
+      ..Flex.BreakBefore = false
+      ..Height = 22
+      ..Width = 2
+    ;
   }
 
   TSpeedButton __createButton(TUserAction id)
@@ -45,22 +64,56 @@ class TRichEditTools extends TWinControl
     if(RichEdit!=null && RichEdit!.HandleAllocated())
     {
       var hre = RichEdit!.Handle as HRichEdit;
+
+      if(id==ID_PASTE)
+      {
+        var queryOpts = { 'name': 'clipboard-read', 'allowWithoutGesture': false };
+        var permissionStatus = window.navigator.permissions!.query(queryOpts);
+        permissionStatus.then((val) async
+        {
+          if(val.state=='denied')
+          {
+            await ShowWarningMessage('Access denied');
+            return;
+          }
+          //print(val.state);
+
+          if(window.navigator.clipboard != null)
+          {
+            var res = window.navigator.clipboard!.readText();
+            res.then((data){
+              hre.execCommand('insertHtml', data);
+              print(data);
+            });
+          }
+        });
+        return;
+      }
+
       hre.execCommand(id.name);
     }
   }
 
   TRichEditTools(TComponent? AOwner) : super(AOwner)
   {
+    AutoSize = true;
     if(assetFormat.isEmpty)
     {
-      assetFormat[ID_BOLD.name]      = 'data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=';
-      assetFormat[ID_ITALIC.name]    = 'data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==';
-      assetFormat[ID_UNDERLINE.name] = 'data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7';
+      assetFormat['$ID_BOLD']      = 'data:image/gif;base64,R0lGODlhEAAQAJH/AP///wAAAP///wAAACH/C0FET0JFOklSMS4wAt7tACH5BAEAAAIALAAAAAAQABAAAAIglI+py60BI2zR1HXvm0In6X1ceGTcFlgnApLOC8fyUQAAOw==';
+      assetFormat['$ID_ITALIC']    = 'data:image/gif;base64,R0lGODlhEAAQAJH/AICAgAAAAP///wAAACH/C0FET0JFOklSMS4wAt7tACH5BAEAAAIALAAAAAAQABAAAAIblI+py+0BoTMQTAHkrTeHK3CTB4pNFIHqyoIFADs=';
+      assetFormat['$ID_UNDERLINE'] = 'data:image/gif;base64,R0lGODlhEAAQAIABAAAAAP///yH5BAEAAAEALAAAAAAQABAAAAIhjI+py70AQYjy1XkVPJt13Hyfdo2JmJGRY6zs21IUTDMFADs=';
 
-      assetFormat[ID_JUSTIFY_LEFT.name]   = 'data:image/gif;base64,R0lGODlhEAAQAIABAAAAAP///yH5BAEAAAEALAAAAAAQABAAAAIZjI+pm+APIZshSoqr3Vlt11GfFSJjiaZKAQA7';
-      assetFormat[ID_JUSTIFY_CENTER.name] = 'data:image/gif;base64,R0lGODlhEAAQAIABAAAAAP///yH5BAEAAAEALAAAAAAQABAAAAIYjI+pm+APIZsoPoqtBpjuPm0WyHzkiSoFADs=';
-      assetFormat[ID_JUSTIFY_RIGHT.name]  = 'data:image/gif;base64,R0lGODlhEAAQAIABAAAAAP///yH5BAEAAAEALAAAAAAQABAAAAIZjI+pm+APIZsqSrqsBrhv3jXfFTJfiaZIAQA7';
-      assetFormat[ID_JUSTIFY_FULL.name]   = 'data:image/gif;base64,R0lGODlhEAAQAIAAAAAAAP///yH5BAEAAAEALAAAAAAQABAAAAIajI+pm+APIZsh2kfZvXlt2ylfFDYjVqbqUQAAOw==';
+      assetFormat['$ID_JUSTIFY_LEFT']   = 'data:image/gif;base64,R0lGODlhEAAQAIABAAAAAP///yH5BAEAAAEALAAAAAAQABAAAAIZjI+pm+APIZshSoqr3Vlt11GfFSJjiaZKAQA7';
+      assetFormat['$ID_JUSTIFY_CENTER'] = 'data:image/gif;base64,R0lGODlhEAAQAIABAAAAAP///yH5BAEAAAEALAAAAAAQABAAAAIYjI+pm+APIZsoPoqtBpjuPm0WyHzkiSoFADs=';
+      assetFormat['$ID_JUSTIFY_RIGHT']  = 'data:image/gif;base64,R0lGODlhEAAQAIABAAAAAP///yH5BAEAAAEALAAAAAAQABAAAAIZjI+pm+APIZsqSrqsBrhv3jXfFTJfiaZIAQA7';
+      assetFormat['$ID_JUSTIFY_FULL']   = 'data:image/gif;base64,R0lGODlhEAAQAIAAAAAAAP///yH5BAEAAAEALAAAAAAQABAAAAIajI+pm+APIZsh2kfZvXlt2ylfFDYjVqbqUQAAOw==';
+
+      assetFormat['$ID_CUT']    = 'data:image/gif;base64,R0lGODlhEAAQAJECAAEAfgAAAP///wAAACH5BAEAAAIALAAAAAAQABAAAAIolI+pcazoRHyy0cbCpPlC7UHhAYAjIJVXiaKV4rbGZsSvm9jpio9hAQA7';
+      assetFormat['$ID_COPY']   = 'data:image/gif;base64,R0lGODlhEAAQAJEDAAEAfgAAAP///////yH5BAEAAAMALAAAAAAQABAAAAI5nI85wa0YhBTsmThjsFqDD0KTBIzf0THlVALXKJSBHHoAA5MLTN/t0rhheA/bjPJYERWg5skCjSYKADs=';
+      assetFormat['$ID_PASTE']  = 'data:image/gif;base64,R0lGODlhEAAQAKIHAP/zvcDAwAEAfv//AP///wAAAIKCgv///yH5BAEAAAcALAAAAAAQABAAAANCeLrcXrA4FeEYVVLDC7AFZ2jhGJxoSXYZ1G1iHK+zYN+0KBA8b8O6no8gOJSCNyJOthP2BEfO7pYstpxPB25bnHgTADs=';
+
+      assetFormat['$ID_UNDO']   = 'data:image/gif;base64,R0lGODlhEAAQAJECAAAAgICAgAAAAAAAACH5BAEAAAIALAAAAAAQABAAAAIglI+py+2vgAQhgSMR1fdG7n3YtITClGkVFJjQC8dyUwAAOw==';
+      assetFormat['$ID_REDO']   = 'data:image/gif;base64,R0lGODlhEAAQAJECAAAAgICAgAAAAAAAACH5BAEAAAIALAAAAAAQABAAAAIglI+py+0vApjASTRP1atm3n3GllBkdApmCgTQC8fyjBQAOw==';
     }
 
     Width = 200;
@@ -72,10 +125,23 @@ class TRichEditTools extends TWinControl
         __createButton(ID_ITALIC),
         __createButton(ID_UNDERLINE),
 
+        __createSeparate(),
+
         __createButton(ID_JUSTIFY_LEFT),
         __createButton(ID_JUSTIFY_CENTER),
         __createButton(ID_JUSTIFY_RIGHT),
         __createButton(ID_JUSTIFY_FULL),
+
+        __createSeparate(),
+
+        __createButton(ID_CUT),
+        __createButton(ID_COPY),
+        __createButton(ID_PASTE),
+
+        __createSeparate(),
+
+        __createButton(ID_UNDO),
+        __createButton(ID_REDO),
       ]);
   }
 
@@ -86,6 +152,13 @@ class TRichEditTools extends TWinControl
       case ID_BOLD: return 'Ctrl+B';
       case ID_ITALIC: return 'Ctrl+I';
       case ID_UNDERLINE: return 'Ctrl+U';
+
+      case ID_CUT: return 'Ctrl+X';
+      case ID_COPY: return 'Ctrl+C';
+      case ID_PASTE: return 'Ctrl+V';
+
+      case ID_UNDO: return 'Ctrl+Z';
+      case ID_REDO: return 'Ctrl+Y';
       default: return '';
     }
   }
