@@ -641,6 +641,7 @@ class TFlexBox extends TWinControl
       }
     }
 
+    bool adjustParent = false;
 
     if(FlexDirection==TFlexDirection.Row)
     {
@@ -651,6 +652,7 @@ class TFlexBox extends TWinControl
         else
         if(Align == TAlign.Top)
           Height = py;
+        adjustParent = true;
       }
     }
     else
@@ -662,8 +664,11 @@ class TFlexBox extends TWinControl
         else
         if(Align == TAlign.Left)
           Width = py;
+        adjustParent = true;
       }
     }
+    if(adjustParent && Parent!=null && Parent!.AutoSize)
+      Parent!.AdjustSize();
   }
 
   void _flexLineControls(List<TCalcFlexParams> list, int px, int py, int cWidth, int cHeight)
