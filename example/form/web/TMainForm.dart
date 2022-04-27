@@ -60,7 +60,7 @@ class TMainForm extends TForm
     status.SimpleText = '© dart-vcl [${vcl_lib_version}], ${vcl_lib_date.year}';
 
     TTabSet(status)
-      ..Width = status.Panels.Items[1].Width
+      ..Width = status.Panels.Items[1].Width-5
       ..MoveTo(105, 1)
       ..SoftTop = true
       ..Tabs.Add('tab-1')
