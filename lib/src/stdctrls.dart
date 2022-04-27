@@ -269,9 +269,7 @@ class TCustomEdit extends TWinControl
 
   void SetSelStart(int Value)
   {
-    IfHandleAllocated((InputElement input) =>
-      input.selectionStart = Value );
-
+    PerformHandle(EM_SETSEL, Value, Value);
   }
 
   void SetSelectionRange(int start, int length)
