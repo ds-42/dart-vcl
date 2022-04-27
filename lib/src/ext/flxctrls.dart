@@ -281,7 +281,7 @@ class TFlexBox extends TWinControl
 {
   late final TFlexParamItems FlexItems;
 
-  TFlexBox(TComponent AOwner) : super(AOwner)
+  TFlexBox(TComponent? AOwner) : super(AOwner)
   {
     FlexItems = TFlexParamItems(this);
     Width = 185;
