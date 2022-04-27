@@ -33,6 +33,8 @@ class HRichEdit extends HControl
     );
   }
 
+  static const String EMPTY_DATA = '<div><br></div>';
+
   final client = DivElement();
 
   Element getClientHandle() => client;
@@ -43,7 +45,7 @@ class HRichEdit extends HControl
       ..className = 'client'
       ..contentEditable = 'true'
       ..spellcheck = false
-      ..innerHtml = '<div><br></div>'
+      ..innerHtml = EMPTY_DATA
       ..owner = this;
 
     handle.append(client);
@@ -209,17 +211,23 @@ class HRichEdit extends HControl
   {
     switch(Message.Msg)
     {
-      case WM_CLEAR:
-        client.innerHtml = '<div><br></div>';
+      case WM_CREATE:
+        var cs = Message.LParam as CREATESTRUCT;
+        setText(cs.lpszName);
+        Message.Result = 0;
         break;
+
+      case WM_CLEAR:          Message.Result = setText(''); break;
+      case WM_GETTEXT:        Message.Result = getText(); break;
+      case WM_SETTEXT:        Message.Result = setText(Message.LParam); break;
 
       case EM_EXGETSEL:       Message.Result = getSel(Message.LParam); break;
       case EM_EXLINEFROMCHAR: Message.Result = getLineFromChar(Message.LParam); break;
       case EM_EXSETSEL:       Message.Result = setSel(Message.LParam);  break;
       case EM_GETEVENTMASK:   Message.Result = 0; break; // dummy
-      case EM_GETSEL:         Message.Result = getSelStart(Message.WParam); break;
       case EM_GETLINE:        Message.Result = getLine(Message.WParam, Message.LParam); break;
       case EM_GETLINECOUNT:   Message.Result = lineCount; break;
+      case EM_GETSEL:         Message.Result = getSelStart(Message.WParam); break;
       case EM_LINEINDEX:      Message.Result = getLineIndex(Message.WParam); break;
       case EM_LINELENGTH:     Message.Result = getLineLength(Message.WParam); break;
       case EM_REPLACESEL:     Message.Result = replaceSel(Message.LParam); break;
@@ -229,6 +237,20 @@ class HRichEdit extends HControl
         super.dispatch(elem, Message);
         break;
     }
+  }
+
+  String getText()
+  {
+    return client.innerHtml ?? '';
+  }
+
+  int setText(String data)
+  {
+    if(data.isEmpty)
+      client.innerHtml = EMPTY_DATA;
+    else
+      client.innerHtml = data;
+    return 0;
   }
 
   int getLine(int ndx, TPointer<String> str)
