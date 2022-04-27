@@ -196,6 +196,7 @@ abstract class Windows
 
     int? hitType;
     Point? downPos;
+    RECT?  downBounds;
 
 
     dynamic doDragStart(Event _event)
@@ -307,21 +308,19 @@ abstract class Windows
 
       if(_capture != null && downPos!=null && hitType!=Windows.HTCLIENT)
       {
-        var hWnd = _capture==null? null : HWND.findWindow(_capture!);
-        if(hWnd is !HWND)
+        var hWnd = HWND.findWindow(_capture!);
+        if(hWnd == null)
           return;
 
+        if(downBounds==null)
+          downBounds = hWnd.handle.offsetRect;
         var dx = (event.client.x - downPos!.x).truncate();
         var dy = (event.client.y - downPos!.y).truncate();
 
-        if(dx+dy==0)
-          return;
-
-        downPos = event.client;
+        var rect = RECT.from(downBounds!);
 
         UINT flags = Windows.SWP_NOACTIVATE | Windows.SWP_NOZORDER;
 
-        var rect = hWnd.handle.offsetRect;
         switch(hitType)
         {
           case Windows.HTBOTTOMLEFT:   rect.left+=dx;   rect.bottom+=dy; break;
@@ -347,8 +346,6 @@ abstract class Windows
             return;
         }
         Windows.SetWindowPos(hWnd, null, rect.left, rect.top, rect.width, rect.height, flags);
-
-
       }
 
       doMouseEvent(_event, [WM_MOUSEMOVE, WM_MOUSEMOVE, WM_MOUSEMOVE]);
@@ -372,6 +369,7 @@ abstract class Windows
       if(event.button == 0) // hittest
       {
         downPos = event.client;
+        downBounds = null;
         hitType = mh.type;
         _capture = mh.type==0? null : mh.elem;
       }
