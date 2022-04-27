@@ -36,6 +36,13 @@ final locale_en_EN =
         '${ TRichEditTools.ID_JUSTIFY_CENTER }': 'Justify right',
         '${ TRichEditTools.ID_JUSTIFY_RIGHT }': 'Justify center',
         '${ TRichEditTools.ID_JUSTIFY_FULL }': 'Justify',
+
+        '${ TRichEditTools.ID_CUT }': 'Cut',
+        '${ TRichEditTools.ID_COPY }': 'Copy',
+        '${ TRichEditTools.ID_PASTE }': 'Paste',
+
+        '${ TRichEditTools.ID_UNDO }': 'Undo',
+        '${ TRichEditTools.ID_REDO }': 'Redo',
       }
     }
   },

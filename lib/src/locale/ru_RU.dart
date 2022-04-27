@@ -36,6 +36,13 @@ final locale_ru_RU =
         '${ TRichEditTools.ID_JUSTIFY_CENTER }': 'По центру',
         '${ TRichEditTools.ID_JUSTIFY_RIGHT }': 'По правому краю',
         '${ TRichEditTools.ID_JUSTIFY_FULL }': 'По ширине',
+
+        '${ TRichEditTools.ID_CUT }': 'Вырезать',
+        '${ TRichEditTools.ID_COPY }': 'Копировать',
+        '${ TRichEditTools.ID_PASTE }': 'Вставить',
+
+        '${ TRichEditTools.ID_UNDO }': 'Отменить',
+        '${ TRichEditTools.ID_REDO }': 'Вернуть',
       }
     }
   },
