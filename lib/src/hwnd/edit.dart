@@ -70,30 +70,42 @@ class HEdit extends HCustomControl
 
     input.owner = this;
 
-    WNDPROC? defproc;
-    defproc = Windows.ChangeWindowProc(this, (elem, message)
-    { // mainproc
-      switch(message.Msg)
-      {
-        case WM_GETTEXT:
-          message.Result = input.value;
-          break;
-
-        case WM_SETTEXT:
-          input.value = message.LParam;
-          break;
-
-        default:
-          defproc!(elem, message);
-          break;
-      }
-    });
-
   }
 
   void release()
   {
     input.remove();
     super.release();
+  }
+
+  void dispatch(Element elem, TMessage message)
+  {
+    switch(message.Msg)
+    {
+      case WM_GETTEXT:
+        message.Result = input.value;
+        break;
+
+      case WM_SETTEXT:
+        input.value = message.LParam;
+        break;
+
+      case EM_GETSEL:
+        var res = message.WParam as Integer;
+        res.Value =  input.selectionStart ?? 0;
+        message.Result = 0;
+        break;
+
+      case EM_SETSEL:
+        input.selectionStart = message.WParam;
+        input.selectionEnd = message.LParam;
+        message.Result = 0;
+        break;
+
+      default:
+        super.dispatch(elem, message);
+        break;
+    }
+
   }
 }
