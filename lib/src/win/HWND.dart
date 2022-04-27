@@ -305,7 +305,8 @@ void _default_element_proc(Element elem, TMessage Message)
 
   if(Message.Msg is EDIT_MESSAGE)
   {
-    _default_text_area_proc(elem as TextAreaElement, Message);
+    if(elem is TextAreaElement)
+      _default_text_area_proc(elem, Message);
     return;
   }
 
