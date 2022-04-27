@@ -14,6 +14,7 @@ class TTabControls extends TTabSheet
     return TBevel(prnt)
       ..Flex.BreakBefore = true
       ..Flex.Grow = 1
+      ..Flex.SetMargin(0, 5, 0, 0)
       ..Height = 5
       ..Shape = TBevelShape.TopLine;
   }

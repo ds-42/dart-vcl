@@ -46,6 +46,7 @@ class TMainForm extends TForm
     BuildFlexControlsPage(pages);
     BuildDialogsPage(pages);
     BuildDataSetPage(pages);
+    BuildRichEditPage(pages);
 
 
     var status = TStatusBar(this);

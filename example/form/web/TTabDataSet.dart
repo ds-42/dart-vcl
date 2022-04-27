@@ -7,7 +7,10 @@ TTabSheet BuildDataSetPage(TPageControl pages)
     ..PageControl = pages;
 }
 
-enum TUserAction { Append, Change, Copy, Delete }
+const taAppend = TUserAction('Append');
+const taChange = TUserAction('Change');
+const taCopy   = TUserAction('Copy');
+const taDelete = TUserAction('Delete');
 
 class TTabDataSet extends TTabSheet
 {
@@ -15,23 +18,31 @@ class TTabDataSet extends TTabSheet
 
   TTabDataSet(TPageControl pages) : super(pages)
   {
-    TButton CreateToolButton(TUserAction action, String caption, String hint)
+    TSpeedButton CreateToolButton(TUserAction action, String hint)
     {
-      return TButton(this)
-        ..Caption=caption
+      TAsset tools = Assets['app/tools'];
+      var btn = TSpeedButton(this)
+//        ..Caption=caption
+        ..Glyph.src = tools['$action'].data
+        ..NumGlyphs = 0
         ..ShowHint = true
+        ..SetSize(30, 30)
         ..Hint = hint
+
         ..OnClick = (Sender) => DoAction(action);
+      return btn;
     }
     // tools
     TFlexBox(this)
       ..Align = TAlign.Top
       ..Parent = this
+      ..FlexItems.SetMargin(1, 1, 1, 1)
       ..Add([
-        CreateToolButton(TUserAction.Append, 'Append', 'Append record'),
-        CreateToolButton(TUserAction.Change, 'Change', 'Change record'),
-        CreateToolButton(TUserAction.Copy,   'Copy',   'Copy record'),
-        CreateToolButton(TUserAction.Delete, 'Delete', 'Delete record'),
+        CreateToolButton(taAppend, 'Append record'),
+        CreateToolButton(taCopy,   'Copy record'),
+        CreateToolButton(taChange, 'Change record'),
+        CreateToolButton(taDelete, 'Delete record')
+          ..Flex.MarginLeft = 10,
       ]);
 
     // define dataset
@@ -56,6 +67,8 @@ class TTabDataSet extends TTabSheet
     AppendRecord(2, 'Petrov',  'Petr', 'Petrovich');
     AppendRecord(3, 'Sidorov', 'Sidr', 'Sidorov');
 
+    pers.First();
+
     var ds = TDataSource(this);
     ds.DataSet = pers;
 
@@ -67,12 +80,12 @@ class TTabDataSet extends TTabSheet
       ..DataSource = ds
       ..DBOptions+= DBGridOptions.RowSelect
       ..Parent = this
-      ..OnDblClick = (Sender) => DoAction(TUserAction.Change);
+      ..OnDblClick = (Sender) => DoAction(taChange);
   }
 
   void DoAction(TUserAction action) async
   {
-    if(action==TUserAction.Delete)
+    if(action==taDelete)
     {
       if(pers.IsEmpty())
         return;
@@ -110,22 +123,22 @@ class TTabDataSet extends TTabSheet
           ..Caption = 'OK',
       ]);
 
-    if(action==TUserAction.Change && pers.IsEmpty())
-      action==TUserAction.Append;
+    if(action==taChange && pers.IsEmpty())
+      action==taAppend;
 
-    if(action != TUserAction.Append)
+    if(action != taAppend)
     {
       Surname.Text = pers['Surname'];
       Name.Text = pers['Name'];
       Patronymic.Text = pers['Patronymic'];
     }
 
-    dlg.Caption = action == TUserAction.Change? 'Change record' : 'Append record';
+    dlg.Caption = action == taChange? 'Change record' : 'Append record';
 
     dlg.AutoSize = true;
     if(await dlg.ShowModal() == TModalResult.Ok)
     {
-      action == TUserAction.Change? pers.Edit() : pers.Append();
+      action == taChange? pers.Edit() : pers.Append();
       pers['Surname'] = Surname.Text;
       pers['Name'] = Name.Text;
       pers['Patronymic'] = Patronymic.Text;

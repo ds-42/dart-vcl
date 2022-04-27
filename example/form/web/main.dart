@@ -1,8 +1,10 @@
 library demo;
 
+import 'dart:async';
 import 'dart:html';
 import 'package:vcl/vcl.dart';
 
+part 'assets.dart';
 part 'TDataMap.dart';
 part 'TFlexDialog.dart';
 part 'TExceptionDialog.dart';
@@ -15,11 +17,13 @@ part 'TTabControls.dart';
 part 'TTabDialogs.dart';
 part 'TTabFlexControls.dart';
 part 'TTabPanels.dart';
+part 'TTabRichEdit.dart';
 part 'TTabDataSet.dart';
 
 void main() async
 {
   Locale.select(TLocale.ENGLISH);
+  def_assets();
 
   Application.Title = 'dart-vcl';
   Application.TryBlock(() async
