@@ -109,5 +109,19 @@ class HPopupControl extends HCustomControl
   {
   }
 
+  void dispatch(Element elem, TMessage Message)
+  {
+    switch(Message.Msg)
+    {
+      case WM_CREATE:
+        Message.Result = 0;
+        break;
+
+      default:
+        super.dispatch(elem, Message);
+        break;
+    }
+  }
+
 }
 
