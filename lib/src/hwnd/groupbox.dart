@@ -36,6 +36,7 @@ class HGroupBox extends HControl
       ..top = '1px'
       ..right = '1px'
       ..bottom = '1px';
+    client.owner = this;
 
 
   }
