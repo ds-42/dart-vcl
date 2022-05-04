@@ -7,6 +7,8 @@ class TDateTimeBase
 
 	String toString() => TDateTime(this).toString();
 
+	String toJson() => TDateTime(this).toString();
+
 	bool operator == (Object other) => other is TDateTimeBase && Val==other.Val;
 }
 
