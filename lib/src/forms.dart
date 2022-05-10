@@ -1068,8 +1068,10 @@ class TCustomForm extends TScrollingWinControl
     }
   }
 
-  void SendCancelMode(TControl Sender)
+  void SendCancelMode(TControl? Sender)
   {
+    if(Active && (ActiveControl != null))
+      ActiveControl!.Perform(CM_CANCELMODE, 0, Sender);
 
   }
 
