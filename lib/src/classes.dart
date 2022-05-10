@@ -17,12 +17,15 @@ typedef void TCanResizeEvent(TObject Sender, Integer NewWidth, Integer NewNeight
 // Text alignment types
 enum TAlignment { LeftJustify, RightJustify, Center }
 
+enum TBiDiMode { LeftToRight, RightToLeft, RightToLeftNoAlign, RightToLeftReadingOnly }
+
 // Types used by standard events
 enum ShiftStates { Shift, Alt, Ctrl, Left, Right, Middle, Double }
 
 typedef TShiftState = Set<ShiftStates>;
 
 
+typedef THelpContext = int;
 
 class TShortCut extends TEnum
 {

@@ -55,8 +55,9 @@ class TCustomMessage
   dynamic get WParam => handle.WParam;
   dynamic get LParam => handle.LParam;
 
-  dynamic get Result => handle.Result;
-  void set Result(dynamic Value) => handle.Result = Value;
+  dynamic
+	  get Result => handle.Result;
+    set Result(dynamic Value) => handle.Result = Value;
 
   TCustomMessage(this.handle);
   String toString() => 'type: $runtimeType, msg: $Msg, wParam: $WParam, lParam: $LParam';
@@ -111,6 +112,20 @@ class TWMCommand extends TCustomMessage
 
   TWMCommand(TMessage message) : super(message);
 }
+
+class TWMContextMenu extends TCustomMessage
+{
+	HWND? get hWnd => WParam as HWND?;
+	TPoint get Pos
+	{
+		if(LParam is POINT)
+			return TPoint.from(LParam);
+		return TPoint();
+	}
+
+	TWMContextMenu(TMessage message) : super(message);
+}
+
 
 class TWMGetMinMaxInfo extends TCustomMessage
 {
@@ -192,6 +207,7 @@ const MESSAGE WM_SETFONT             = MESSAGE(0x0030, 'WM_SETFONT');
 const MESSAGE WM_WINDOWPOSCHANGING   = MESSAGE(0x0046, 'WM_WINDOWPOSCHANGING'); // wParam: null, lParam TElementPos
 const MESSAGE WM_WINDOWPOSCHANGED    = MESSAGE(0x0047, 'WM_WINDOWPOSCHANGED'); // wParam: null, lParam TElementPos
 const MESSAGE WM_NOTIFY              = MESSAGE(0x004E, 'WM_NOTIFY');
+const MESSAGE WM_CONTEXTMENU         = MESSAGE(0x007B, 'WM_CONTEXTMENU');
 const MESSAGE WM_NCCREATE            = MESSAGE(0x0081, 'WM_NCCREATE');
 const MESSAGE WM_NCDESTROY           = MESSAGE(0x0082, 'WM_NCDESTROY');
 const MESSAGE WM_NCCALCSIZE          = MESSAGE(0x0083, 'WM_NCCALCSIZE');

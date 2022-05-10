@@ -7,6 +7,9 @@ class EMenuError extends TException
 }
 
 
+enum TPopupAlignment { Left, Right, Center }
+
+
 void _menu_error(var ResStr)
 {
   throw EMenuError.CreateRes(ResStr);
@@ -29,6 +32,8 @@ int UniqueCommand()
 
 class TMenuItem extends TComponent
 {
+  static const cLineCaption = '-';
+
   String _caption = '';
   String
     get Caption => _caption;
@@ -45,6 +50,9 @@ class TMenuItem extends TComponent
   {
     if(_handle == null)
     {
+      if(Owner is TMainMenu)
+        _handle = HMAINMENU();
+      else
       if(Owner is TPopupMenu)
         _handle = Windows.CreatePopupMenu();
       else
@@ -137,13 +145,33 @@ class TMenuItem extends TComponent
 
   int _command = 0;
   int get Command => _command;
-    
+
+  THelpContext _helpContext = 0;
+  THelpContext
+    get HelpContext => _helpContext;
+    set HelpContext(THelpContext Value) => _helpContext = Value;
+
+  String _hint = '';
+  String
+    get Hint => _hint;
+    set Hint(String Value) => _hint = Value;
 
   final _items = <TMenuItem>[];
 
   late final TItems<TMenuItem> Items;
 
 
+
+  TShortCut _shortCut = TShortCut.None;
+  TShortCut
+    get ShortCut => _shortCut;
+    set ShortCut(TShortCut Value)
+    {
+      if(_shortCut == Value)
+        return;
+      _shortCut = Value;
+      MenuChanged(true);
+    }
 
 
   TMenuItem? _parent;
@@ -329,7 +357,6 @@ class TMenuItem extends TComponent
     return item;
   }
 
-
   void Remove(TMenuItem Item)
   {
     int i = IndexOf(Item);
@@ -345,7 +372,7 @@ class TMenuItem extends TComponent
       Source = null;
     else
       Source = this;
-    
+
   }
 
 
@@ -369,7 +396,6 @@ class TMenu extends TComponent
 
   HMENU GetHandle() => Items.Handle;
 
-
   late final TMenuItem Items;
 
   HForm? _windowHandle;
@@ -387,12 +413,25 @@ class TMenu extends TComponent
 
 
 
+    bool _parentBiDiMode = true;
+    bool
+      get ParentBiDiMode => _parentBiDiMode;
+      set ParentBiDiMode(bool Value)
+      {
+        if(_parentBiDiMode == Value)
+          return;
+
+        _parentBiDiMode = Value;
+        ParentBiDiModeChanged();
+      }
+
   TMenu(TComponent? AOwner) : super(AOwner)
   {
     Items = TMenuItem(this);
 
     Items._menu = this;
 
+    ParentBiDiModeChanged();
   }
 
   void Destroy()
@@ -414,9 +453,49 @@ class TMenu extends TComponent
   }
 
 
+
+  void DoBiDiModeChanged()
+  {
+
+  }
+
   bool IsRightToLeft()
   {
     return false; 
+  }
+
+
+
+  TBiDiMode _biDiMode = TBiDiMode.LeftToRight;
+  TBiDiMode
+    get BiDiMode => _biDiMode;
+    set BiDiMode(TBiDiMode Value)
+    {
+      if(_biDiMode == Value)
+        return;
+      _biDiMode = Value;
+      _parentBiDiMode = false;
+      DoBiDiModeChanged();
+    }
+
+  void ParentBiDiModeChanged()
+  {
+    if(!_parentBiDiMode)
+      return;
+    var AForm = FindControl(WindowHandle);
+    if(AForm != null)
+    {
+      BiDiMode = AForm.BiDiMode;
+      _parentBiDiMode = true;
+    }
+  }
+
+  void ParentBiDiModeChangedEx(TObject AControl) // changed name
+  {
+    if(!_parentBiDiMode)
+      return;
+    BiDiMode = (AControl as TControl).BiDiMode;
+    _parentBiDiMode = true;
   }
 
 
@@ -458,21 +537,115 @@ class TMainMenu extends TMenu
 class TPopupMenu extends TMenu
 {
 
+  TPoint _popupPoint = TPoint(-1, -1);
+  TPoint get PopupPoint => _popupPoint;
+
+  TPopupAlignment  _alignment = TPopupAlignment.Left;
+  TPopupAlignment
+    get Alignment => _alignment;
+    set Alignment(TPopupAlignment Value) => _alignment = Value;
+
+  bool _autoPopup = true;
+  bool
+    get AutoPopup => _autoPopup;
+    set AutoPopup(bool Value) => _autoPopup = Value;
+
+  TComponent? _popupComponent;
+  TComponent?
+    get PopupComponent => _popupComponent;
+    set PopupComponent(TComponent? Value) => _popupComponent = Value;
+
+  TNotifyEvent? _onPopup;
+  TNotifyEvent?
+    get OnPopup => _onPopup;
+    set OnPopup(TNotifyEvent? Value) => _onPopup = Value;
+
+
 
   TPopupMenu(TComponent owner) : super(owner)
   {
-    
-
+    Items.OnClick = DoPopup; 
   }
 
   void Destroy()
-  {
-    
+  { 
     super.Destroy();
   }
 
+  void DoPopup(TObject Sender)
+  {
+    if(_onPopup!=null) _onPopup!(Sender);
+  }
+
+
+
+  void Popup(int X, int Y)
+  {
+
+
+    _popupPoint = TPoint(X, Y);
+
+    DoPopup(this);
+
+    Windows.TrackPopupMenu(Items.Handle, 0/*AFlags*/, X, Y, 0 /* reserved */, HWND_DESKTOP/*PopupList.Window*/, null);
+  }
+}
+
+// Menu building functions
+
+void InitMenuItems(TMenu AMenu, List<TMenuItem> Items)
+{
 
 }
+
+TMainMenu NewMenu(TComponent Owner, String AName, List<TMenuItem> Items)
+{
+  var Result = TMainMenu(Owner);
+  Result.Name = AName;
+  InitMenuItems(Result, Items);
+  return Result;
+}
+
+TPopupMenu NewPopupMenu(TComponent Owner, String AName, TPopupAlignment Alignment, bool AutoPopup, List<TMenuItem> Items)
+{
+  var Result = TPopupMenu(Owner);
+  Result.Name = AName;
+  Result.AutoPopup = AutoPopup;
+  Result.Alignment = Alignment;
+  InitMenuItems(Result, Items);
+  return Result;
+}
+
+TMenuItem NewSubMenu(String ACaption, THelpContext hCtx, String AName, List<TMenuItem> Items, bool AEnabled)
+{
+  var Result = TMenuItem(null);
+  for(var item in Items)
+    Result.Add(item);
+  Result.Caption = ACaption;
+  Result.HelpContext = hCtx;
+  Result.Name = AName;
+  Result.Enabled = AEnabled;
+  return Result;
+}
+
+TMenuItem NewItem(String ACaption, TShortCut AShortCut, bool AChecked, bool AEnabled, TNotifyEvent AOnClick, THelpContext hCtx, String AName)
+{
+  return TMenuItem(null)
+    ..Caption = ACaption
+    ..ShortCut = AShortCut
+    ..OnClick = AOnClick
+    ..HelpContext = hCtx
+    ..Checked = AChecked
+    ..Enabled = AEnabled
+    ..Name = AName;
+}
+
+TMenuItem NewLine()
+{
+  return TMenuItem(null)
+    ..Caption = TMenuItem.cLineCaption;
+}
+
 
 
 

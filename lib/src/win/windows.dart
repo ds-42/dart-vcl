@@ -146,6 +146,7 @@ abstract class Windows
 
   // dispatch table
   static dynamic _doBlur;
+  static dynamic _doContextMenu;
   static dynamic _doCopy;
   static dynamic _doCut;
   static dynamic _doDblClick;
@@ -282,22 +283,22 @@ abstract class Windows
       Element? elem = ElemFromEvent(event);
 
 
-      POINT clientPos;
+      int px = event.client.x.toInt();
+      int py = event.client.y.toInt();
+      var clientPos = POINT(px, py);
+
       var hWnd = HWND.findWindow(elem);
       if(hWnd==null)
       {
         var r= elem.borderRect;
-        int px = event.client.x.toInt()-r.left;
-        int py = event.client.y.toInt()-r.top;
-        clientPos = POINT(px, py);
+        clientPos.x-=r.left;
+        clientPos.y-=r.top;
       }
       else
-      {
-        clientPos = POINT(event.client.x.toInt(), event.client.y.toInt());
         Windows.ScreenToClient(hWnd, clientPos);
-      }
 
-      SendElementMessage(elem, types[event.button], MouseEventToShiftState(event), clientPos);
+      MESSAGE msg = types[event.button];
+      SendElementMessage(elem, msg, MouseEventToShiftState(event), clientPos);
     }
 
     dynamic doMouseMove(Event _event)
@@ -351,8 +352,14 @@ abstract class Windows
       doMouseEvent(_event, [WM_MOUSEMOVE, WM_MOUSEMOVE, WM_MOUSEMOVE]);
     }
 
+
     dynamic doMouseDown(Event _event)
     {
+      var menu = HMENU.findRoot(_event.target as Element);
+      if(menu==null || menu!=_activePopup)
+        _cancelPopup();
+
+
       _capture = null;
       downPos = null;
       _mouseHit? mh = _mouseHit.fromEvent(_event as MouseEvent);
@@ -366,6 +373,7 @@ abstract class Windows
       }
 
       MouseEvent event = _event;
+
       if(event.button == 0) // hittest
       {
         downPos = event.client;
@@ -402,6 +410,28 @@ abstract class Windows
       _capture = null;
       hitType = 0;
 
+
+    }
+
+    dynamic doContextMenu(Event _event)
+    {
+      var root = HMENU.findRoot(_event.target as Element);
+      if(root!=null)
+      {
+        _event.preventDefault();
+        return;
+      }
+
+      var event = _event as PointerEvent;
+      var hwnd = HWND.findWindow(event.target as Element);
+      if(hwnd == null)
+        return;
+
+      var pt = POINT(event.client.x.toInt(), event.client.y.toInt());
+      var res = SendMessage(hwnd, WM_CONTEXTMENU, hwnd, pt);
+
+      if(res==null) _cancelPopup();
+      else          _event.preventDefault();
     }
 
     dynamic doDblClick(Event _event)
@@ -580,26 +610,27 @@ abstract class Windows
 
     }
 
-    window.addEventListener('blur',       doBlur,       true); _doBlur = doBlur;
-    window.addEventListener('copy',       doCopy,       true); _doCopy = doCopy;
-    window.addEventListener('cut',        doCut,        true); _doCut = doCut;
-    window.addEventListener('dblclick',   doDblClick,   true); _doDblClick = doDblClick;
-    window.addEventListener('dragstart',  doDragStart,  true); _doDragStart = doDragStart;
-    window.addEventListener('focus',      doFocus,      true); _doFocus = doFocus;
-    window.addEventListener('keydown',    doKeyDown,    true); _doKeyDown = doKeyDown;
-    window.addEventListener('keypress',   doKeyPress,   true); _doKeyPress = doKeyPress;
-    window.addEventListener('keyup',      doKeyUp,      true); _doKeyUp = doKeyUp;
-    window.addEventListener('mousedown',  doMouseDown,  true); _doMouseDown = doMouseDown;
-    window.addEventListener('mousemove',  doMouseMove,  true); _doMouseMove = doMouseMove;
-    window.addEventListener('mouseover',  doMouseOver,  true); _doMouseOver = doMouseOver;
-    window.addEventListener('mouseout',   doMouseOut,   true); _doMouseOut = doMouseOut;
-    window.addEventListener('mouseup',    doMouseUp,    true); _doMouseUp = doMouseUp;
-    window.addEventListener('mousewheel', doMouseWhell, true); _doMouseWhell = doMouseWhell;
+    window.addEventListener('blur',        doBlur,        true); _doBlur = doBlur;
+    window.addEventListener('contextmenu', doContextMenu, true); _doContextMenu = doContextMenu;
+    window.addEventListener('copy',        doCopy,        true); _doCopy = doCopy;
+    window.addEventListener('cut',         doCut,         true); _doCut = doCut;
+    window.addEventListener('dblclick',    doDblClick,    true); _doDblClick = doDblClick;
+    window.addEventListener('dragstart',   doDragStart,   true); _doDragStart = doDragStart;
+    window.addEventListener('focus',       doFocus,       true); _doFocus = doFocus;
+    window.addEventListener('keydown',     doKeyDown,     true); _doKeyDown = doKeyDown;
+    window.addEventListener('keypress',    doKeyPress,    true); _doKeyPress = doKeyPress;
+    window.addEventListener('keyup',       doKeyUp,       true); _doKeyUp = doKeyUp;
+    window.addEventListener('mousedown',   doMouseDown,   true); _doMouseDown = doMouseDown;
+    window.addEventListener('mousemove',   doMouseMove,   true); _doMouseMove = doMouseMove;
+    window.addEventListener('mouseover',   doMouseOver,   true); _doMouseOver = doMouseOver;
+    window.addEventListener('mouseout',    doMouseOut,    true); _doMouseOut = doMouseOut;
+    window.addEventListener('mouseup',     doMouseUp,     true); _doMouseUp = doMouseUp;
+    window.addEventListener('mousewheel',  doMouseWhell,  true); _doMouseWhell = doMouseWhell;
     window.addEventListener('selectionchange', doSelectionChange, true); _doSelectionChange = doSelectionChange;
-    window.addEventListener('paste',      doPaste,      true); _doPaste = doPaste;
-    window.addEventListener('touchstart', doTouchStart, true); _doTouchStart = doTouchStart;
-    window.addEventListener('touchmove',  doTouchMove,  true); _doTouchMove = doTouchMove;
-    window.addEventListener('touchend',   doTouchEnd,   true); _doTouchEnd = doTouchEnd;
+    window.addEventListener('paste',       doPaste,       true); _doPaste = doPaste;
+    window.addEventListener('touchstart',  doTouchStart,  true); _doTouchStart = doTouchStart;
+    window.addEventListener('touchmove',   doTouchMove,   true); _doTouchMove = doTouchMove;
+    window.addEventListener('touchend',    doTouchEnd,    true); _doTouchEnd = doTouchEnd;
 
 
   }
@@ -610,6 +641,7 @@ abstract class Windows
       return;
 
     _doBlur.cancel();
+    _doContextMenu.cancel();
     _doCopy.cancel();
     _doDblClick.cancel();
     _doDragStart.cancel();
@@ -630,6 +662,25 @@ abstract class Windows
     _doTouchEnd.cancel();
 
     _active = false;
+  }
+
+  static HPOPUPMENU? _activePopup;
+
+  static void _selectPopup(HPOPUPMENU? menu)
+  {
+    if(_activePopup == menu)
+      return;
+    _cancelPopup();
+    _activePopup = menu;
+  }
+
+  static void _cancelPopup()
+  {
+    if(_activePopup==null)
+      return;
+//    _activePopup!.handle.style.visibility = null;
+    _activePopup!.handle.remove();
+    _activePopup = null;
   }
 
   static Element? ElemByChild(Element _elem)
@@ -1370,9 +1421,25 @@ abstract class Windows
   static int GetSystemMetrics(int nIndex) =>
     __sysparams.GetSystemMetrics(nIndex);
 
-  static HMENU CreateMenu() => HMENU(HMENU.MAINMENU);
+  static HMENU CreateMenu() => HMENU();
 
-  static HMENU CreatePopupMenu() => HMENU(HMENU.POPUPMENU);
+  static HMENU CreatePopupMenu() => HPOPUPMENU();
+
+  static BOOL TrackPopupMenu(HMENU hMenu, UINT uFlags, int x, int y, int nReserved, HWND hWnd, RECT? prcRect)
+  {
+    if(hMenu is !HPOPUPMENU)
+      return 0; /* FALSE */
+
+    _selectPopup(hMenu);
+
+    hMenu
+      ..style.left = '${x}px'
+      ..style.top = '${y}px'
+      ..handle.style.display = 'block';
+    document.body!.append(hMenu.handle);
+    return 1; /* TRUE */
+  }
+
 
   /*
    * DrawText() Format Flags

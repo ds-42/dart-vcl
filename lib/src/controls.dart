@@ -6,6 +6,7 @@ part of vcl;
 const MESSAGE CM_ACTIVATE            = MESSAGE(0xb000, 'CM_ACTIVATE');
 const MESSAGE CM_DEACTIVATE          = MESSAGE(0xb001, 'CM_DEACTIVATE');
 
+const MESSAGE CM_CANCELMODE          = MESSAGE(0xb004, 'CM_CANCELMODE');
 const MESSAGE CM_DIALOGKEY           = MESSAGE(0xb005, 'CM_DIALOGKEY');
 const MESSAGE CM_DIALOGCHAR          = MESSAGE(0xb006, 'CM_DIALOGCHAR');
 const MESSAGE CM_FOCUSCHANGED        = MESSAGE(0xb007, 'CM_FOCUSCHANGED');
@@ -50,6 +51,9 @@ const MESSAGE CM_INVALIDATE          = MESSAGE(0xb034, 'CM_INVALIDATE');
 
 const MESSAGE CM_CONTROLCHANGE       = MESSAGE(0xb036, 'CM_CONTROLCHANGE');
 const MESSAGE CM_CHANGED             = MESSAGE(0xb037, 'CM_CHANGED'); // wParam: null, lParam: TControl
+
+const MESSAGE CM_BIDIMODECHANGED     = MESSAGE(0xb03c, 'CM_BIDIMODECHANGED');
+const MESSAGE CM_PARENTBIDIMODECHANGED = MESSAGE(0xb03d, 'CM_PARENTBIDIMODECHANGED');
 
 const MESSAGE CM_HINTSHOWPAUSE       = MESSAGE(0xb041, 'CM_HINTSHOWPAUSE');
 
@@ -814,6 +818,21 @@ class TControl extends TComponent
   void set Constraints(TSizeConstraints Value) => _constraints=Value;
 
 
+  TPopupMenu? _popupMenu;
+
+  TPopupMenu?
+    get PopupMenu => _popupMenu;
+    set PopupMenu(TPopupMenu? Value)
+    {
+      _popupMenu = Value;
+      if(Value != null)
+      {
+        Value.ParentBiDiModeChangedEx(this);
+        Value.FreeNotification(this);
+      }
+    }
+
+  TPopupMenu? GetPopupMenu() => _popupMenu;
 
   String _hint = "";
   String get Hint => _hint;
@@ -979,6 +998,18 @@ class TControl extends TComponent
   }
 
 
+
+  void Notification(TComponent AComponent, TOperation Operation)
+  {
+    super.Notification(AComponent, Operation);
+    if(Operation == TOperation.Remove)
+      if(AComponent == PopupMenu)
+        PopupMenu = null;
+      else
+      if(AComponent == Action)
+        Action == null;
+  }
+
   void MoveTo(int ALeft, int ATop) => SetBounds(ALeft, ATop, Width, Height); // new
   void SetSize(int AWidth, int AHeight) => SetBounds(Left, Top, AWidth, AHeight); // new
 
@@ -1088,7 +1119,7 @@ class TControl extends TComponent
     return TPoint(point.x - origin.x, point.y - origin.y);
   }
 
-  void SendCancelMode(TControl Sender)
+  void SendCancelMode(TControl? Sender)
   {
     TControl? Control = this;
     while(Control != null)
@@ -1117,6 +1148,18 @@ class TControl extends TComponent
     Perform(CM_TEXTCHANGED, 0, 0);
   }
 
+  TBiDiMode _biDiMode = TBiDiMode.LeftToRight;
+  TBiDiMode
+    get BiDiMode => _biDiMode;
+    set BiDiMode(TBiDiMode Value)
+    {
+      if(_biDiMode == Value)
+        return;
+
+      _biDiMode = Value;
+      _parentBiDiMode = false;
+      Perform(CM_BIDIMODECHANGED, 0, 0);
+    }
 
   void FontChanged(TObject Sender)
   {
@@ -1152,7 +1195,18 @@ class TControl extends TComponent
       Perform(CM_PARENTCOLORCHANGED, 0, 0);
   }
 
+  bool _parentBiDiMode = true;
+  bool
+    get ParentBiDiMode => _parentBiDiMode;
+    set ParentBiDiMode(bool Value)
+    {
+      if(_parentBiDiMode == Value)
+        return;
 
+      _parentBiDiMode = Value;
+      if((_parent != null) && !(ComponentState.contains(ComponentStates.Reading)))
+        Perform(CM_PARENTBIDIMODECHANGED, 0, 0);
+    }
 
   TCursor _cursor = TCursor.Default;
   TCursor
@@ -1454,6 +1508,7 @@ class TControl extends TComponent
       case CM_VISIBLECHANGED:        _cmVisibleChanged(Message); break;
 
       case WM_COMMAND:               _wmCommand(TWMCommand(Message)); break;
+      case WM_CONTEXTMENU:           _wmContextMenu(TWMContextMenu(Message)); break;
       case WM_LBUTTONDOWN:           _wmLButtonDown(TWMMouse(Message)); break;
       case WM_LBUTTONUP:             _wmLButtonUp(TWMMouse(Message)); break;
       case WM_LBUTTONDBLCLK:         _wmLButtonDblClick(TWMMouse(Message)); break;
@@ -1574,7 +1629,6 @@ class TControl extends TComponent
       else
         MouseDown(Button, Shift, Message.XPos, Message.YPos);
   }
-
 
 
   bool CheckNewSize(Integer NewWidth,  Integer NewHeight)
@@ -1712,6 +1766,11 @@ class TControl extends TComponent
       ActionLink!.Update();
   }
 
+  void DoContextPopup(TPoint MousePos, TPointer<bool> Handled)
+  {
+//    if Assigned(FOnContextPopup) then FOnContextPopup(Self, MousePos, Handled);
+  }
+
 
 
   ///  C O N T R O L   M E S S A G E S ///
@@ -1830,6 +1889,53 @@ class TControl extends TComponent
   void _wmCommand(TWMCommand Message)
   {
     if(!TWinControl.DoControlMsg(Message.Ctl, Message.handle))
+      super.Dispatch(Message.handle);
+  }
+
+  void _wmContextMenu(TWMContextMenu Message)
+  {
+    if(Message.Result != 0 && Message.Result!=null)
+      return;
+
+    if(ComponentState.contains(ComponentStates.Designing))
+    {
+      super.Dispatch(Message.handle);
+      return;
+    }
+
+    TPoint Temp;
+    TPoint Pt = Message.Pos; // SmallPointToPoint(Message.Pos);
+    if(Pt.isInvalid)
+      Temp = TPoint.from(Pt);
+    else
+    {
+      Temp = ScreenToClient(Pt);
+      if(!PtInRect(ClientRect, Temp))
+      {
+        super.Dispatch(Message.handle);
+        return;
+      }
+    }
+
+    var Handled = TPointer(false);
+    DoContextPopup(Temp, Handled);
+    Message.Result = Handled.Value? 1 : 0;// Ord(Handled);
+    if(Handled.Value)
+      return;
+
+    var PopupMenu = GetPopupMenu();
+
+    if((PopupMenu != null) && PopupMenu.AutoPopup)
+    {
+      SendCancelMode(null);
+      PopupMenu.PopupComponent = this;
+      if(Pt.isInvalid)
+        Pt = ClientToScreen(TPoint());
+      PopupMenu.Popup(Pt.x, Pt.y);
+      Message.Result = 1;
+    }
+
+    if(Message.Result==0 || Message.Result==null)
       super.Dispatch(Message.handle);
   }
 
