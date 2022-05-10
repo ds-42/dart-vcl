@@ -84,7 +84,9 @@ class POINT
     y = pt.y;
   }
 
-  double DistanceTo(POINT pt)
+  bool get isInvalid => (x == -1) && (y == -1);
+
+  double distanceTo(POINT pt)
   {
     return sqrt((x-pt.x)*(x-pt.x)+(y-pt.y)*(y-pt.y));
   }
@@ -450,6 +452,7 @@ class TItems<T> extends Iterable<T>
 
   TItems(this._getter, this._igetter, [this._setter]);
   TItems.from(TItems other) : this(other._getter, other._igetter, other._setter);
+  TItems.proxy(TItems other) : this(other._getter, () => ProxyIterator<T>(other.iterator), other._setter);
 
   T operator [](int index) => _getter(index);
   void operator []=(int index, T value) => _setter!(index, value);
@@ -457,6 +460,21 @@ class TItems<T> extends Iterable<T>
   @override
   Iterator<T> get iterator => _igetter();
 }
+
+
+class ProxyIterator<T> extends Iterator<T>
+{
+  final Iterator source;
+
+  ProxyIterator(this.source);
+
+  @override
+  T get current => source.current;
+
+  @override
+  bool moveNext() => source.moveNext();
+}
+
 
 class TPointer<T>
 {
