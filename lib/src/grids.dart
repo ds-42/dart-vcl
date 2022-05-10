@@ -834,6 +834,22 @@ class TCustomGrid extends TCustomControl
         while((Where.left < StopX) && (CurCol < ColCount))
         {
           Where.right = Where.left + GetColWidths(CurCol);
+
+          // define cell [CurRow, CurCol]
+          TableCellElement? cell;
+          int ci = CurCol;
+          if(ci>=DrawInfo.Horz.FixedCellCount)
+            ci-=DrawInfo.Horz.FirstGridCell-1;
+          if(CurRow<body.rows.length)
+          {
+            TableRowElement row = body.rows[CurRow];
+            if(ci<row.cells.length)
+            {
+              cell = row.cells[ci];
+              cell.style.display = Where.right > Where.left? null : 'none';
+            }
+          }
+
           if((Where.right > Where.left)/* && RectVisible(Canvas.Handle, Where)*/)
           {
             TGridDrawState DrawState = TGridDrawState();
@@ -843,15 +859,8 @@ class TCustomGrid extends TCustomControl
 
 
 
-              int ci = CurCol;
-              if(ci>=DrawInfo.Horz.FixedCellCount)
-                ci-=DrawInfo.Horz.FirstGridCell-1;
-              if(CurRow<body.rows.length)
-              {
-                TableRowElement row = body.rows[CurRow];
-                if(ci<row.cells.length)
-                  DrawCell(CreateGridCell(row.cells[ci], CurCol, CurRow, DrawState));
-              }
+              if(cell != null)
+                DrawCell(CreateGridCell(cell, CurCol, CurRow, DrawState));
 
           }
           Where.left = Where.right + DrawInfo.Horz.EffectiveLineWidth;

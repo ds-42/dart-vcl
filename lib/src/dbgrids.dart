@@ -599,7 +599,15 @@ class TDBGridColumns extends TCollection
 
   TDBGridColumns(this.Grid) : super((Sender) => TColumn())
   {
-    _columns = TItems<TColumn>.from(super.Items);
+    _columns = TItems<TColumn>.proxy(super.Items);
+  }
+
+  TColumn? operator [](String name)
+  {
+    for(var col in Items)
+      if(col.FieldName==name)
+        return col;
+    return null;
   }
 
   TColumn Add()
@@ -1442,9 +1450,9 @@ class TCustomDBGrid extends TCustomGrid
 ;
     ResetColumnFieldBindings();
     _visibleColumns.clear();
-    for(int i = 0; i<Columns.Count; i++)
-      if(Columns.Items[i].Showing)
-        _visibleColumns.add(Columns.Items[i]);
+    for(var col in Columns.Items)
+      if(col.Showing)
+        _visibleColumns.add(col);
     ColCount = Columns.Count + _indicatorOffset;
     super.FixedCols = _indicatorOffset;
     _titleOffset = 0;
@@ -1453,11 +1461,11 @@ class TCustomDBGrid extends TCustomGrid
       _titleOffset = 1;
       if(DataLink.DataSet != null  /*&& _dataLink.DataSet.ObjectView*/)
       {
-        for(int i=0; i<Columns.Count; i++)
+        for(var col in Columns.Items)
         {
-          if(Columns.Items[i].Showing)
+          if(col.Showing)
           {
-            int j = Columns.Items[i].Depth();
+            int j = col.Depth();
             if(j>=_titleOffset)
               _titleOffset = j + 1;
           }
