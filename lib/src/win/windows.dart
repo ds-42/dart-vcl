@@ -430,8 +430,8 @@ abstract class Windows
       var pt = POINT(event.client.x.toInt(), event.client.y.toInt());
       var res = SendMessage(hwnd, WM_CONTEXTMENU, hwnd, pt);
 
-      if(res==null) _cancelPopup();
-      else          _event.preventDefault();
+      if(res==1) _event.preventDefault();
+      else _cancelPopup();
     }
 
     dynamic doDblClick(Event _event)
