@@ -896,6 +896,11 @@ class TControl extends TComponent
     get OnMouseUp => _onMouseUp;
     set OnMouseUp(TMouseEvent? Value) => _onMouseUp=Value;
 
+  TNotifyEvent? _onResize;
+  TNotifyEvent?
+    get OnResize => _onResize;
+    set OnResize(TNotifyEvent? Value) => _onResize = Value;
+
 
   TNotifyEvent? _onClick;
   TNotifyEvent?
@@ -993,8 +998,7 @@ class TControl extends TComponent
 
   void Resize()
   {
-
-
+    if(_onResize!=null) _onResize!(this);
   }
 
 
