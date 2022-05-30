@@ -365,6 +365,7 @@ class TTabSheet extends TWinControl
       try
       {
         Realign(); // see: TTabSheet.AlignControls
+//        AdjustSize();
         DoShow();
       }
       catch(e)
