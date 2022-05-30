@@ -237,8 +237,10 @@ class TCalcFlexParams
       marginRight   = Params.MarginRight ?? (FlexBox.FlexItems.MarginRight ?? 0);
       marginBottom  = Params.MarginBottom ?? (FlexBox.FlexItems.MarginBottom ?? 0);
 
-      MinWidth      = Control.Flex.MinWidth ?? FlexBox.FlexItems.MinWidth;
-      MaxWidth      = Control.Flex.MaxWidth ?? FlexBox.FlexItems.MaxWidth;
+      var wMin = Control.Flex.MinWidth ?? FlexBox.FlexItems.MinWidth;
+      var wMax = Control.Flex.MaxWidth ?? FlexBox.FlexItems.MaxWidth;
+      MinWidth      = Control.Flex.Width==null? wMin : null;
+      MaxWidth      = Control.Flex.Width==null? wMax : null;
       MinHeight     = Control.Flex.MinHeight ?? FlexBox.FlexItems.MinHeight;
       MaxHeight     = Control.Flex.MaxHeight ?? FlexBox.FlexItems.MaxHeight;
       ParamsWidth   = Params.Width;
@@ -370,6 +372,8 @@ class TFlexBox extends TWinControl
   {
 //    super.AlignControls(AControl, Rect);
     _flexProcessing();
+    if(Showing)
+      AdjustSize();
   }
 
   void FlexControls() => Realign();
