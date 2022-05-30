@@ -65,31 +65,6 @@ class TRichEditTools extends TWinControl
     {
       var hre = RichEdit!.Handle as HRichEdit;
 
-      if(id==ID_PASTE)
-      {
-        var queryOpts = { 'name': 'clipboard-read', 'allowWithoutGesture': false };
-        var permissionStatus = window.navigator.permissions!.query(queryOpts);
-        permissionStatus.then((val) async
-        {
-          if(val.state=='denied')
-          {
-            await ShowWarningMessage('Access denied');
-            return;
-          }
-          //print(val.state);
-
-          if(window.navigator.clipboard != null)
-          {
-            var res = window.navigator.clipboard!.readText();
-            res.then((data){
-              hre.execCommand('insertHtml', data);
-              print(data);
-            });
-          }
-        });
-        return;
-      }
-
       hre.execCommand(id.name);
     }
   }

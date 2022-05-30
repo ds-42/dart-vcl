@@ -47,6 +47,7 @@ class HRichEdit extends HControl
       ..spellcheck = false
       ..innerHtml = EMPTY_DATA
       ..owner = this;
+    props << WindowProp.ChildOwner;
 
     handle.append(client);
   }
@@ -201,8 +202,34 @@ class HRichEdit extends HControl
     return true;  /* eof */
   }
 
+
+  bool _useNativePaste = false;
+  bool
+    get useNativePaste => _useNativePaste;
+    set useNativePaste(bool val) => _useNativePaste = val;
+
   void execCommand(String command, [String value = ''])
   {
+    if(command=='paste' && useNativePaste==false)
+    {
+      var queryOpts = { 'name': 'clipboard-read', 'allowWithoutGesture': false };
+      var permissionStatus = window.navigator.permissions!.query(queryOpts);
+      permissionStatus.then((val) async
+      {
+        if(val.state=='denied')
+        {
+          await ShowWarningMessage('Access denied');
+          return;
+        }
+
+        if(window.navigator.clipboard != null)
+        {
+          var res = window.navigator.clipboard!.readText();
+          res.then((data) => execCommand('insertHtml', data) );
+        }
+      });
+    }
+
     client.focus();
     document.execCommand(command, false, value); 
   }
