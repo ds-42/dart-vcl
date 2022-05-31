@@ -108,5 +108,5 @@ part 'src/locale/ru_RU.dart';
 
 
 
-final String vcl_lib_version = '1.2.3';
-final DateTime vcl_lib_date = DateTime(2022, 04, 26);
+final String vcl_lib_version = '1.2.4';
+final DateTime vcl_lib_date = DateTime(2022, 05, 31);
