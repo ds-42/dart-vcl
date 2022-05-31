@@ -59,6 +59,46 @@ class HSelect extends HControl
   }
 
   HSelect() : super( SelectElement() );
+
+  void dispatch(Element elem, TMessage message)
+  {
+    switch(message.Msg)
+    {
+      case WM_CREATE:
+//        var cs = message.LParam as CREATESTRUCT;
+//        if(cs.style.and(Windows.WS_DISABLED))
+//          handle.setAttribute('disabled', '');
+        message.Result = 0;
+        break;
+
+      case LB_GETCURSEL:
+        var select = handle as SelectElement;
+        message.Result = select.selectedIndex ?? -1;
+        break;
+
+      case LB_GETTEXTLEN:
+        String text = getText(message.WParam);
+        message.Result = text.length;
+        break;
+
+      case LB_GETTEXT:
+        message.Result = getText(message.WParam);
+        break;
+
+      default:
+        super.dispatch(elem, message);
+        break;
+    }
+  }
+
+  String getText(int ndx)
+  {
+    var select = handle as SelectElement;
+    int cnt = select.length ?? 0;
+    if(ndx>=0 && ndx<=cnt)
+      return select.options[ndx].label ?? '';
+    return '';
+  }
 }
 
 class HDateTimePick extends HControl 
