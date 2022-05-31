@@ -3,7 +3,7 @@ description: Create vcl form
 version: 1.0.0
 
 environment:
-  sdk: '>=2.16.1 <3.0.0'
+  sdk: '>=2.17.1 <3.0.0'
 
 # dependencies:
 #   path: ^1.7.0
