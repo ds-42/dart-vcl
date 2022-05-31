@@ -50,8 +50,9 @@ class TFlexDialog extends TForm
           ..Caption = 'Email',
 
         TBevel(this)
-           ..Shape = TBevelShape.TopLine
-           ..Height = 5,
+          ..Flex.BreakBefore = true
+          ..Shape = TBevelShape.TopLine
+          ..Height = 5,
 
         TButton(this)
           ..Flex.BreakBefore = true
