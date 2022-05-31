@@ -1,3 +1,9 @@
+## [1.2.4]
+- Support dart SDK 2.17.1
+- Updated vcl core
+- Updated win core
+- Added TPopupMenu
+
 ## [1.2.3]
 - Updated vcl core
 - Updated win core
