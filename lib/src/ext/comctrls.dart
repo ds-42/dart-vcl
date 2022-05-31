@@ -95,6 +95,7 @@ class TRichEditTools extends TWinControl
     Height = 30;
 
     FormatBand = __createBand()
+      ..Height = 26
       ..Add([
         __createButton(ID_BOLD),
         __createButton(ID_ITALIC),
