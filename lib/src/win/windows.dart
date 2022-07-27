@@ -1365,6 +1365,15 @@ abstract class Windows
     return HWND.findWindow(elem);
   }
 
+
+  static int GetKeyState(int nVirtKey)
+  {
+    if(_keyPressed.contains(nVirtKey))
+      return 0x80;
+    return 0;
+  }
+
+
   static HWND? GetCapture()
   {
     var elem = Windows._capture;
