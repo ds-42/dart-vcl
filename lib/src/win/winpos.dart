@@ -743,7 +743,10 @@ abstract class _winpos // WINPOS_
 
   static BOOL SetWindowPos( HWND hwnd, HWINDOW? hwndInsertAfter,
                      int x, int y, int cx, int cy, UINT flags )
-  { 
+  {
+    if(hwndInsertAfter==null)
+      hwndInsertAfter = HWND_TOP; // new
+    
     var winpos = WINDOWPOS(
       hwnd, 
       hwndInsertAfter, 

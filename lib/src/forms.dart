@@ -853,7 +853,7 @@ class TCustomForm extends TScrollingWinControl
         case TFormBorderStyle.None:
           if ((Parent == null) && (ParentWindow == null))
               Params.Style |= Windows.WS_POPUP;
-          
+
           break;
 
         case TFormBorderStyle.Single:
@@ -879,11 +879,11 @@ class TCustomForm extends TScrollingWinControl
       }
       if([TFormBorderStyle.Single, TFormBorderStyle.Sizeable, TFormBorderStyle.None].contains(CreateStyle))
       { 
-/*        if(_windowState == TWindowState.Minimized)
+        if(_windowState == TWindowState.Minimized)
           Params.Style |= Windows.WS_MINIMIZE;
         else
         if(_windowState == TWindowState.Maximized)
-          Params.Style |= Windows.WS_MAXIMIZE;*/
+          Params.Style |= Windows.WS_MAXIMIZE;
       }
       else
         _windowState = TWindowState.Normal;

@@ -243,7 +243,16 @@ class WND
       if(!flags.and(__windows.WIN_NEED_SIZE))
       {
         if(sized)
-          Windows.SendMessage(hwnd, WM_SIZE, Windows.SIZE_RESTORED, SIZE(cx, cy));
+        {
+          int type = Windows.SIZE_RESTORED;
+          if(dwStyle.and(Windows.WS_MAXIMIZE))
+            type = Windows.SIZE_MAXIMIZED;
+          else
+          if(dwStyle.and(Windows.WS_MINIMIZE))
+            type = Windows.SIZE_MINIMIZED;
+
+          Windows.SendMessage(hwnd, WM_SIZE, type, SIZE(cx, cy));
+        }
         if(moved)
           Windows.SendMessage(hwnd, WM_MOVE, null, POINT(px, py));
       }
