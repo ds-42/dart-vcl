@@ -4107,8 +4107,8 @@ class TWinControl extends TControl
 
       if(!pos.flags.and(Windows.SWP_NOSIZE))
       {
-        Integer cx = Integer(pos.cx);
-        Integer cy = Integer(pos.cy);
+        var cx = Integer(pos.cx);
+        var cy = Integer(pos.cy);
         if(!CheckNewSize(cx, cy))
           pos.flags |= Windows.SWP_NOSIZE;
         pos.cx = cx.Value;
