@@ -543,9 +543,7 @@ abstract class Windows
       _touchx = t.client.x.toInt();
       _touchy = t.client.y.toInt();
 
-      Element? elem = ElemByChild(event.target as Element);
-      if(elem == null)
-        return;
+      Element elem = Windows.ElemFromEvent(event);
 
       TShiftState Shift = TShiftState();
       SendElementMessage(elem, WM_MOUSEWHEEL, TWheelInfo(-dy*10, Shift), TPoint(0, 0));
