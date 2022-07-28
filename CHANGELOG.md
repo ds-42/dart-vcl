@@ -1,3 +1,8 @@
+## [1.2.5]
+- Support dart SDK 2.17.5
+- Updated vcl core
+- Updated win core
+
 ## [1.2.4]
 - Support dart SDK 2.17.1
 - Updated vcl core
