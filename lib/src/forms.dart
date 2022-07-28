@@ -1620,8 +1620,20 @@ class TScreen extends TComponent
 
     window.onResize.listen((event)
     {
-      _width = window.innerWidth!;
-      _height = window.innerHeight!;
+      int iw = window.innerWidth ?? 0;
+      int ih = window.innerHeight ?? 0;
+
+      int ow = window.outerWidth;
+      int oh = window.outerHeight;
+
+      if(iw!=ow && iw!=oh)
+      {
+        ow = iw;
+        oh = ih;
+      }
+
+      _width = ow;
+      _height = oh;
 
       _customForms.forEach((form)
       {
@@ -1910,8 +1922,14 @@ class TApplication extends TComponent
     get OnMessage => _onMessage;
     set OnMessage(TMessageEvent? event) => _onMessage = event;
 
+  late final bool _isDevelopment;
+  bool get IsDevelopment => _isDevelopment;
+
   TApplication(TComponent? AOwner) : super(AOwner)
   {
+    String name = runtimeType.toString();
+    _isDevelopment = !name.contains(':');
+
     DefineObjectFactory(TForm, (_) => TForm(_ as TComponent) );
 
     if(SysMetric.SmartMode)
