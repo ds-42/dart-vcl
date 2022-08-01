@@ -176,16 +176,29 @@ abstract class Windows
 
     _run();
 
-    void idle(deadline)
-    {
 
+    // some devices don't support "window.requestIdleCallback". "Future.delayed" as an alternative
+    void idle()
+    {
+      Future.delayed(Duration()).then((value)
+      {
+        if(_application != null)
+          _application!.Idle(); 
+
+        idle();
+      });
+    }
+    idle();
+
+/*    void idle(deadline)
+    {
       if(_application != null)
-        _application!.Idle(); 
+        _application!.Idle(); /** TMessage(MESSAGE(0)) **/
 
       if(_active)
         window.requestIdleCallback(idle);
     }
-    window.requestIdleCallback(idle);
+    window.requestIdleCallback(idle);*/
 
   }
 
