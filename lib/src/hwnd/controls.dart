@@ -30,7 +30,7 @@ class HPanel extends HControl
       '${ rule.block }'
       '${ rule.borderBox }'
       '${ rule.no_select }'
-      'background: #cccccc;'
+//      'background: #cccccc;'
       'whiteSpace: nowrap;'
       'overflow: hidden;'
       'text-overflow: ellipsis;');

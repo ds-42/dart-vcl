@@ -59,44 +59,7 @@ class TColor
 
   TColor alpha(int a) => TAlphaColor(value, a, name);
 
-  int? get rgb
-  {
-    switch(this)
-    {
-      case cl3DDkShadow:          return 0x696969;
-      case cl3DLight:             return 0xe3e3e3;
-      case clActiveBorder:        return 0xb4b4b4;
-      case clActiveCaption:       return 0xd1b499;
-      case clActiveRecord:        return 0x6060ff; //0x000080;
-      case clAppWorkSpace:        return 0xababab;
-      case clBackground:          return 0x000000;
-      case clBtnFace:             return 0xe0e0e0; //0xcccccc;
-      case clBtnHighlight:        return 0xffffff;
-      case clBtnShadow:           return 0x808080;
-      case clBtnText:             return 0x000000;
-      case clCaptionText:         return 0x000000;
-      case clDefault:             return null;
-      case clGrayText:            return 0x6d6d6d;
-      case clHighlight:           return 0xd77800;
-      case clHighlightText:       return 0xffffff;
-      case clInactiveBorder:      return 0xfcf7f4;
-      case clInactiveCaption:     return 0xdbcdbf;
-      case clInactiveCaptionText: return 0x000000;
-      case clInactiveRecord:      return 0x808080;
-      case clInfoBk:              return 0xffffe0;
-      case clInfoText:            return 0x000000;
-      case clLinkBk:              return 0xffffd0;
-      case clMenu:                return 0xf0f0f0;
-      case clMenuText:            return 0x000000;
-      case clNone:                return null;
-      case clReadOnly:            return 0xdddddd;
-      case clScrollBar:           return 0xc8c8c8;
-      case clWindow:              return 0xffffff;
-      case clWindowFrame:         return 0x646464;
-      case clWindowText:          return 0x000000;
-      default:                    return value & 0xffffff;
-    }
-  }
+  int? get rgb => Theme.Active.getColorRGB(this);
 
   int? get rgba
   {

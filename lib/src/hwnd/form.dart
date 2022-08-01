@@ -9,7 +9,7 @@ class HForm extends HCustomControl
   {
     rule.add('',
       '${ rule.block }${ rule.font }'
-      'border: 1px solid gray;'
+      'border: 1px solid ${ clActiveBorder.html };'
       'box-shadow: 5px 5px 10px rgba(0,0,0,.25);'
       'background-color: ${ clBtnFace.html };'
 //      'margin: 3px;'
@@ -25,23 +25,31 @@ class HForm extends HCustomControl
 
     rule.add('.client',
       'position: absolute;'
-      'overflow: auto;');
+      'overflow: auto;'
+      'color: ${ clWindowText.html };');
+
+    String cl_active = clActiveCaption.html;
+    String cl_inactive = clInactiveCaption.html;
+//    String cl_title = clActiveTitle.html;
 
     rule.add('.title',
-      'background: radial-gradient(#6060ff, #a0a0ff);'
-      'text-shadow: 1px  1px 0 #6060ff,'
-                   '1px -1px 0 #6060ff,'
-                  '-1px  1px 0 #6060ff,'
-                  '-1px -1px 0 #6060ff;'
-      'color: white;'
+//      'background: radial-gradient(#6060ff, #a0a0ff);'
+      'background: radial-gradient($cl_active, ${ clActiveCaption.mixWith(clWhite).html });'
+      'text-shadow: 1px  1px 0 $cl_active,'
+                   '1px -1px 0 $cl_active,'
+                  '-1px  1px 0 $cl_active,'
+                  '-1px -1px 0 $cl_active;'
+      'color: ${ clCaptionText.html };'
       'box-sizing: border-box;');
 
     rule.add('.inactive',
-      'background: radial-gradient(#808080, #c0c0c0);'
-      'text-shadow: 1px  1px 0 #808080,'
-                   '1px -1px 0 #808080,'
-                  '-1px  1px 0 #808080,'
-                  '-1px -1px 0 #808080;');
+      'background: radial-gradient($cl_inactive, ${ clInactiveCaption.mixWith(clWhite).html });'
+      'text-shadow: 1px  1px 0 $cl_inactive,'
+                   '1px -1px 0 $cl_inactive,'
+                  '-1px  1px 0 $cl_inactive,'
+                  '-1px -1px 0 $cl_inactive;'
+      'color: ${ clInactiveCaptionText.html };'
+    );
 
     rule.add('.caption',
       '${ rule.inline }${ rule.no_select }'

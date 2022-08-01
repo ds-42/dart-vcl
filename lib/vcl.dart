@@ -83,6 +83,7 @@ part 'src/ext/mem.dart';
 part 'src/ext/period.dart';
 part 'src/ext/sysdate.dart';
 part 'src/ext/systime.dart';
+part 'src/ext/theme.dart';
 part 'src/ext/time.dart';
 part 'src/ext/types_ext.dart';
 part 'src/win/winuser.dart';

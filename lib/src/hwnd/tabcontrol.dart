@@ -53,17 +53,17 @@ class HTabControl extends HCustomControl
       'margin: 0 2px 0 0;'
       'padding: 0 5px;'
       'line-height: 20px;'
-      'background: #ccc;'
-      'color: gray;'
+      'background: ${ clBtnFace.tone(-0.1).html };'
+      'color: ${ clGrayText.html };'
       'text-align: center;'
       'border-radius: 3px 3px 0 0;'
       'border: 1px solid #999;' 
       '${ rule.borderBox}');
     rule.add('.$tab_radio:checked+label',
       'z-index: 1;'
-      'color: black;'
-      'background: #ddd;'
-      'border-bottom-color: #ddd;'
+      'color: ${ clWindowText.html };'
+      'background: ${ clBtnFace.html };'
+      'border-bottom-color: ${ clBtnFace.html };'
       'cursor: default;');
     rule.add('.$tab_radio',
       'display: none;');
